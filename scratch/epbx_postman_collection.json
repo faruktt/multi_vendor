@@ -1,0 +1,110 @@
+{
+	"info": {
+		"_postman_id": "c13d8d64-4e2b-4d7a-a634-1c52d8b4b7f8",
+		"name": "Cloud PBX Reseller API (V2)",
+		"description": "Developer API for Resellers to automate Cloud PBX SaaS tenant management and telephony provisioning.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "System & Authentication",
+			"item": [
+				{
+					"name": "Ping / Verify Token",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{api_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v2/ping",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"ping"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Tenant (Customer) Management",
+			"item": [
+				{
+					"name": "List All Customers",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{api_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v2/customers",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"customers"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Customer",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{api_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"company_name\": \"Example Corp\",\n    \"email\": \"admin@example.com\",\n    \"package_id\": 1\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v2/customers",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"customers"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "https://pbx.epbx.bd"
+		},
+		{
+			"key": "api_token",
+			"value": "YOUR_DEVELOPER_TOKEN_HERE"
+		}
+	]
+}
