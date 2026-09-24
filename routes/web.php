@@ -25,6 +25,7 @@ use App\Http\Controllers\Web\ActivityLogController;
 use App\Http\Controllers\Web\UserActivityController;
 use App\Http\Controllers\Web\FlashSaleController;
 use App\Http\Controllers\Web\HomeContentController;
+use App\Http\Controllers\Web\AdsCostController;
 use App\Http\Controllers\Web\EpbxCallController;
 use App\Http\Controllers\Warehouse\DashboardController as WarehouseDashboardController;
 use App\Http\Controllers\Warehouse\ProductController as WarehouseProductController;
@@ -305,6 +306,15 @@ Route::prefix('admin')->group(function () {
             Route::get('/all-customers',    [AdminDataController::class, 'allCustomers'])->name('all-customers');
             Route::get('/sales-report',     [AdminDataController::class, 'salesReport'])->name('sales-report');
             Route::get('/financial-report', [AdminDataController::class, 'financialReport'])->name('financial-report');
+
+            // ── Ads Cost Management ───────────────────────────────────────
+            Route::prefix('ads-cost')->name('ads-cost.')->group(function () {
+                Route::get('/',             [AdsCostController::class, 'index'])->name('index');
+                Route::post('/',            [AdsCostController::class, 'store'])->name('store');
+                Route::put('/{adsCost}',    [AdsCostController::class, 'update'])->name('update');
+                Route::delete('/{adsCost}', [AdsCostController::class, 'destroy'])->name('destroy');
+                Route::get('/export',       [AdsCostController::class, 'export'])->name('export');
+            });
 
             // Activity Logs
             Route::get('/activity-logs',                 [ActivityLogController::class, 'index'])->name('activity-logs.index');
