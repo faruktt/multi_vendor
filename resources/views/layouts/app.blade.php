@@ -270,6 +270,9 @@
             <a href="{{ route('admin.financial-report') }}" class="nav-link {{ request()->routeIs('admin.financial-report') ? 'is-active' : '' }}">
                 <span class="icon"><i class="fas fa-coins text-[11px]"></i></span> Financial Report
             </a>
+            <a href="{{ route('admin.ads-cost.index') }}" class="nav-link {{ request()->routeIs('admin.ads-cost.*') ? 'is-active' : '' }}">
+                <span class="icon"><i class="fas fa-rectangle-ad text-[11px] text-amber-400"></i></span> Ads Cost
+            </a>
             <a href="{{ route('admin.fraud-check') }}" class="nav-link {{ request()->routeIs('admin.fraud-check') ? 'is-active' : '' }}">
                 <span class="icon"><i class="fas fa-shield-halved text-[11px]"></i></span> Fraud Check
             </a>
@@ -295,7 +298,7 @@
                 $pendingResellerWithdrawalsCount = \App\Models\ResellerWithdrawal::where('status', 'pending')->count();
             @endphp
 
-            <a href="{{ route('admin.resellers.index') }}" 
+            <a href="{{ route('admin.resellers.index') }}"
                class="nav-link border-l-2 border-purple-500/30 hover:border-purple-400 {{ request()->routeIs('admin.resellers.index') ? 'is-active !border-purple-400' : '' }}">
                 <span class="icon"><i class="fas fa-handshake text-[11px] text-purple-400"></i></span>
                 <span class="truncate">All Resellers</span>
@@ -304,7 +307,7 @@
                 @endif
             </a>
 
-            <a href="{{ route('admin.resellers.orders') }}" 
+            <a href="{{ route('admin.resellers.orders') }}"
                class="nav-link border-l-2 border-purple-500/30 hover:border-purple-400 {{ request()->routeIs('admin.resellers.orders*') ? 'is-active' : '' }}">
                 <span class="icon"><i class="fas fa-cart-flatbed text-[11px] text-violet-400"></i></span>
                 <span class="truncate">Reseller Orders</span>
@@ -313,7 +316,7 @@
                 @endif
             </a>
 
-            <a href="{{ route('admin.resellers.withdrawals') }}" 
+            <a href="{{ route('admin.resellers.withdrawals') }}"
                class="nav-link border-l-2 border-purple-500/30 hover:border-purple-400 {{ request()->routeIs('admin.resellers.withdrawals*') ? 'is-active' : '' }}">
                 <span class="icon"><i class="fas fa-wallet text-[11px] text-fuchsia-400"></i></span>
                 <span class="truncate">Reseller Withdrawals</span>
@@ -322,7 +325,7 @@
                 @endif
             </a>
 
-            <a href="{{ route('admin.resellers.report') }}" 
+            <a href="{{ route('admin.resellers.report') }}"
                class="nav-link border-l-2 border-purple-500/30 hover:border-purple-400 {{ request()->routeIs('admin.resellers.report*') ? 'is-active' : '' }}">
                 <span class="icon"><i class="fas fa-chart-pie text-[11px] text-indigo-400"></i></span>
                 <span class="truncate">Reseller Reports</span>
