@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 
 namespace App\Http\Controllers\Web;
 
@@ -66,7 +66,7 @@ class AdsCostController extends Controller
         $avgCpa = $totalConversions > 0 ? round($totalCost / $totalConversions, 2) : 0;
         $avgCpc = $totalClicks > 0 ? round($totalCost / $totalClicks, 2) : 0;
 
-        // Quick aggregate KPI cards
+        // Quick aggregate KPI cards (All time / Month / Today)
         $todayCost = (float) AdsCost::whereDate('cost_date', Carbon::today())->sum('amount');
         $thisMonthCost = (float) AdsCost::whereMonth('cost_date', Carbon::now()->month)
             ->whereYear('cost_date', Carbon::now()->year)
@@ -74,7 +74,7 @@ class AdsCostController extends Controller
         $allTimeCost = (float) AdsCost::sum('amount');
         $allTimeConversions = (int) AdsCost::sum('conversions');
 
-        // Platform breakdown
+        // Platform breakdown (Overall distribution)
         $platformsList = ['facebook', 'google', 'tiktok', 'instagram', 'youtube', 'snapchat', 'other'];
         $platformBreakdown = AdsCost::selectRaw('platform, SUM(amount) as total_amount, COUNT(*) as count, SUM(conversions) as total_conversions')
             ->groupBy('platform')
@@ -120,11 +120,10 @@ class AdsCostController extends Controller
             'notes'         => 'nullable|string|max:2000',
         ]);
 
-        $validated['currency'] = $request->input('currency') ?: 'BDT';
-        $validated['impressions'] = (int) $request->input('impressions', 0);
-        $validated['clicks'] = (int) $request->input('clicks', 0);
-        $validated['conversions'] = (int) $request->input('conversions', 0);
-        $validated['amount_usd'] = $request->filled('amount_usd') ? (float) $request->input('amount_usd') : null;
+        $validated['currency'] = $validated['currency'] ?: 'BDT';
+        $validated['impressions'] = $validated['impressions'] ?? 0;
+        $validated['clicks'] = $validated['clicks'] ?? 0;
+        $validated['conversions'] = $validated['conversions'] ?? 0;
         $validated['created_by'] = auth()->id();
 
         $adsCost = AdsCost::create($validated);
@@ -151,11 +150,10 @@ class AdsCostController extends Controller
             'notes'         => 'nullable|string|max:2000',
         ]);
 
-        $validated['currency'] = $request->input('currency') ?: 'BDT';
-        $validated['impressions'] = (int) $request->input('impressions', 0);
-        $validated['clicks'] = (int) $request->input('clicks', 0);
-        $validated['conversions'] = (int) $request->input('conversions', 0);
-        $validated['amount_usd'] = $request->filled('amount_usd') ? (float) $request->input('amount_usd') : null;
+        $validated['currency'] = $validated['currency'] ?: 'BDT';
+        $validated['impressions'] = $validated['impressions'] ?? 0;
+        $validated['clicks'] = $validated['clicks'] ?? 0;
+        $validated['conversions'] = $validated['conversions'] ?? 0;
 
         $adsCost->update($validated);
 
@@ -175,5 +173,70 @@ class AdsCostController extends Controller
         $adsCost->delete();
 
         return back()->with('success', 'Ads cost record deleted successfully.');
+    }
+
+    public function export(Request $request)
+    {
+        $query = AdsCost::with('createdBy')->latest('cost_date')->latest('id');
+
+        if ($request->filled('platform') && $request->platform !== 'all') {
+            $query->where('platform', $request->platform);
+        }
+
+        if ($request->filled('search')) {
+            $search = trim($request->search);
+            $query->where(function ($q) use ($search) {
+                $q->where('campaign_name', 'like', "%{$search}%")
+                  ->orWhere('ad_account', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('from_date')) {
+            $query->whereDate('cost_date', '>=', $request->from_date);
+        }
+        if ($request->filled('to_date')) {
+            $query->whereDate('cost_date', '<=', $request->to_date);
+        }
+
+        $records = $query->get();
+
+        $filename = 'ads_costs_' . date('Y_m_d_His') . '.csv';
+
+        $headers = [
+            'Content-Type'        => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+        ];
+
+        $callback = function () use ($records) {
+            $file = fopen('php://output', 'w');
+            // UTF-8 BOM for Excel compatibility
+            fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
+
+            fputcsv($file, ['ID', 'Date', 'Platform', 'Campaign Name', 'Ad Account', 'Amount (BDT)', 'Amount (USD)', 'Impressions', 'Clicks', 'Conversions', 'CPC (BDT)', 'CPA (BDT)', 'CTR (%)', 'Logged By', 'Target URL', 'Notes']);
+
+            foreach ($records as $item) {
+                fputcsv($file, [
+                    $item->id,
+                    $item->cost_date?->format('Y-m-d'),
+                    $item->platform_label,
+                    $item->campaign_name,
+                    $item->ad_account ?? '-',
+                    $item->amount,
+                    $item->amount_usd ?? '-',
+                    $item->impressions ?? 0,
+                    $item->clicks ?? 0,
+                    $item->conversions ?? 0,
+                    $item->cpc,
+                    $item->cpa,
+                    $item->ctr . '%',
+                    $item->createdBy?->name ?? 'System',
+                    $item->target_url ?? '-',
+                    $item->notes ?? '-',
+                ]);
+            }
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
     }
 }
