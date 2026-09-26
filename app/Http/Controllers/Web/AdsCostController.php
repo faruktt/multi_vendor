@@ -102,4 +102,78 @@ class AdsCostController extends Controller
             'toDate'
         ));
     }
+
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'platform'      => 'required|string|in:facebook,google,tiktok,instagram,youtube,snapchat,other',
+            'campaign_name' => 'required|string|max:255',
+            'ad_account'    => 'nullable|string|max:255',
+            'cost_date'     => 'required|date',
+            'amount'        => 'required|numeric|min:0.01',
+            'currency'      => 'nullable|string|max:10',
+            'amount_usd'    => 'nullable|numeric|min:0',
+            'impressions'   => 'nullable|integer|min:0',
+            'clicks'        => 'nullable|integer|min:0',
+            'conversions'   => 'nullable|integer|min:0',
+            'target_url'    => 'nullable|string|max:500',
+            'notes'         => 'nullable|string|max:2000',
+        ]);
+
+        $validated['currency'] = $request->input('currency') ?: 'BDT';
+        $validated['impressions'] = (int) $request->input('impressions', 0);
+        $validated['clicks'] = (int) $request->input('clicks', 0);
+        $validated['conversions'] = (int) $request->input('conversions', 0);
+        $validated['amount_usd'] = $request->filled('amount_usd') ? (float) $request->input('amount_usd') : null;
+        $validated['created_by'] = auth()->id();
+
+        $adsCost = AdsCost::create($validated);
+
+        ActivityLogger::log('created', $adsCost, "Added ads cost: {$adsCost->campaign_name} ({$adsCost->platform_label}) ৳" . number_format($adsCost->amount, 2));
+
+        return back()->with('success', 'Ads cost entry recorded successfully.');
+    }
+
+    public function update(Request $request, AdsCost $adsCost)
+    {
+        $validated = $request->validate([
+            'platform'      => 'required|string|in:facebook,google,tiktok,instagram,youtube,snapchat,other',
+            'campaign_name' => 'required|string|max:255',
+            'ad_account'    => 'nullable|string|max:255',
+            'cost_date'     => 'required|date',
+            'amount'        => 'required|numeric|min:0.01',
+            'currency'      => 'nullable|string|max:10',
+            'amount_usd'    => 'nullable|numeric|min:0',
+            'impressions'   => 'nullable|integer|min:0',
+            'clicks'        => 'nullable|integer|min:0',
+            'conversions'   => 'nullable|integer|min:0',
+            'target_url'    => 'nullable|string|max:500',
+            'notes'         => 'nullable|string|max:2000',
+        ]);
+
+        $validated['currency'] = $request->input('currency') ?: 'BDT';
+        $validated['impressions'] = (int) $request->input('impressions', 0);
+        $validated['clicks'] = (int) $request->input('clicks', 0);
+        $validated['conversions'] = (int) $request->input('conversions', 0);
+        $validated['amount_usd'] = $request->filled('amount_usd') ? (float) $request->input('amount_usd') : null;
+
+        $adsCost->update($validated);
+
+        ActivityLogger::log('updated', $adsCost, "Updated ads cost: {$adsCost->campaign_name} ({$adsCost->platform_label})");
+
+        return back()->with('success', 'Ads cost updated successfully.');
+    }
+
+    public function destroy(AdsCost $adsCost)
+    {
+        $name = $adsCost->campaign_name;
+        $platform = $adsCost->platform_label;
+        $amount = $adsCost->amount;
+
+        ActivityLogger::log('deleted', $adsCost, "Deleted ads cost: {$name} ({$platform}) ৳" . number_format($amount, 2));
+
+        $adsCost->delete();
+
+        return back()->with('success', 'Ads cost record deleted successfully.');
+    }
 }
