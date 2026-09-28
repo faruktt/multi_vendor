@@ -78,6 +78,7 @@ class ActivityLog extends Model
             'Coupon'                    => 'fas fa-ticket text-rose-500',
             'Banner'                    => 'fas fa-image text-pink-500',
             'IncomeExpense'             => 'fas fa-coins text-amber-600',
+            'AdsCost'                   => 'fas fa-rectangle-ad text-indigo-500',
             'CourierSetting'            => 'fas fa-truck-fast text-teal-600',
             'OrderStatus'               => 'fas fa-list-check text-blue-600',
             default                     => 'fas fa-cube text-slate-400',

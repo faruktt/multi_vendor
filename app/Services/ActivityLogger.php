@@ -189,6 +189,7 @@ class ActivityLogger
         return (string) (
             $model->name
             ?? $model->title
+            ?? $model->campaign_name
             ?? $model->invoice_no
             ?? $model->code
             ?? $model->email
