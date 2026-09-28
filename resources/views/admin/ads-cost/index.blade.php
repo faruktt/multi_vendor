@@ -468,6 +468,7 @@
                     <template x-if="isEditing">
                         <input type="hidden" name="_method" value="PUT">
                     </template>
+                    <input type="hidden" name="currency" :value="form.currency || 'BDT'">
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                         {{-- Platform --}}
@@ -613,6 +614,7 @@ function adsCostManager() {
             ad_account: '',
             cost_date: @json(now()->toDateString()),
             amount: '',
+            currency: 'BDT',
             amount_usd: '',
             conversions: '',
             clicks: '',
@@ -630,6 +632,7 @@ function adsCostManager() {
                 ad_account: '',
                 cost_date: new Date().toISOString().substring(0, 10),
                 amount: '',
+                currency: 'BDT',
                 amount_usd: '',
                 conversions: '',
                 clicks: '',
@@ -649,6 +652,7 @@ function adsCostManager() {
                 ad_account: ad.ad_account || '',
                 cost_date: ad.cost_date ? ad.cost_date.substring(0, 10) : new Date().toISOString().substring(0, 10),
                 amount: ad.amount,
+                currency: ad.currency || 'BDT',
                 amount_usd: ad.amount_usd || '',
                 conversions: ad.conversions || '',
                 clicks: ad.clicks || '',

@@ -8,6 +8,10 @@ use App\Services\ActivityLogger;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
+/**
+ * Controller for managing multi-platform advertising expenses, KPI analytics,
+ * performance tracking (CPC/CPA/CTR), and CSV reports.
+ */
 class AdsCostController extends Controller
 {
     public function index(Request $request)
@@ -120,10 +124,10 @@ class AdsCostController extends Controller
             'notes'         => 'nullable|string|max:2000',
         ]);
 
-        $validated['currency'] = $validated['currency'] ?: 'BDT';
-        $validated['impressions'] = $validated['impressions'] ?? 0;
-        $validated['clicks'] = $validated['clicks'] ?? 0;
-        $validated['conversions'] = $validated['conversions'] ?? 0;
+        $validated['currency'] = !empty($validated['currency']) ? $validated['currency'] : 'BDT';
+        $validated['impressions'] = !empty($validated['impressions']) ? (int) $validated['impressions'] : 0;
+        $validated['clicks'] = !empty($validated['clicks']) ? (int) $validated['clicks'] : 0;
+        $validated['conversions'] = !empty($validated['conversions']) ? (int) $validated['conversions'] : 0;
         $validated['created_by'] = auth()->id();
 
         $adsCost = AdsCost::create($validated);
@@ -150,10 +154,10 @@ class AdsCostController extends Controller
             'notes'         => 'nullable|string|max:2000',
         ]);
 
-        $validated['currency'] = $validated['currency'] ?: 'BDT';
-        $validated['impressions'] = $validated['impressions'] ?? 0;
-        $validated['clicks'] = $validated['clicks'] ?? 0;
-        $validated['conversions'] = $validated['conversions'] ?? 0;
+        $validated['currency'] = !empty($validated['currency']) ? $validated['currency'] : 'BDT';
+        $validated['impressions'] = !empty($validated['impressions']) ? (int) $validated['impressions'] : 0;
+        $validated['clicks'] = !empty($validated['clicks']) ? (int) $validated['clicks'] : 0;
+        $validated['conversions'] = !empty($validated['conversions']) ? (int) $validated['conversions'] : 0;
 
         $adsCost->update($validated);
 
