@@ -270,17 +270,17 @@
                         </div>
                     </div>
 
-                    {{-- Available Profit --}}
-                    <div class="bg-gradient-to-br from-emerald-600 to-teal-700 text-white rounded-2xl p-4 shadow-md shadow-emerald-100 flex flex-col justify-between md:col-span-2">
+                    {{-- Return Delivery Charges --}}
+                    <div class="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-sm flex flex-col justify-between">
                         <div class="flex items-center justify-between mb-2">
-                            <span class="text-xs font-extrabold uppercase tracking-wider text-emerald-100">Available Profit</span>
-                            <div class="w-8 h-8 rounded-xl bg-white/20 text-white flex items-center justify-center text-xs backdrop-blur-sm">
-                                <i class="fas fa-wallet"></i>
+                            <span class="text-xs font-bold uppercase tracking-wider text-rose-500">Return Charges</span>
+                            <div class="w-8 h-8 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center text-xs">
+                                <i class="fas fa-undo-alt"></i>
                             </div>
                         </div>
                         <div>
-                            <div class="text-3xl font-black tracking-tight">৳{{ number_format($resellerStats['available_profit'], 2) }}</div>
-                            <div class="text-xs text-emerald-100 mt-1">Ready for manual withdrawal / payout</div>
+                            <div class="text-2xl font-black text-rose-600">৳{{ number_format($resellerStats['total_return_charges'], 2) }}</div>
+                            <div class="text-[11px] text-slate-400 mt-0.5">Shipping fee deducted</div>
                         </div>
                     </div>
 
@@ -294,9 +294,38 @@
                         </div>
                         <div>
                             <div class="text-2xl font-black text-amber-700">৳{{ number_format($resellerStats['withdrawn'], 2) }}</div>
-                            <div class="text-[11px] text-slate-400 mt-0.5">Total deducted/paid</div>
+                            <div class="text-[11px] text-slate-400 mt-0.5">Total payout paid</div>
                         </div>
                     </div>
+
+                    {{-- Available Profit / Net Balance --}}
+                    @if($resellerStats['available_profit'] < 0)
+                        <div class="bg-gradient-to-br from-rose-600 to-red-700 text-white rounded-2xl p-4 shadow-md shadow-rose-100 flex flex-col justify-between">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-xs font-extrabold uppercase tracking-wider text-rose-100">Negative Balance</span>
+                                <div class="w-8 h-8 rounded-xl bg-white/20 text-white flex items-center justify-center text-xs backdrop-blur-sm">
+                                    <i class="fas fa-exclamation-circle"></i>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="text-2xl font-black tracking-tight">-৳{{ number_format(abs($resellerStats['available_profit']), 2) }}</div>
+                                <div class="text-[11px] text-rose-100 mt-0.5">Deficit from return orders</div>
+                            </div>
+                        </div>
+                    @else
+                        <div class="bg-gradient-to-br from-emerald-600 to-teal-700 text-white rounded-2xl p-4 shadow-md shadow-emerald-100 flex flex-col justify-between">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-xs font-extrabold uppercase tracking-wider text-emerald-100">Available Profit</span>
+                                <div class="w-8 h-8 rounded-xl bg-white/20 text-white flex items-center justify-center text-xs backdrop-blur-sm">
+                                    <i class="fas fa-wallet"></i>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="text-2xl font-black tracking-tight">৳{{ number_format($resellerStats['available_profit'], 2) }}</div>
+                                <div class="text-[11px] text-emerald-100 mt-0.5">Ready for payout</div>
+                            </div>
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>
@@ -315,7 +344,7 @@
                 </div>
             </div>
 
-            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3.5">
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3.5">
                 {{-- Total Resellers --}}
                 <div class="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-sm">
                     <div class="flex items-center justify-between mb-1.5">
@@ -356,14 +385,14 @@
                     <div class="text-[11px] text-slate-400 mt-0.5">Earned from delivered</div>
                 </div>
 
-                {{-- Available Profit --}}
-                <div class="bg-white rounded-2xl border border-emerald-200/80 bg-emerald-50/20 p-4 shadow-sm">
+                {{-- Return Charges --}}
+                <div class="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-sm">
                     <div class="flex items-center justify-between mb-1.5">
-                        <span class="text-[11px] font-bold uppercase tracking-wider text-emerald-700">Available Profit</span>
-                        <i class="fas fa-wallet text-emerald-600 text-xs"></i>
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-rose-500">Return Deduct</span>
+                        <i class="fas fa-undo-alt text-rose-500 text-xs"></i>
                     </div>
-                    <div class="text-2xl font-black text-emerald-700">৳{{ number_format($globalStats['available_profit'], 0) }}</div>
-                    <div class="text-[11px] text-emerald-600/70 mt-0.5">Ready for payout</div>
+                    <div class="text-2xl font-black text-rose-600">৳{{ number_format($globalStats['total_return_charges'], 0) }}</div>
+                    <div class="text-[11px] text-slate-400 mt-0.5">Shipping charge cut</div>
                 </div>
 
                 {{-- Total Withdrawn --}}
@@ -375,6 +404,27 @@
                     <div class="text-2xl font-black text-amber-700">৳{{ number_format($globalStats['total_withdrawn'], 0) }}</div>
                     <div class="text-[11px] text-slate-400 mt-0.5">Total payout done</div>
                 </div>
+
+                {{-- Available Profit --}}
+                @if($globalStats['available_profit'] < 0)
+                    <div class="bg-white rounded-2xl border border-rose-200/80 bg-rose-50/30 p-4 shadow-sm">
+                        <div class="flex items-center justify-between mb-1.5">
+                            <span class="text-[11px] font-bold uppercase tracking-wider text-rose-700">Available Net</span>
+                            <i class="fas fa-exclamation-circle text-rose-600 text-xs"></i>
+                        </div>
+                        <div class="text-2xl font-black text-rose-700">-৳{{ number_format(abs($globalStats['available_profit']), 0) }}</div>
+                        <div class="text-[11px] text-rose-600/70 mt-0.5">Net deficit balance</div>
+                    </div>
+                @else
+                    <div class="bg-white rounded-2xl border border-emerald-200/80 bg-emerald-50/20 p-4 shadow-sm">
+                        <div class="flex items-center justify-between mb-1.5">
+                            <span class="text-[11px] font-bold uppercase tracking-wider text-emerald-700">Available Profit</span>
+                            <i class="fas fa-wallet text-emerald-600 text-xs"></i>
+                        </div>
+                        <div class="text-2xl font-black text-emerald-700">৳{{ number_format($globalStats['available_profit'], 0) }}</div>
+                        <div class="text-[11px] text-emerald-600/70 mt-0.5">Ready for payout</div>
+                    </div>
+                @endif
             </div>
         </div>
     @endif
@@ -439,8 +489,16 @@
                             </td>
 
                             <td class="px-5 py-3.5 text-right">
-                                <div class="font-black text-emerald-600">৳{{ number_format($r->available_balance, 2) }}</div>
+                                @if($r->available_balance < 0)
+                                    <div class="font-black text-rose-600">-৳{{ number_format(abs($r->available_balance), 2) }}</div>
+                                    <div class="text-[10px] text-rose-500 font-bold">Negative Balance</div>
+                                @else
+                                    <div class="font-black text-emerald-600">৳{{ number_format($r->available_balance, 2) }}</div>
+                                @endif
                                 <div class="text-[10px] text-slate-400 font-medium">Profit: ৳{{ number_format($r->total_profit, 2) }}</div>
+                                @if($r->total_return_charge > 0)
+                                    <div class="text-[10px] text-rose-500 font-medium">Return: -৳{{ number_format($r->total_return_charge, 2) }}</div>
+                                @endif
                             </td>
 
                             <td class="px-5 py-3.5">

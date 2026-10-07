@@ -248,7 +248,7 @@
 
                             @if($supplier->isPending() || !$supplier->isActive())
                                 <form method="POST" action="{{ route('admin.suppliers.approve', $supplier->id) }}" class="inline-block"
-                                      onsubmit="return confirm('Approve supplier {{ $supplier->display_name }}? They will be granted login access.');">
+                                      onsubmit="return confirm('Approve supplier {{ $supplier->display_name }}? They will be granted login access and receive a confirmation email.');">
                                     @csrf
                                     <button type="submit"
                                             class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition">

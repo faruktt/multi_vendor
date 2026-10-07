@@ -156,22 +156,34 @@
             </div>
 
             {{-- 4. Available Balance --}}
-            <div class="bg-gradient-to-br from-indigo-700 via-indigo-800 to-purple-900 rounded-2xl p-5 shadow-sm text-white relative overflow-hidden group">
+            <div class="bg-gradient-to-br {{ $availableBalance < 0 ? 'from-rose-700 via-rose-800 to-red-900' : 'from-indigo-700 via-indigo-800 to-purple-900' }} rounded-2xl p-5 shadow-sm text-white relative overflow-hidden group">
                 <div class="absolute -right-4 -bottom-4 opacity-15">
                     <i class="fas fa-vault text-8xl"></i>
                 </div>
                 <div class="relative z-10 flex items-center justify-between">
-                    <span class="text-xs font-bold text-indigo-200 uppercase tracking-wider">Available Balance</span>
-                    <a href="{{ route('reseller.withdrawals.index') }}"
-                       class="text-[11px] font-bold bg-white text-indigo-800 px-2.5 py-1 rounded-lg hover:bg-indigo-50 shadow-xs transition">
-                        উত্তোলন
-                    </a>
+                    <span class="text-xs font-bold {{ $availableBalance < 0 ? 'text-rose-200' : 'text-indigo-200' }} uppercase tracking-wider">Available Balance</span>
+                    @if($withdrawableBalance >= 10)
+                        <a href="{{ route('reseller.withdrawals.index') }}"
+                           class="text-[11px] font-bold bg-white text-indigo-800 px-2.5 py-1 rounded-lg hover:bg-indigo-50 shadow-xs transition">
+                            উত্তোলন
+                        </a>
+                    @elseif($availableBalance < 0)
+                        <span class="text-[10px] font-bold bg-white/20 text-rose-100 px-2 py-0.5 rounded-lg">
+                            ঋণাত্মক
+                        </span>
+                    @endif
                 </div>
                 <div class="relative z-10 mt-3">
-                    <div class="text-3xl font-black">৳{{ number_format($availableBalance, 2) }}</div>
-                    <div class="text-[11px] text-indigo-200 mt-2 flex items-center gap-1">
-                        <span>উত্তোলনযোগ্য ব্যালেন্স:</span>
-                        <strong class="text-white font-bold">৳{{ number_format($withdrawableBalance, 2) }}</strong>
+                    <div class="text-3xl font-black">
+                        {{ $availableBalance < 0 ? '-৳' . number_format(abs($availableBalance), 2) : '৳' . number_format($availableBalance, 2) }}
+                    </div>
+                    <div class="text-[11px] {{ $availableBalance < 0 ? 'text-rose-200' : 'text-indigo-200' }} mt-2 flex items-center gap-1">
+                        @if($availableBalance < 0)
+                            <span>পরবর্তী লাভ থেকে কর্তন হবে</span>
+                        @else
+                            <span>উত্তোলনযোগ্য ব্যালেন্স:</span>
+                            <strong class="text-white font-bold">৳{{ number_format($withdrawableBalance, 2) }}</strong>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -196,6 +208,15 @@
                     <span class="font-bold text-slate-800">৳{{ number_format($totalProfit, 2) }}</span>
                 </div>
 
+                @if($totalReturnCharge > 0)
+                <div class="flex items-center justify-between py-1.5 border-b border-slate-50 bg-rose-50/50 px-2 rounded-lg">
+                    <span class="text-rose-700 font-semibold flex items-center gap-1.5">
+                        <i class="fas fa-rotate-left text-rose-500 text-[10px]"></i> রিটার্ন ডেলিভারি চার্জ কর্তন ({{ $returnedOrdersCount }}টি অর্ডার)
+                    </span>
+                    <span class="font-bold text-rose-600">- ৳{{ number_format($totalReturnCharge, 2) }}</span>
+                </div>
+                @endif
+
                 <div class="flex items-center justify-between py-1.5 border-b border-slate-50">
                     <span class="text-slate-500 flex items-center gap-1.5">
                         <i class="fas fa-arrow-up-right-from-square text-orange-500 text-[10px]"></i> মোট উত্তোলিত টাকা (Withdrawn)
@@ -203,9 +224,11 @@
                     <span class="font-bold text-orange-600">- ৳{{ number_format($totalWithdrawn, 2) }}</span>
                 </div>
 
-                <div class="flex items-center justify-between py-1.5 border-b border-slate-50 bg-indigo-50/50 px-2.5 rounded-lg">
-                    <span class="font-bold text-indigo-900">নেট এভেইলেবল ব্যালেন্স</span>
-                    <span class="font-extrabold text-indigo-700">৳{{ number_format($availableBalance, 2) }}</span>
+                <div class="flex items-center justify-between py-1.5 border-b border-slate-50 {{ $availableBalance < 0 ? 'bg-rose-50' : 'bg-indigo-50/50' }} px-2.5 rounded-lg">
+                    <span class="font-bold {{ $availableBalance < 0 ? 'text-rose-900' : 'text-indigo-900' }}">নেট এভেইলেবল ব্যালেন্স</span>
+                    <span class="font-extrabold {{ $availableBalance < 0 ? 'text-rose-700' : 'text-indigo-700' }}">
+                        {{ $availableBalance < 0 ? '-৳' . number_format(abs($availableBalance), 2) : '৳' . number_format($availableBalance, 2) }}
+                    </span>
                 </div>
 
                 <div class="flex items-center justify-between py-1.5 border-b border-slate-50">

@@ -7,32 +7,58 @@
 
     {{-- Wallet Summary --}}
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div class="bg-gradient-to-br from-indigo-600 to-indigo-800 rounded-2xl shadow-sm p-5 text-white relative overflow-hidden flex flex-col justify-between">
+        @php
+            $dashReseller = auth('reseller')->user();
+            $availBal = $dashReseller->available_balance;
+            $retCharge = $dashReseller->total_return_charge;
+        @endphp
+        <div class="bg-gradient-to-br {{ $availBal < 0 ? 'from-rose-700 to-rose-900' : 'from-indigo-600 to-indigo-800' }} rounded-2xl shadow-sm p-5 text-white relative overflow-hidden flex flex-col justify-between">
             <div class="absolute -right-6 -bottom-6 opacity-20">
                 <i class="fas fa-wallet text-9xl"></i>
             </div>
             <div class="relative z-10">
-                <span class="text-indigo-100 text-sm font-medium">Available Balance</span>
-                <div class="text-3xl font-black mt-1">৳{{ number_format(auth('reseller')->user()->available_balance, 2) }}</div>
-                @if(auth('reseller')->user()->pending_withdrawals > 0)
+                <span class="{{ $availBal < 0 ? 'text-rose-200' : 'text-indigo-100' }} text-sm font-medium">Available Balance</span>
+                <div class="text-3xl font-black mt-1 tracking-tight">
+                    {{ $availBal < 0 ? '-৳' . number_format(abs($availBal), 2) : '৳' . number_format($availBal, 2) }}
+                </div>
+                @if($availBal < 0)
+                    <div class="text-xs text-rose-200 mt-1 flex items-center gap-1 font-medium">
+                        <i class="fas fa-circle-exclamation"></i> রিটার্ন ডেলিভারি চার্জ বাবদ ঋণাত্মক
+                    </div>
+                @elseif($dashReseller->pending_withdrawals > 0)
                     <div class="text-xs text-amber-200 mt-1 flex items-center gap-1">
-                        <i class="fas fa-clock"></i> ৳{{ number_format(auth('reseller')->user()->pending_withdrawals, 2) }} pending approval
+                        <i class="fas fa-clock"></i> ৳{{ number_format($dashReseller->pending_withdrawals, 2) }} pending approval
                     </div>
                 @else
                     <div class="text-xs text-indigo-200 mt-1">Added from completed orders</div>
                 @endif
             </div>
             <div class="relative z-10 mt-4">
-                <a href="{{ route('reseller.withdrawals.index') }}"
-                   class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white text-indigo-700 hover:bg-indigo-50 font-bold text-xs rounded-xl shadow-sm transition">
-                    <i class="fas fa-hand-holding-dollar"></i> Withdraw Profit
-                </a>
+                @if($dashReseller->withdrawable_balance >= 10)
+                    <a href="{{ route('reseller.withdrawals.index') }}"
+                       class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white text-indigo-700 hover:bg-indigo-50 font-bold text-xs rounded-xl shadow-sm transition">
+                        <i class="fas fa-hand-holding-dollar"></i> Withdraw Profit
+                    </a>
+                @elseif($availBal < 0)
+                    <span class="inline-flex items-center gap-1 px-3 py-1.5 bg-black/20 text-rose-100 font-semibold text-xs rounded-xl">
+                        পরবর্তী লাভ থেকে সমন্বয় হবে
+                    </span>
+                @else
+                    <span class="inline-flex items-center gap-1 px-3 py-1.5 bg-white/20 text-white/80 font-semibold text-xs rounded-xl">
+                        উত্তোলনযোগ্য ব্যালেন্স নেই
+                    </span>
+                @endif
             </div>
         </div>
         <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 flex items-center justify-between">
             <div>
                 <span class="text-slate-500 text-sm font-medium">Total Profit Earned</span>
-                <div class="text-2xl font-bold text-slate-800 mt-1">৳{{ number_format(auth('reseller')->user()->total_profit, 2) }}</div>
+                <div class="text-2xl font-bold text-slate-800 mt-1">৳{{ number_format($dashReseller->total_profit, 2) }}</div>
+                @if($retCharge > 0)
+                    <div class="text-xs text-rose-600 mt-1 font-semibold flex items-center gap-1">
+                        <i class="fas fa-rotate-left text-[10px]"></i> রিটার্ন চার্জ: -৳{{ number_format($retCharge, 2) }}
+                    </div>
+                @endif
             </div>
             <div class="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600">
                 <i class="fas fa-chart-line text-lg"></i>

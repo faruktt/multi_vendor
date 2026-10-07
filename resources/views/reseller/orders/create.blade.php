@@ -134,13 +134,17 @@
             {{-- Order Summary & Price Customization --}}
             <div>
                 <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 sticky top-20">
-                    <h3 class="font-bold text-slate-700 mb-4">Set Your Selling Price</h3>
+                    <h3 class="font-bold text-slate-700 mb-4 flex items-center justify-between">
+                        <span><i class="fas fa-boxes text-indigo-500 mr-1.5"></i> Order Items & Pricing</span>
+                        <span class="text-xs font-semibold text-slate-400">{{ count($lines) }} product{{ count($lines) > 1 ? 's' : '' }}</span>
+                    </h3>
                     
-                    <div class="space-y-4">
+                    <div class="space-y-3">
                         @foreach($lines as $line)
-                            <div class="flex flex-col gap-2 border-b border-slate-50 pb-3 last:border-0 last:pb-0">
-                                <div class="flex items-start gap-3">
-                                    <div class="w-10 h-10 rounded-lg overflow-hidden bg-slate-50 flex-shrink-0">
+                            <div class="p-3 rounded-xl bg-slate-50 border border-slate-100">
+                                {{-- Product Info --}}
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 rounded-lg overflow-hidden bg-white border border-slate-200/80 flex-shrink-0">
                                         @if($line['image_url'])
                                             <img src="{{ $line['image_url'] }}" class="w-full h-full object-cover">
                                         @else
@@ -148,18 +152,49 @@
                                         @endif
                                     </div>
                                     <div class="flex-1 min-w-0">
-                                        <p class="text-sm font-medium text-slate-700 truncate">{{ $line['product']->name }}</p>
-                                        <p class="text-xs text-slate-400">{{ $line['qty'] }} items (Your cost: ৳{{ number_format($line['price'], 2) }} each)</p>
+                                        <p class="text-xs font-bold text-slate-800 truncate">{{ $line['product']->name }}</p>
+                                        <div class="text-[11px] text-slate-400 mt-0.5 flex items-center gap-1.5">
+                                            <span>Cost: <strong class="text-slate-600">৳{{ number_format($line['price'], 0) }}</strong></span>
+                                            @if($line['variant'])
+                                                <span>•</span>
+                                                <span class="text-indigo-600 font-medium">{{ $line['variant']->variant_name }}</span>
+                                            @endif
+                                        </div>
                                     </div>
                                 </div>
-                                <div class="flex items-center justify-between mt-1">
-                                    <span class="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Customer Price</span>
-                                    <div class="flex items-center gap-2">
-                                        <span class="text-slate-400 text-sm">৳</span>
-                                        <input type="number" name="selling_prices[{{ $line['key'] }}]" step="0.01" min="{{ $line['price'] }}"
-                                               x-model.number="sellingPrices['{{ $line['key'] }}']"
-                                               value="{{ old('selling_prices.' . $line['key'], $line['price']) }}" required
-                                               class="w-24 border border-slate-200 rounded-lg px-2 py-1 text-sm font-bold text-right focus:outline-none focus:border-indigo-400">
+
+                                {{-- Quantity & Selling Price in 1 clean row --}}
+                                <div class="flex items-center justify-between gap-2 mt-2.5 pt-2 border-t border-slate-200/60">
+                                    {{-- Quantity Stepper --}}
+                                    <div class="flex items-center border border-slate-200 rounded-lg overflow-hidden bg-white">
+                                        <button type="button" @click="decreaseQty('{{ $line['key'] }}')"
+                                                :disabled="getQty('{{ $line['key'] }}') <= 1"
+                                                class="w-7 h-7 flex items-center justify-center text-slate-600 hover:bg-slate-100 disabled:opacity-25 transition-colors font-bold cursor-pointer">
+                                            <i class="fas fa-minus text-[9px]"></i>
+                                        </button>
+                                        <input type="number" name="quantities[{{ $line['key'] }}]" min="1" max="{{ $line['available_stock'] ?? 9999 }}"
+                                               :value="getQty('{{ $line['key'] }}')"
+                                               @input="onQtyChange('{{ $line['key'] }}', $event.target.value)"
+                                               @change="onQtyChange('{{ $line['key'] }}', $event.target.value)"
+                                               class="w-8 h-7 text-center text-xs font-bold text-slate-800 border-x border-slate-200 focus:outline-none bg-transparent [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none">
+                                        <button type="button" @click="increaseQty('{{ $line['key'] }}')"
+                                                :disabled="getQty('{{ $line['key'] }}') >= {{ $line['available_stock'] ?? 9999 }}"
+                                                class="w-7 h-7 flex items-center justify-center text-slate-600 hover:bg-slate-100 disabled:opacity-25 transition-colors font-bold cursor-pointer">
+                                            <i class="fas fa-plus text-[9px]"></i>
+                                        </button>
+                                    </div>
+
+                                    {{-- Customer Price Input --}}
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="text-xs text-slate-500 font-medium">Sell:</span>
+                                        <div class="flex items-center border border-slate-200 rounded-lg bg-white overflow-hidden focus-within:border-indigo-400">
+                                            <span class="pl-2 text-slate-400 text-xs font-bold">৳</span>
+                                            <input type="number" name="selling_prices[{{ $line['key'] }}]" step="0.01" min="{{ $line['price'] }}"
+                                                   x-model.number="sellingPrices['{{ $line['key'] }}']"
+                                                   value="{{ old('selling_prices.' . $line['key'], $line['price']) }}" required
+                                                   placeholder="Price"
+                                                   class="w-20 h-7 pr-2 text-right text-xs font-bold text-slate-800 focus:outline-none bg-transparent">
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -177,9 +212,9 @@
                                    @keydown.enter.prevent="applyCoupon()"
                                    class="flex-1 border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono font-bold uppercase focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-slate-50 disabled:bg-slate-100">
                             <button type="button" @click="appliedCoupon ? removeCoupon() : applyCoupon()"
-                                    :disabled="loadingCoupon || (!appliedCoupon && !couponCode.trim())"
-                                    class="px-3.5 py-2 rounded-xl text-xs font-bold transition-all disabled:opacity-50"
-                                    :class="appliedCoupon ? 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-200' : 'bg-indigo-600 hover:bg-indigo-700 text-white'">
+                                   :disabled="loadingCoupon || (!appliedCoupon && !couponCode.trim())"
+                                   class="px-3.5 py-2 rounded-xl text-xs font-bold transition-all disabled:opacity-50 cursor-pointer"
+                                   :class="appliedCoupon ? 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-200' : 'bg-indigo-600 hover:bg-indigo-700 text-white'">
                                 <span x-show="!loadingCoupon" x-text="appliedCoupon ? 'Remove' : 'Apply'"></span>
                                 <span x-show="loadingCoupon"><i class="fas fa-spinner fa-spin"></i></span>
                             </button>
@@ -260,9 +295,9 @@ function checkoutSummary() {
             @foreach($lines as $line)
                 {
                     key: '{{ $line['key'] }}',
-                    cost: {{ $line['price'] * $line['qty'] }},
                     unitCost: {{ $line['price'] }},
-                    qty: {{ $line['qty'] }}
+                    qty: {{ (int) old('quantities.' . $line['key'], $line['qty']) }},
+                    maxStock: {{ (int) ($line['available_stock'] ?? 9999) }},
                 },
             @endforeach
         ],
@@ -273,6 +308,7 @@ function checkoutSummary() {
         couponMessage: '',
         couponError: '',
         loadingCoupon: false,
+        syncTimeouts: {},
 
         get thanas() {
             return this.allLocations[this.selectedDistrict] || [];
@@ -314,6 +350,77 @@ function checkoutSummary() {
             this.syncZone();
         },
 
+        getItem(key) {
+            return this.items.find(i => i.key === key);
+        },
+
+        getQty(key) {
+            return this.getItem(key)?.qty || 1;
+        },
+
+        increaseQty(key) {
+            const item = this.getItem(key);
+            if (!item) return;
+            if (item.maxStock && item.qty >= item.maxStock) return;
+            item.qty++;
+            this.syncCart(key, item.qty);
+        },
+
+        decreaseQty(key) {
+            const item = this.getItem(key);
+            if (!item || item.qty <= 1) return;
+            item.qty--;
+            this.syncCart(key, item.qty);
+        },
+
+        onQtyChange(key, value) {
+            const item = this.getItem(key);
+            if (!item) return;
+            let val = parseInt(value);
+            if (isNaN(val) || val < 1) val = 1;
+            if (item.maxStock && val > item.maxStock) val = item.maxStock;
+            item.qty = val;
+            this.syncCart(key, item.qty);
+        },
+
+        getItemSubtotal(key) {
+            const item = this.getItem(key);
+            if (!item) return 0;
+            const p = parseFloat(this.sellingPrices[key]);
+            const unitPrice = (!isNaN(p) && p >= 0) ? p : item.unitCost;
+            return unitPrice * item.qty;
+        },
+
+        getItemProfit(key) {
+            const item = this.getItem(key);
+            if (!item) return 0;
+            const p = parseFloat(this.sellingPrices[key]);
+            const unitPrice = (!isNaN(p) && p >= 0) ? p : item.unitCost;
+            return Math.max(0, (unitPrice - item.unitCost) * item.qty);
+        },
+
+        syncCart(key, qty) {
+            if (this.syncTimeouts[key]) {
+                clearTimeout(this.syncTimeouts[key]);
+            }
+            this.syncTimeouts[key] = setTimeout(() => {
+                const csrfToken = document.querySelector('meta[name=csrf-token]')?.content || '{{ csrf_token() }}';
+                fetch('{{ route('reseller.cart.update') }}', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ key: key, qty: qty })
+                }).then(() => {
+                    if (this.appliedCoupon) {
+                        this.applyCoupon(true);
+                    }
+                }).catch(err => console.error('Cart sync error:', err));
+            }, 300);
+        },
+
         get deliveryCharge() {
             if (this.zone === 'inside') return parseFloat(this.deliveryInside) || 0;
             if (this.zone === 'sub_dhaka') return parseFloat(this.deliverySubDhaka) || 0;
@@ -321,17 +428,15 @@ function checkoutSummary() {
         },
 
         get customerSubtotal() {
-            let sum = 0;
-            this.items.forEach(item => {
+            return this.items.reduce((acc, item) => {
                 const val = parseFloat(this.sellingPrices[item.key]);
                 const unitPrice = (!isNaN(val) && val >= 0) ? val : item.unitCost;
-                sum += unitPrice * item.qty;
-            });
-            return sum;
+                return acc + (unitPrice * item.qty);
+            }, 0);
         },
 
         get baseCost() {
-            return this.items.reduce((acc, item) => acc + item.cost, 0);
+            return this.items.reduce((acc, item) => acc + (item.unitCost * item.qty), 0);
         },
 
         get total() {
@@ -342,39 +447,48 @@ function checkoutSummary() {
             return Math.max(0, (this.customerSubtotal - this.baseCost) + this.discount);
         },
 
-        applyCoupon() {
-            if (!this.couponCode.trim()) return;
-            this.loadingCoupon = true;
+        applyCoupon(silent = false) {
+            const codeToUse = this.appliedCoupon || this.couponCode;
+            if (!codeToUse || !codeToUse.trim()) return;
+            if (!silent) this.loadingCoupon = true;
             this.couponError = '';
             this.couponMessage = '';
+
+            const quantitiesMap = {};
+            this.items.forEach(i => quantitiesMap[i.key] = i.qty);
 
             fetch('{{ route('reseller.orders.coupon') }}', {
                 method: 'POST',
                 headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
+                    'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]')?.content || '{{ csrf_token() }}',
                     'Content-Type': 'application/json',
                     'Accept': 'application/json'
                 },
                 body: JSON.stringify({
-                    code: this.couponCode
+                    code: codeToUse,
+                    quantities: quantitiesMap
                 })
             })
             .then(r => r.json())
             .then(data => {
-                this.loadingCoupon = false;
+                if (!silent) this.loadingCoupon = false;
                 if (data.success) {
                     this.appliedCoupon = data.code;
                     this.discount = parseFloat(data.discount_amount) || 0;
                     this.couponMessage = `${data.code} applied! Saved ৳${this.discount.toFixed(2)}`;
                 } else {
-                    this.couponError = data.message || 'Invalid coupon code';
-                    this.appliedCoupon = null;
-                    this.discount = 0;
+                    if (!silent) {
+                        this.couponError = data.message || 'Invalid coupon code';
+                        this.appliedCoupon = null;
+                        this.discount = 0;
+                    }
                 }
             })
             .catch(err => {
-                this.loadingCoupon = false;
-                this.couponError = 'Error validating coupon';
+                if (!silent) {
+                    this.loadingCoupon = false;
+                    this.couponError = 'Error validating coupon';
+                }
             });
         },
 

@@ -198,12 +198,7 @@
                             </span>
                             <span class="text-[11px] text-slate-400 font-medium">Retail: ৳{{ number_format($retailPrice, 0) }}</span>
                             @else
-                            <span class="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-1">
-                                Regular Retail Price
-                            </span>
-                            <span class="text-xl font-bold text-slate-400 line-through">
-                                ৳<span x-text="Number(currentRetailPrice).toLocaleString()"></span>
-                            </span>
+                            
                             @endif
                         </div>
                     </div>

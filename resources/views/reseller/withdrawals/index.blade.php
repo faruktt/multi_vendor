@@ -56,14 +56,22 @@
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
 
         {{-- Available / Withdrawable Card --}}
-        <div class="bg-gradient-to-br from-indigo-600 to-indigo-800 rounded-2xl shadow-sm p-5 text-white relative overflow-hidden flex flex-col justify-between">
+        <div class="bg-gradient-to-br {{ $availableBalance < 0 ? 'from-rose-700 to-rose-900' : 'from-indigo-600 to-indigo-800' }} rounded-2xl shadow-sm p-5 text-white relative overflow-hidden flex flex-col justify-between">
             <div class="absolute -right-6 -bottom-6 opacity-15">
                 <i class="fas fa-wallet text-8xl"></i>
             </div>
             <div class="relative z-10">
-                <span class="text-indigo-200 text-xs font-semibold uppercase tracking-wider">Withdrawable Balance</span>
-                <div class="text-3xl font-black mt-1">৳{{ number_format($withdrawableBalance, 2) }}</div>
-                @if($pendingWithdrawals > 0)
+                <span class="{{ $availableBalance < 0 ? 'text-rose-200' : 'text-indigo-200' }} text-xs font-semibold uppercase tracking-wider">
+                    {{ $availableBalance < 0 ? 'Available Balance (ঋণাত্মক)' : 'Withdrawable Balance' }}
+                </span>
+                <div class="text-3xl font-black mt-1">
+                    {{ $availableBalance < 0 ? '-৳' . number_format(abs($availableBalance), 2) : '৳' . number_format($withdrawableBalance, 2) }}
+                </div>
+                @if($availableBalance < 0)
+                    <div class="text-xs text-rose-200 mt-1">
+                        রিটার্ন ডেলিভারি চার্জ বাবদ ঋণাত্মক (পরবর্তী লাভে সমন্বয় হবে)
+                    </div>
+                @elseif($pendingWithdrawals > 0)
                     <div class="text-xs text-amber-200 mt-1">
                         ৳{{ number_format($pendingWithdrawals, 2) }} pending request(s)
                     </div>
@@ -74,8 +82,13 @@
             <div class="relative z-10 mt-4">
                 @if($withdrawableBalance >= 10)
                     <button type="button" @click="showModal = true"
-                            class="inline-flex items-center gap-2 px-4 py-2 bg-white text-indigo-700 hover:bg-indigo-50 font-bold text-xs rounded-xl shadow transition transform active:scale-95">
+                            class="inline-flex items-center gap-2 px-4 py-2 bg-white text-indigo-700 hover:bg-indigo-50 font-bold text-xs rounded-xl shadow transition transform active:scale-95 cursor-pointer">
                         <i class="fas fa-hand-holding-dollar"></i> Request Payout
+                    </button>
+                @elseif($availableBalance < 0)
+                    <button type="button" disabled
+                            class="inline-flex items-center gap-2 px-4 py-2 bg-white/20 text-rose-100 font-semibold text-xs rounded-xl cursor-not-allowed">
+                        <i class="fas fa-lock"></i> ব্যালেন্স ঋণাত্মক
                     </button>
                 @else
                     <button type="button" disabled

@@ -68,6 +68,8 @@ class AccountController extends Controller
                                + ($statusCounts->get('sent_to_courier')?->count ?? 0)
                                + ($statusCounts->get('out_for_delivery')?->count ?? 0);
         $cancelledOrdersCount  = $statusCounts->get('cancelled')?->count ?? 0;
+        $returnedOrdersCount   = ($statusCounts->get('return')?->count ?? 0) + ($statusCounts->get('returned')?->count ?? 0);
+        $totalReturnCharge     = $reseller->total_return_charge;
 
         // Average profit per completed order
         $avgProfitPerOrder = $completedOrdersCount > 0 ? round($totalProfit / $completedOrdersCount, 2) : 0;
@@ -93,6 +95,8 @@ class AccountController extends Controller
             'totalPaidAmount',
             'totalDueAmount',
             'totalProfit',
+            'totalReturnCharge',
+            'returnedOrdersCount',
             'pendingProfit',
             'totalPotentialProfit',
             'totalWithdrawn',

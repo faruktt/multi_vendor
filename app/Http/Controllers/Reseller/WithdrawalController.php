@@ -39,6 +39,13 @@ class WithdrawalController extends Controller
         $reseller = auth('reseller')->user();
         $maxWithdrawable = max(0, (float) $reseller->withdrawable_balance);
 
+        if ($maxWithdrawable < 10) {
+            if ($reseller->available_balance < 0) {
+                return back()->with('error', 'আপনার বর্তমান ব্যালেন্স ঋণাত্মক (-৳' . number_format(abs($reseller->available_balance), 2) . ')। রিটার্ন অর্ডারের ডেলিভারি চার্জ সমন্বয় না হওয়া পর্যন্ত টাকা উত্তোলন করা যাবে না।');
+            }
+            return back()->with('error', 'টাকা উত্তোলন করার জন্য ন্যূনতম ১০ টাকা ব্যালেন্স প্রয়োজন (আপনার উত্তোলনযোগ্য ব্যালেন্স: ৳' . number_format($maxWithdrawable, 2) . ')।');
+        }
+
         $request->validate([
             'amount'          => [
                 'required',

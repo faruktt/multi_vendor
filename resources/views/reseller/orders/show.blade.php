@@ -155,10 +155,20 @@
                 </div>
                 <span class="font-bold text-indigo-700 text-lg">৳{{ number_format($order->total, 2) }}</span>
             </div>
+            @if(in_array($order->order_status, ['return', 'returned']))
+            <div class="flex justify-between items-center mt-3 text-rose-700 bg-rose-50 px-3 py-2.5 rounded-xl border border-rose-100">
+                <div>
+                    <span class="font-bold text-xs block">Order Returned (ডেলিভারি চার্জ কর্তন)</span>
+                    <span class="text-[10px] text-rose-500">Shipping fee charged against profit</span>
+                </div>
+                <span class="font-black text-sm text-rose-600">-৳{{ number_format($order->delivery_charge, 2) }}</span>
+            </div>
+            @else
             <div class="flex justify-between items-center mt-3 text-emerald-700 bg-emerald-50 px-3 py-2 rounded-xl border border-emerald-100">
-                <span class="font-bold text-xs">Your Estimated Profit</span>
+                <span class="font-bold text-xs">{{ in_array($order->order_status, ['completed', 'complete']) ? 'Your Earned Profit' : 'Your Estimated Profit' }}</span>
                 <span class="font-black text-sm">৳{{ number_format($order->reseller_profit, 2) }}</span>
             </div>
+            @endif
             <div class="flex justify-between text-xs text-slate-400 pt-2">
                 <span>Payment Status</span>
                 <span class="font-semibold text-slate-600 capitalize">{{ $order->payment_status }}</span>

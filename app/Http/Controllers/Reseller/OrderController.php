@@ -14,6 +14,7 @@ use App\Models\Vendor;
 use App\Support\BangladeshLocations;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Str;
 
 class OrderController extends Controller
@@ -63,6 +64,18 @@ class OrderController extends Controller
     {
         $request->validate(['code' => 'required|string']);
         $reseller = auth('reseller')->user();
+
+        if ($request->has('quantities') && is_array($request->quantities)) {
+            $cart = Session::get(CartController::SESSION_KEY, []);
+            foreach ($request->quantities as $k => $qtyVal) {
+                $q = (int) $qtyVal;
+                if ($q > 0 && isset($cart[$k])) {
+                    $cart[$k]['qty'] = $q;
+                }
+            }
+            Session::put(CartController::SESSION_KEY, $cart);
+        }
+
         $lines    = CartController::lines();
         $subtotal = (float) $lines->sum('subtotal');
 
@@ -96,7 +109,20 @@ class OrderController extends Controller
     public function store(Request $request)
     {
         $reseller = auth('reseller')->user();
-        $lines    = CartController::lines();
+
+        // If quantities are submitted from checkout, sync cart session first
+        if ($request->has('quantities') && is_array($request->quantities)) {
+            $cart = Session::get(CartController::SESSION_KEY, []);
+            foreach ($request->quantities as $k => $qtyVal) {
+                $q = (int) $qtyVal;
+                if ($q > 0 && isset($cart[$k])) {
+                    $cart[$k]['qty'] = $q;
+                }
+            }
+            Session::put(CartController::SESSION_KEY, $cart);
+        }
+
+        $lines = CartController::lines();
 
         if ($lines->isEmpty()) {
             return redirect()->route('reseller.products.index')->with('error', 'Your cart is empty.');
@@ -113,6 +139,8 @@ class OrderController extends Controller
             'coupon_code'      => 'nullable|string',
             'selling_prices'   => 'required|array',
             'selling_prices.*' => 'required|numeric|min:0',
+            'quantities'       => 'nullable|array',
+            'quantities.*'     => 'nullable|integer|min:1',
         ]);
 
         // Total reseller buy cost across all items

@@ -77,6 +77,10 @@ class CartController extends Controller
         }
         $this->putCart($cart);
 
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json(['success' => true, 'cart' => $cart]);
+        }
+
         return back()->with('success', 'Cart updated.');
     }
 
@@ -120,6 +124,7 @@ class CartController extends Controller
                 'product'                => $product,
                 'variant'                => $variant,
                 'qty'                    => $qty,
+                'available_stock'        => (int) max(0, $available),
                 'price'                  => $price,
                 'regular_reseller_price' => (float) ($product->reseller_price ?? ($variant?->price ?? $product->price)),
                 'is_flash_sale'          => $product->is_on_reseller_flash_sale,

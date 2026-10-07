@@ -55,22 +55,24 @@ class ResellerManagementController extends Controller
             $resellerSales = Sale::withoutGlobalScopes()->where('reseller_id', $selectedReseller->id);
             $completedSales = Sale::withoutGlobalScopes()->where('reseller_id', $selectedReseller->id)->whereIn('order_status', ['completed', 'complete']);
 
-            $totalOrders     = $resellerSales->count();
-            $totalSales      = (float) $resellerSales->sum('total');
-            $totalProfit     = (float) $completedSales->sum('reseller_profit');
-            $totalWithdrawn  = (float) ResellerWithdrawal::where('reseller_id', $selectedReseller->id)->where('status', 'approved')->sum('amount');
-            $pendingWithdrawn= (float) ResellerWithdrawal::where('reseller_id', $selectedReseller->id)->where('status', 'pending')->sum('amount');
-            $availableProfit = max(0, $totalProfit - $totalWithdrawn);
-            $withdrawableProfit = max(0, $availableProfit - $pendingWithdrawn);
+            $totalOrders        = $resellerSales->count();
+            $totalSales         = (float) $resellerSales->sum('total');
+            $totalProfit        = (float) $completedSales->sum('reseller_profit');
+            $totalReturnCharges = (float) Sale::withoutGlobalScopes()->where('reseller_id', $selectedReseller->id)->whereIn('order_status', ['return', 'returned'])->sum('delivery_charge');
+            $totalWithdrawn     = (float) ResellerWithdrawal::where('reseller_id', $selectedReseller->id)->where('status', 'approved')->sum('amount');
+            $pendingWithdrawn   = (float) ResellerWithdrawal::where('reseller_id', $selectedReseller->id)->where('status', 'pending')->sum('amount');
+            $availableProfit    = round($totalProfit - $totalReturnCharges - $totalWithdrawn, 2);
+            $withdrawableProfit = max(0, round($availableProfit - $pendingWithdrawn, 2));
 
             $resellerStats = [
-                'orders'              => $totalOrders,
-                'sales'               => $totalSales,
-                'total_profit'        => $totalProfit,
-                'withdrawn'           => $totalWithdrawn,
-                'pending_withdrawn'   => $pendingWithdrawn,
-                'available_profit'    => $availableProfit,
-                'withdrawable_profit' => $withdrawableProfit,
+                'orders'               => $totalOrders,
+                'sales'                => $totalSales,
+                'total_profit'         => $totalProfit,
+                'total_return_charges' => $totalReturnCharges,
+                'withdrawn'            => $totalWithdrawn,
+                'pending_withdrawn'    => $pendingWithdrawn,
+                'available_profit'     => $availableProfit,
+                'withdrawable_profit'  => $withdrawableProfit,
             ];
         }
 
@@ -78,22 +80,24 @@ class ResellerManagementController extends Controller
         $globalOrdersCount   = Sale::withoutGlobalScopes()->where('channel', 'reseller')->count();
         $globalSalesTotal    = (float) Sale::withoutGlobalScopes()->where('channel', 'reseller')->sum('total');
         $globalProfitTotal   = (float) Sale::withoutGlobalScopes()->where('channel', 'reseller')->whereIn('order_status', ['completed', 'complete'])->sum('reseller_profit');
+        $globalReturnCharges = (float) Sale::withoutGlobalScopes()->where('channel', 'reseller')->whereIn('order_status', ['return', 'returned'])->sum('delivery_charge');
         $globalWithdrawn     = (float) ResellerWithdrawal::where('status', 'approved')->sum('amount');
         $globalPending       = (float) ResellerWithdrawal::where('status', 'pending')->sum('amount');
-        $globalAvailable     = max(0, $globalProfitTotal - $globalWithdrawn);
+        $globalAvailable     = round($globalProfitTotal - $globalReturnCharges - $globalWithdrawn, 2);
         $pendingWithdrawalsCount = ResellerWithdrawal::where('status', 'pending')->count();
 
         $globalStats = [
-            'total_resellers'     => Reseller::count(),
-            'active_resellers'    => $activeCount,
-            'pending_resellers'   => $pendingCount,
-            'total_orders'        => $globalOrdersCount,
-            'total_sales'         => $globalSalesTotal,
-            'total_profit'        => $globalProfitTotal,
-            'total_withdrawn'     => $globalWithdrawn,
-            'pending_withdrawn'   => $globalPending,
-            'available_profit'    => $globalAvailable,
-            'pending_withdrawals' => $pendingWithdrawalsCount,
+            'total_resellers'      => Reseller::count(),
+            'active_resellers'     => $activeCount,
+            'pending_resellers'    => $pendingCount,
+            'total_orders'         => $globalOrdersCount,
+            'total_sales'          => $globalSalesTotal,
+            'total_profit'         => $globalProfitTotal,
+            'total_return_charges' => $globalReturnCharges,
+            'total_withdrawn'      => $globalWithdrawn,
+            'pending_withdrawn'    => $globalPending,
+            'available_profit'     => $globalAvailable,
+            'pending_withdrawals'  => $pendingWithdrawalsCount,
         ];
 
         return view('admin.resellers.index', compact(
@@ -219,8 +223,8 @@ class ResellerManagementController extends Controller
             'note'            => 'nullable|string|max:255',
         ]);
 
-        if ($request->amount > $reseller->available_balance) {
-            return back()->with('error', 'Withdrawal amount exceeds available balance.');
+        if ($reseller->available_balance <= 0 || $request->amount > $reseller->available_balance) {
+            return back()->with('error', 'Withdrawal amount exceeds available balance (৳' . number_format(max(0, $reseller->available_balance), 2) . ').');
         }
 
         ResellerWithdrawal::create([

@@ -9,6 +9,9 @@ use App\Models\Supplier;
 use App\Models\SupplierWithdrawal;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use App\Mail\SupplierApprovedMail;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 class SupplierManagementController extends Controller
 {
@@ -123,7 +126,22 @@ class SupplierManagementController extends Controller
             'approved_by' => auth()->id(),
         ]);
 
-        return back()->with('success', "Supplier \"{$supplier->display_name}\" approved successfully. They can now access their dashboard.");
+        $emailSent = false;
+        try {
+            if (!empty($supplier->email)) {
+                Mail::to($supplier->email)->send(new SupplierApprovedMail($supplier));
+                $emailSent = true;
+            }
+        } catch (\Throwable $e) {
+            Log::error("Failed to send supplier approval email to {$supplier->email}: " . $e->getMessage());
+        }
+
+        $msg = "Supplier \"{$supplier->display_name}\" approved successfully.";
+        if ($emailSent) {
+            $msg .= " Confirmation email sent to {$supplier->email}.";
+        }
+
+        return back()->with('success', $msg);
     }
 
     /** Deactivate / Reject an active supplier */

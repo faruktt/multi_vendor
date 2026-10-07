@@ -67,6 +67,35 @@ class Reseller extends Authenticatable
         return (float) $this->sales()->withoutGlobalScopes()->whereIn('order_status', ['completed', 'complete'])->sum('reseller_profit');
     }
 
+    /**
+     * Total delivery charge deducted for returned orders.
+     * When a reseller's order is returned, shipping cost is charged against the reseller's balance.
+     */
+    public function getTotalReturnChargeAttribute(): float
+    {
+        return (float) $this->sales()->withoutGlobalScopes()
+            ->whereIn('order_status', ['return', 'returned'])
+            ->sum('delivery_charge');
+    }
+
+    /**
+     * Number of returned orders for this reseller
+     */
+    public function getReturnedOrdersCountAttribute(): int
+    {
+        return $this->sales()->withoutGlobalScopes()
+            ->whereIn('order_status', ['return', 'returned'])
+            ->count();
+    }
+
+    /**
+     * Net profit earned after deducting shipping charges of returned orders
+     */
+    public function getNetProfitAttribute(): float
+    {
+        return round($this->total_profit - $this->total_return_charge, 2);
+    }
+
     public function getTotalWithdrawnAttribute(): float
     {
         return (float) $this->withdrawals()->where('status', 'approved')->sum('amount');
@@ -77,14 +106,27 @@ class Reseller extends Authenticatable
         return (float) $this->withdrawals()->where('status', 'pending')->sum('amount');
     }
 
+    /**
+     * Available wallet balance:
+     * (Total Completed Profit - Total Return Delivery Charges - Total Approved Withdrawn).
+     * If return charges exceed profit, this balance will be negative (e.g. -60.00).
+     * Subsequent completed order profits will naturally add to/offset this negative amount.
+     */
     public function getAvailableBalanceAttribute(): float
     {
-        return max(0, $this->total_profit - $this->total_withdrawn);
+        return round($this->total_profit - $this->total_return_charge - $this->total_withdrawn, 2);
     }
 
+    /**
+     * Actual withdrawable balance:
+     * Cannot be negative, and cannot withdraw while in debt/negative balance.
+     */
     public function getWithdrawableBalanceAttribute(): float
     {
-        return max(0, $this->available_balance - $this->pending_withdrawals);
+        if ($this->available_balance <= 0) {
+            return 0.0;
+        }
+        return max(0, round($this->available_balance - $this->pending_withdrawals, 2));
     }
 
     public function getTotalSalesAmountAttribute(): float
@@ -95,7 +137,7 @@ class Reseller extends Authenticatable
     public function getPendingProfitAttribute(): float
     {
         return (float) $this->sales()->withoutGlobalScopes()
-            ->whereNotIn('order_status', ['completed', 'complete', 'cancelled', 'returned'])
+            ->whereNotIn('order_status', ['completed', 'complete', 'cancelled', 'returned', 'return'])
             ->sum('reseller_profit');
     }
 }

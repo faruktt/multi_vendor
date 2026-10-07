@@ -11,7 +11,7 @@
             <label class="block text-xs font-semibold text-slate-500 mb-1">Status</label>
             <select name="status" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-slate-50">
                 <option value="">All</option>
-                @foreach(['pending','confirmed','shipped','delivered','cancelled'] as $s)
+                @foreach(['pending','confirmed','shipped','delivered','cancelled','return'] as $s)
                     <option value="{{ $s }}" {{ request('status') === $s ? 'selected' : '' }}>{{ ucfirst($s) }}</option>
                 @endforeach
             </select>
@@ -31,6 +31,8 @@
             'shipped'   => 'bg-purple-100 text-purple-700',
             'delivered' => 'bg-emerald-100 text-emerald-700',
             'cancelled' => 'bg-red-100 text-red-700',
+            'return'    => 'bg-rose-100 text-rose-700 font-bold',
+            'returned'  => 'bg-rose-100 text-rose-700 font-bold',
         ];
     @endphp
 
@@ -68,6 +70,11 @@
                                 <span class="px-2.5 py-1 rounded-full text-xs font-semibold {{ $statusColors[$order->order_status] ?? 'bg-slate-100 text-slate-600' }}">
                                     {{ ucfirst($order->order_status) }}
                                 </span>
+                                @if(in_array($order->order_status, ['return', 'returned']))
+                                    <div class="text-[11px] text-rose-600 font-bold mt-1">
+                                        -৳{{ number_format($order->delivery_charge, 0) }} চার্জ কর্তন
+                                    </div>
+                                @endif
                             </td>
                             <td class="px-5 py-3 text-slate-400">{{ $order->created_at->format('d M Y') }}</td>
                             <td class="px-5 py-3 text-right whitespace-nowrap">
