@@ -83,9 +83,15 @@
                 {{-- Invoice --}}
                 <td class="px-4 py-3">
                     <div class="flex items-center gap-1.5">
-                        <p class="font-mono font-semibold text-slate-800 text-xs">
+                        <a href="{{ route('branch.sales.show', [$branch, $sale]) }}"
+                           class="w-6 h-6 rounded-md bg-blue-50 hover:bg-blue-600 text-blue-600 hover:text-white border border-blue-200/80 flex items-center justify-center flex-shrink-0 transition-all hover:scale-105 shadow-2xs"
+                           title="View Sale">
+                            <i class="fas fa-eye text-[10px]"></i>
+                        </a>
+                        <a href="{{ route('branch.sales.show', [$branch, $sale]) }}"
+                           class="font-mono font-semibold text-slate-800 hover:text-blue-600 text-xs transition-colors">
                             {{ $sale->invoice_no }}
-                        </p>
+                        </a>
 
                         @switch($sale->channel)
 
@@ -349,11 +355,6 @@
                 {{-- Action --}}
                 <td class="px-4 py-3 text-center">
                     <div class="flex items-center justify-center gap-1.5">
-                        <a href="{{ route('branch.sales.show', [$branch, $sale]) }}"
-                           title="View"
-                           class="text-blue-600 hover:bg-blue-50 w-7 h-7 flex items-center justify-center rounded-lg border border-blue-200 transition-colors">
-                            <i class="fas fa-eye text-[10px]"></i>
-                        </a>
                         <a href="{{ route('branch.sales.edit', [$branch, $sale]) }}"
                            title="Edit"
                            class="text-amber-600 hover:bg-amber-50 w-7 h-7 flex items-center justify-center rounded-lg border border-amber-200 transition-colors">

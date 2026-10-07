@@ -210,9 +210,7 @@
                     <i class="fas fa-bolt text-yellow-200 text-[9px] animate-pulse"></i> FLASH SALE
                 </div>
                 @elseif($hasDiscount)
-                <div class="absolute top-2 left-2 z-20 bg-indigo-600 text-white text-[9.5px] font-black tracking-wider px-2 py-0.5 rounded-full shadow-md">
-                    RESELLER PRICE
-                </div>
+                
                 @endif
 
                 {{-- Image Area --}}
@@ -306,7 +304,7 @@
                         <div class="text-[15px] font-extrabold text-gray-900">
                             ৳ {{ number_format($effectivePrice, 0) }}
                             @if($hasDiscount)
-                            <span class="text-[11.5px] text-gray-400 font-normal line-through ml-1">৳ {{ number_format($product->price, 0) }}</span>
+                            <span class="text-[11.5px] text-gray-400 font-normal line-through ml-1"></span>
                             @endif
                         </div>
                         @endif

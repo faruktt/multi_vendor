@@ -866,6 +866,106 @@ window.submitCartForm = function (form) {
     .catch(() => form.submit());
 };
 
+window.updateCheckoutQty = function (key, qty) {
+    const token = document.querySelector('meta[name=csrf-token]')?.content || '';
+    const formData = new FormData();
+    formData.append('_token', token);
+    formData.append('qty[' + key + ']', qty);
+
+    fetch('{{ route('shop.cart.update') }}', {
+        method: 'POST',
+        headers: { 'Accept': 'application/json' },
+        body: formData,
+    })
+    .then(res => res.json())
+    .then(data => {
+        const checkoutLines = document.getElementById('checkout-cart-lines');
+        if (checkoutLines && data.count === 0) {
+            window.location.href = '{{ route('shop.products.index') }}';
+            return;
+        }
+
+        const body = document.getElementById('cart-drawer-body');
+        if (body) {
+            body.innerHTML = data.html;
+            if (window.Alpine) Alpine.initTree(body);
+        }
+
+        if (checkoutLines) {
+            checkoutLines.innerHTML = data.checkout_lines_html;
+            if (window.Alpine) Alpine.initTree(checkoutLines);
+        }
+
+        const orderForm = document.getElementById('checkout-order-form');
+        if (orderForm && window.Alpine) {
+            Alpine.$data(orderForm).subtotal = Number(data.subtotal) || 0;
+        }
+
+        const countEl = document.getElementById('cart-drawer-count');
+        if (countEl) countEl.textContent = data.count > 0 ? '(' + data.count + ')' : '';
+
+        const badge = document.getElementById('cart-header-badge');
+        if (badge) {
+            badge.textContent = data.count;
+            badge.style.display = data.count > 0 ? '' : 'none';
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        window.location.reload();
+    });
+};
+
+window.removeCheckoutQty = function (key) {
+    const token = document.querySelector('meta[name=csrf-token]')?.content || '';
+    const formData = new FormData();
+    formData.append('_token', token);
+    formData.append('_method', 'DELETE');
+
+    fetch('{{ url('/cart/remove') }}/' + encodeURIComponent(key), {
+        method: 'POST',
+        headers: { 'Accept': 'application/json' },
+        body: formData,
+    })
+    .then(res => res.json())
+    .then(data => {
+        const checkoutLines = document.getElementById('checkout-cart-lines');
+        if (checkoutLines && data.count === 0) {
+            window.location.href = '{{ route('shop.products.index') }}';
+            return;
+        }
+
+        const body = document.getElementById('cart-drawer-body');
+        if (body) {
+            body.innerHTML = data.html;
+            if (window.Alpine) Alpine.initTree(body);
+        }
+
+        if (checkoutLines) {
+            checkoutLines.innerHTML = data.checkout_lines_html;
+            if (window.Alpine) Alpine.initTree(checkoutLines);
+        }
+
+        const orderForm = document.getElementById('checkout-order-form');
+        if (orderForm && window.Alpine) {
+            Alpine.$data(orderForm).subtotal = Number(data.subtotal) || 0;
+        }
+
+        const countEl = document.getElementById('cart-drawer-count');
+        if (countEl) countEl.textContent = data.count > 0 ? '(' + data.count + ')' : '';
+
+        const badge = document.getElementById('cart-header-badge');
+        if (badge) {
+            badge.textContent = data.count;
+            badge.style.display = data.count > 0 ? '' : 'none';
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        window.location.reload();
+    });
+};
+
 document.addEventListener('alpine:init', () => {
     Alpine.store('toast', {
         items: [],

@@ -118,7 +118,8 @@
                         </div>
 
                         {{-- Facebook Video / Reel URL --}}
-                        <div>
+
+                        {{-- <div>
                             <label class="block text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
                                 <i class="fab fa-facebook text-blue-600"></i>
                                 <span>Facebook Video / Reel / Review URL</span>
@@ -126,7 +127,7 @@
                             <input type="url" name="facebook_video_url" value="{{ old('facebook_video_url', $product->facebook_video_url ?? '') }}"
                                    placeholder="https://www.facebook.com/reel/..."
                                    class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all">
-                        </div>
+                        </div> --}}
                     </div>
                 </div>
 

@@ -93,7 +93,7 @@
     </style>
     @stack('styles')
 </head>
-<body class="h-full bg-slate-100" x-data="{ sidebarOpen: false }">
+<body class="h-full bg-slate-100" x-data="{ sidebarOpen: false }" x-effect="if (sidebarOpen) setTimeout(() => window.dispatchEvent(new CustomEvent('sidebar-opened')), 100)">
 
 {{-- Mobile overlay --}}
 <div x-show="sidebarOpen" @click="sidebarOpen = false"
@@ -123,7 +123,7 @@
     </div>
 
     {{-- Navigation --}}
-    <nav class="flex-1 overflow-y-auto sidebar-scroll py-3 px-3 space-y-0.5">
+    <nav id="adminSidebarNav" class="flex-1 overflow-y-auto sidebar-scroll py-3 px-3 space-y-0.5">
         @auth
         @php
             $authUser     = auth()->user();
@@ -243,37 +243,37 @@
             {{-- Admin tools --}}
             <div class="nav-divider !mt-3"></div>
             <div class="section-label">Cross-Branch Data</div>
-            <a href="{{ route('admin.all-customers') }}" class="nav-link {{ request()->routeIs('admin.all-customers') ? 'is-active' : '' }}">
+            <a href="{{ route('admin.all-customers') }}" class="nav-link {{ request()->routeIs('admin.all-customers*') ? 'is-active' : '' }}">
                 <span class="icon"><i class="fas fa-users text-[11px]"></i></span> All Customers
             </a>
-            <a href="{{ route('admin.all-sales') }}" class="nav-link {{ request()->routeIs('admin.all-sales') ? 'is-active' : '' }}">
+            <a href="{{ route('admin.all-sales') }}" class="nav-link {{ request()->routeIs('admin.all-sales*') ? 'is-active' : '' }}">
                 <span class="icon"><i class="fas fa-receipt text-[11px]"></i></span> All Sales
             </a>
-            <a href="{{ route('admin.all-products') }}" class="nav-link {{ request()->routeIs('admin.all-products') ? 'is-active' : '' }}">
+            <a href="{{ route('admin.all-products') }}" class="nav-link {{ request()->routeIs('admin.all-products*') ? 'is-active' : '' }}">
                 <span class="icon"><i class="fas fa-box text-[11px]"></i></span> All Products
             </a>
-            <a href="{{ route('admin.all-categories') }}" class="nav-link {{ request()->routeIs('admin.all-categories') ? 'is-active' : '' }}">
+            <a href="{{ route('admin.all-categories') }}" class="nav-link {{ request()->routeIs('admin.all-categories*') ? 'is-active' : '' }}">
                 <span class="icon"><i class="fas fa-tags text-[11px]"></i></span> All Categories
             </a>
-            <a href="{{ route('admin.all-purchases') }}" class="nav-link {{ request()->routeIs('admin.all-purchases') ? 'is-active' : '' }}">
+            <a href="{{ route('admin.all-purchases') }}" class="nav-link {{ request()->routeIs('admin.all-purchases*') ? 'is-active' : '' }}">
                 <span class="icon"><i class="fas fa-truck text-[11px]"></i></span> All Purchases
             </a>
-            <a href="{{ route('admin.all-suppliers') }}" class="nav-link {{ request()->routeIs('admin.all-suppliers') ? 'is-active' : '' }}">
+            <a href="{{ route('admin.all-suppliers') }}" class="nav-link {{ request()->routeIs('admin.all-suppliers*') ? 'is-active' : '' }}">
                 <span class="icon"><i class="fas fa-industry text-[11px]"></i></span> Purchase Suppliers
             </a>
-            <a href="{{ route('admin.stock-report') }}" class="nav-link {{ request()->routeIs('admin.stock-report') ? 'is-active' : '' }}">
+            <a href="{{ route('admin.stock-report') }}" class="nav-link {{ request()->routeIs('admin.stock-report*') ? 'is-active' : '' }}">
                 <span class="icon"><i class="fas fa-warehouse text-[11px]"></i></span> Stock Report
             </a>
-            <a href="{{ route('admin.sales-report') }}" class="nav-link {{ request()->routeIs('admin.sales-report') ? 'is-active' : '' }}">
+            <a href="{{ route('admin.sales-report') }}" class="nav-link {{ request()->routeIs('admin.sales-report*') ? 'is-active' : '' }}">
                 <span class="icon"><i class="fas fa-chart-line text-[11px]"></i></span> Sales Report
             </a>
-            <a href="{{ route('admin.financial-report') }}" class="nav-link {{ request()->routeIs('admin.financial-report') ? 'is-active' : '' }}">
+            <a href="{{ route('admin.financial-report') }}" class="nav-link {{ request()->routeIs('admin.financial-report*') ? 'is-active' : '' }}">
                 <span class="icon"><i class="fas fa-coins text-[11px]"></i></span> Financial Report
             </a>
             <a href="{{ route('admin.ads-cost.index') }}" class="nav-link {{ request()->routeIs('admin.ads-cost.*') ? 'is-active' : '' }}">
                 <span class="icon"><i class="fas fa-rectangle-ad text-[11px] text-amber-400"></i></span> Ads Cost
             </a>
-            <a href="{{ route('admin.fraud-check') }}" class="nav-link {{ request()->routeIs('admin.fraud-check') ? 'is-active' : '' }}">
+            <a href="{{ route('admin.fraud-check') }}" class="nav-link {{ request()->routeIs('admin.fraud-check*') ? 'is-active' : '' }}">
                 <span class="icon"><i class="fas fa-shield-halved text-[11px]"></i></span> Fraud Check
             </a>
 
@@ -359,7 +359,7 @@
                 $pendingSupplierWithdrawalsCount = \App\Models\SupplierWithdrawal::where('status', 'pending')->count();
             @endphp
 
-                  <a href="{{ route('admin.suppliers.manage') }}" class="nav-link {{ request()->routeIs('admin.suppliers.manage*') ? 'is-active' : '' }}">
+                  <a href="{{ route('admin.suppliers.manage') }}" class="nav-link {{ request()->routeIs('admin.suppliers.*') ? 'is-active' : '' }}">
                 <span class="icon"><i class="fas fa-store text-[11px]"></i></span> Suppliers / Vendors
                 @if($pendingSupplierCount > 0)
                     <span class="ml-auto px-1.5 py-0.5 text-[10px] rounded-full bg-amber-400 text-amber-950 font-black animate-pulse">{{ $pendingSupplierCount }}</span>
@@ -589,6 +589,99 @@
 
 </aside>
 {{-- ────────────── END SIDEBAR ────────────── --}}
+
+{{-- ── Sidebar Scroll Position & Active Item View Manager ── --}}
+<script>
+(function() {
+    function getStoredScroll() {
+        try { return sessionStorage.getItem('admin_sidebar_scroll'); } catch(e) { return null; }
+    }
+    function setStoredScroll(val) {
+        try { sessionStorage.setItem('admin_sidebar_scroll', val); } catch(e) {}
+    }
+
+    function syncSidebarScroll(smooth) {
+        var nav = document.getElementById('adminSidebarNav') || document.querySelector('aside.sidebar nav');
+        if (!nav) return;
+
+        // 1. Restore previous scroll position from sessionStorage
+        var savedScroll = getStoredScroll();
+        if (savedScroll !== null) {
+            nav.scrollTop = parseInt(savedScroll, 10);
+        }
+
+        // 2. Identify active item in the sidebar
+        var activeItem = nav.querySelector('.nav-link.is-active, .sub-link.sub-active, a.is-active, a.sub-active');
+        if (activeItem) {
+            var navRect = nav.getBoundingClientRect();
+            var itemRect = activeItem.getBoundingClientRect();
+
+            if (navRect.height > 0 && itemRect.height > 0) {
+                // Check if active item is comfortably visible in the viewport of nav
+                var isVisible = (
+                    itemRect.top >= navRect.top + 24 &&
+                    itemRect.bottom <= navRect.bottom - 24
+                );
+
+                if (!isVisible) {
+                    var currentScroll = nav.scrollTop;
+                    var diff = (itemRect.top - navRect.top) - (navRect.height / 2) + (itemRect.height / 2);
+                    var targetScroll = Math.max(0, Math.round(currentScroll + diff));
+
+                    if (smooth) {
+                        nav.scrollTo({ top: targetScroll, behavior: 'smooth' });
+                    } else {
+                        nav.scrollTop = targetScroll;
+                    }
+                    setStoredScroll(nav.scrollTop);
+                }
+            }
+        }
+    }
+
+    // Run immediately so sidebar renders scrolled before first paint (no jarring jump)
+    syncSidebarScroll(false);
+
+    // Re-check after DOM is ready, Alpine is initialized, and window is fully loaded
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function() { syncSidebarScroll(false); });
+    }
+    document.addEventListener('alpine:initialized', function() {
+        setTimeout(function() { syncSidebarScroll(false); }, 60);
+    });
+    window.addEventListener('load', function() { syncSidebarScroll(false); });
+    window.addEventListener('sidebar-opened', function() { syncSidebarScroll(false); });
+    window.addEventListener('resize', function() { syncSidebarScroll(false); });
+
+    // Save scroll position when user scrolls or clicks any link inside the sidebar
+    function bindSidebarScrollHandlers() {
+        var nav = document.getElementById('adminSidebarNav') || document.querySelector('aside.sidebar nav');
+        if (!nav || nav.dataset.scrollBound) return;
+        nav.dataset.scrollBound = '1';
+
+        nav.addEventListener('click', function(e) {
+            var a = e.target.closest('a');
+            if (a && nav.contains(a)) {
+                setStoredScroll(nav.scrollTop);
+            }
+        });
+
+        var scrollTimer = null;
+        nav.addEventListener('scroll', function() {
+            clearTimeout(scrollTimer);
+            scrollTimer = setTimeout(function() {
+                setStoredScroll(nav.scrollTop);
+            }, 80);
+        }, { passive: true });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', bindSidebarScrollHandlers);
+    } else {
+        bindSidebarScrollHandlers();
+    }
+})();
+</script>
 
 {{-- ────────────── MAIN ────────────── --}}
 <div class="lg:ml-[260px] min-h-screen flex flex-col min-w-0">

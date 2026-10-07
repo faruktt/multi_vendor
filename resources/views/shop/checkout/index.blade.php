@@ -1,321 +1,306 @@
 @extends('shop.layout')
-@section('title', 'Checkout — ' . ($branch->system_name ?? $branch->name))
-@section('main-class', 'w-full')
+@section('title', 'ক্যাশ অন ডেলিভারিতে অর্ডার করুন — ' . ($branch->system_name ?? $branch->name))
+@section('main-class', 'w-full bg-slate-100/80 min-h-screen py-6 sm:py-12 px-4 sm:px-6')
 
 @php $currency = $appSettings['currency'] ?? '৳'; @endphp
 
-@section('breadcrumb')
-<a href="{{ route('root') }}" class="flex items-center gap-1.5 hover:text-brand-dark flex-shrink-0">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>
-    Home
-</a>
-<span class="text-gray-300">/</span>
-<span class="text-gray-900 font-semibold">Cart &amp; Checkout</span>
-@endsection
-
 @section('content')
-<div class="max-w-[1440px] mx-auto px-4 py-4">
+<div class="max-w-[580px] mx-auto w-full">
 
-    <h1 class="text-xl font-extrabold tracking-tight mb-4">Your Cart &amp; Checkout</h1>
+    {{-- Main Checkout Card --}}
+    <div id="checkout-order-form"
+         class="bg-white rounded-3xl border border-blue-100 shadow-xl overflow-hidden"
+         x-data="{
+            subtotal: {{ $subtotal }},
+            deliveryInside: {{ $deliveryInside }},
+            deliverySubDhaka: {{ $deliverySubDhaka }},
+            deliveryOutside: {{ $deliveryOutside }},
+            zone: 'inside',
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            couponCode: '',
+            appliedCoupon: null,
+            discount: 0,
+            couponMessage: '',
+            couponError: '',
+            loadingCoupon: false,
 
-        {{-- Cart lines --}}
-        <div class="lg:col-span-2 rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden h-fit">
+            get deliveryCharge() {
+                if (this.zone === 'inside') return this.deliveryInside;
+                if (this.zone === 'sub_dhaka') return this.deliverySubDhaka;
+                return this.deliveryOutside;
+            },
+
+            get total() {
+                return Math.max(0, this.subtotal - this.discount) + this.deliveryCharge;
+            },
+
+            applyCoupon() {
+                if (!this.couponCode.trim()) return;
+                this.loadingCoupon = true;
+                this.couponError = '';
+                this.couponMessage = '';
+
+                const phoneInput = document.querySelector('input[name=phone]');
+                const phone = phoneInput ? phoneInput.value : '';
+
+                fetch('{{ route('shop.checkout.coupon') }}', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        code: this.couponCode,
+                        phone: phone
+                    })
+                })
+                .then(r => r.json())
+                .then(data => {
+                    this.loadingCoupon = false;
+                    if (data.success) {
+                        this.appliedCoupon = data.code;
+                        this.discount = parseFloat(data.discount_amount) || 0;
+                        this.couponMessage = `${data.code} কুপন সফলভাবে যুক্ত হয়েছে! ছাড়: ৳${this.discount.toFixed(2)}`;
+                    } else {
+                        this.couponError = data.message || 'ভুল বা মেয়াদোত্তীর্ণ কুপন কোড';
+                        this.appliedCoupon = null;
+                        this.discount = 0;
+                    }
+                })
+                .catch(err => {
+                    this.loadingCoupon = false;
+                    this.couponError = 'কুপন যাচাই করতে সমস্যা হয়েছে';
+                });
+            },
+
+            removeCoupon() {
+                this.appliedCoupon = null;
+                this.discount = 0;
+                this.couponCode = '';
+                this.couponMessage = '';
+                this.couponError = '';
+            }
+         }">
+
+        {{-- Card Header matching reference image --}}
+        <div class="bg-gradient-to-r from-blue-50/90 to-indigo-50/50 px-6 py-5 sm:px-8 sm:py-6 border-b border-blue-100/70 flex items-center justify-between">
+            <div class="flex items-center gap-3.5">
+                <div class="w-11 h-11 rounded-2xl bg-blue-100 border border-blue-200/80 flex items-center justify-center text-blue-600 shadow-2xs flex-shrink-0">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/>
+                        <path d="m3.3 7 8.7 5 8.7-5"/>
+                        <path d="M12 22V12"/>
+                    </svg>
+                </div>
+                <div>
+                    <h2 class="text-sm sm:text-base font-extrabold text-slate-900 leading-tight">ক্যাশ অন ডেলিভারিতে অর্ডার করুন</h2>
+                    <p class="text-[11px] sm:text-xs text-slate-500 font-medium mt-1">আপনার বিস্তারিত তথ্য দিন</p>
+                </div>
+            </div>
+            <a href="{{ route('root') }}"
+               class="w-8 h-8 rounded-full bg-white hover:bg-slate-100 text-slate-400 hover:text-slate-600 border border-slate-200/80 flex items-center justify-center transition-colors shadow-2xs"
+               title="বন্ধ করুন">
+                <i class="fas fa-times text-xs"></i>
+            </a>
+        </div>
+
+        {{-- Checkout Form Container with explicit padding --}}
+        <div class="p-6 sm:p-8 md:p-9">
+            <form method="POST" action="{{ route('shop.checkout.store') }}" class="space-y-5 sm:space-y-6">
+                @csrf
+            <input type="hidden" name="payment_method" value="cash">
+            <input type="hidden" name="coupon_code" :value="appliedCoupon">
+
+            @if(auth('customer')->check())
+            <div class="bg-blue-50/70 border border-blue-100 rounded-xl px-4 py-3 flex items-center justify-between text-xs text-blue-900">
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-user-circle text-blue-600 text-sm"></i>
+                    <span class="font-bold">{{ auth('customer')->user()->name }} হিসেবে অর্ডার করছেন</span>
+                </div>
+                <span class="text-[11px] text-blue-700 font-medium">{{ auth('customer')->user()->phone }}</span>
+            </div>
+            @endif
+
+            {{-- 1. নাম * --}}
+            <div>
+                <label class="block text-xs sm:text-sm font-bold text-slate-800 mb-2">
+                    নাম <span class="text-red-500">*</span>
+                </label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+                        <i class="fas fa-pencil-alt text-xs"></i>
+                    </span>
+                    <input type="text" name="name" value="{{ old('name', $customer->name ?? '') }}" required placeholder="নাম"
+                           class="w-full pl-11 pr-4 py-3 sm:py-3.5 text-sm bg-white border border-slate-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition placeholder:text-slate-400 font-medium">
+                </div>
+                @error('name') <p class="text-xs text-red-500 mt-1.5 font-semibold">{{ $message }}</p> @enderror
+            </div>
+
+            {{-- 2. মোবাইল নম্বর * --}}
+            <div>
+                <label class="block text-xs sm:text-sm font-bold text-slate-800 mb-2">
+                    মোবাইল নম্বর <span class="text-red-500">*</span>
+                </label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+                        <i class="fas fa-phone-alt text-xs"></i>
+                    </span>
+                    <input type="tel" name="phone" value="{{ old('phone', $customer->phone ?? '') }}" required placeholder="অবশ্যই ১১ অংকের হতে হবে"
+                           class="w-full pl-11 pr-4 py-3 sm:py-3.5 text-sm bg-white border border-slate-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition placeholder:text-slate-400 font-medium">
+                </div>
+                @error('phone') <p class="text-xs text-red-500 mt-1.5 font-semibold">{{ $message }}</p> @enderror
+            </div>
+
+            {{-- 3. সম্পূর্ণ ঠিকানা * (District and Thana dropdowns removed) --}}
+            <div>
+                <label class="block text-xs sm:text-sm font-bold text-slate-800 mb-2">
+                    সম্পূর্ণ ঠিকানা <span class="text-red-500">*</span>
+                </label>
+                <div class="relative">
+                    <span class="absolute top-3.5 left-4 flex items-start pointer-events-none text-slate-400">
+                        <i class="fas fa-location-dot text-xs"></i>
+                    </span>
+                    <textarea name="address" rows="2" required placeholder="আপনার জেলা, থানা ও বিস্তারিত ঠিকানা"
+                              class="w-full pl-11 pr-4 py-3 sm:py-3.5 text-sm bg-white border border-slate-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition placeholder:text-slate-400 resize-none font-medium">{{ old('address', $customer->address ?? '') }}</textarea>
+                </div>
+                @error('address') <p class="text-xs text-red-500 mt-1.5 font-semibold">{{ $message }}</p> @enderror
+            </div>
+
+            {{-- 4. Cart Items Section (Product details matching image) --}}
             <div id="checkout-cart-lines">
                 @include('shop.partials.checkout-cart-lines', ['lines' => $lines])
             </div>
-        </div>
 
-        {{-- Order form + summary --}}
-        <div id="checkout-order-form" class="rounded-2xl border border-gray-200 bg-white shadow-sm p-5 h-fit"
-             x-data="{
-                subtotal: {{ $subtotal }},
-                deliveryInside: {{ $deliveryInside }},
-                deliverySubDhaka: {{ $deliverySubDhaka }},
-                deliveryOutside: {{ $deliveryOutside }},
-                subDhakaThanas: {{ json_encode($subDhakaThanas ?? []) }},
-                allLocations: {{ json_encode($allLocations) }},
-                allDistricts: {{ json_encode($allDistricts) }},
-                selectedDistrict: '{{ old('district', $customer->district ?? 'Dhaka') }}',
-                selectedThana: '{{ old('thana', $customer->thana ?? '') }}',
-                zone: 'inside',
-
-                init() {
-                    this.$watch('selectedThana', () => this.syncZone());
-                    this.syncZone();
-                },
-
-                get thanas() {
-                    return this.allLocations[this.selectedDistrict] || [];
-                },
-
-                isSubDhaka(district, thana) {
-                    if (!this.subDhakaThanas || !district || !thana) return false;
-                    for (const [d, list] of Object.entries(this.subDhakaThanas)) {
-                        if (d.toLowerCase() === district.toLowerCase() && Array.isArray(list)) {
-                            return list.some(t => t.toLowerCase() === thana.toLowerCase());
-                        }
-                    }
-                    return false;
-                },
-
-                syncZone() {
-                    if (!this.selectedDistrict) {
-                        this.zone = 'outside';
-                        return;
-                    }
-
-                    // If thana is selected, check if it matches sub-dhaka thanas
-                    if (this.selectedThana && this.isSubDhaka(this.selectedDistrict, this.selectedThana)) {
-                        this.zone = 'sub_dhaka';
-                        return;
-                    }
-
-                    // If district is Dhaka and thana is not sub-dhaka
-                    if (this.selectedDistrict.toLowerCase() === 'dhaka') {
-                        this.zone = 'inside';
-                        return;
-                    }
-
-                    // All other districts & thanas
-                    this.zone = 'outside';
-                },
-
-                onDistrictChange() {
-                    // Reset selected thana if not part of newly chosen district
-                    if (this.selectedThana && !this.thanas.includes(this.selectedThana)) {
-                        this.selectedThana = '';
-                    }
-                    this.syncZone();
-                },
-
-                couponCode: '',
-                appliedCoupon: null,
-                discount: 0,
-                couponMessage: '',
-                couponError: '',
-                loadingCoupon: false,
-                get deliveryCharge() {
-                    if (this.zone === 'inside') return this.deliveryInside;
-                    if (this.zone === 'sub_dhaka') return this.deliverySubDhaka;
-                    return this.deliveryOutside;
-                },
-                get total() { return Math.max(0, this.subtotal - this.discount) + this.deliveryCharge; },
-                applyCoupon() {
-                    if (!this.couponCode.trim()) return;
-                    this.loadingCoupon = true;
-                    this.couponError = '';
-                    this.couponMessage = '';
-                    
-                    const phoneInput = document.querySelector('input[name=phone]');
-                    const phone = phoneInput ? phoneInput.value : '';
-
-                    fetch('{{ route('shop.checkout.coupon') }}', {
-                        method: 'POST',
-                        headers: {
-                            'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            code: this.couponCode,
-                            phone: phone
-                        })
-                    })
-                    .then(r => r.json())
-                    .then(data => {
-                        this.loadingCoupon = false;
-                        if (data.success) {
-                            this.appliedCoupon = data.code;
-                            this.discount = parseFloat(data.discount_amount) || 0;
-                            this.couponMessage = `${data.code} applied! Discount: ৳${this.discount.toFixed(2)}`;
-                        } else {
-                            this.couponError = data.message || 'Invalid coupon code';
-                            this.appliedCoupon = null;
-                            this.discount = 0;
-                        }
-                    })
-                    .catch(err => {
-                        this.loadingCoupon = false;
-                        this.couponError = 'Error applying coupon';
-                    });
-                },
-                removeCoupon() {
-                    this.appliedCoupon = null;
-                    this.discount = 0;
-                    this.couponCode = '';
-                    this.couponMessage = '';
-                    this.couponError = '';
-                }
-             }">
-            <form method="POST" action="{{ route('shop.checkout.store') }}" class="space-y-4">
-                @csrf
-                <input type="hidden" name="coupon_code" :value="appliedCoupon">
-
-                @if(auth('customer')->check())
-                    <div class="bg-brand/10 border border-brand/20 rounded-xl p-3 flex items-center justify-between text-xs text-brand-dark">
-                        <div class="flex items-center gap-2">
-                            <i class="fas fa-user-circle text-base text-brand"></i>
-                            <div>
-                                <span class="font-bold">Ordering as {{ auth('customer')->user()->name }}</span>
-                                <div class="text-[10px] text-gray-500">{{ auth('customer')->user()->phone ?? auth('customer')->user()->email }}</div>
+            {{-- 5. ডেলিভারি চার্জ (Delivery Charge / Shipping Area) --}}
+            <div>
+                <label class="block text-xs sm:text-sm font-bold text-slate-800 mb-2.5">
+                    ডেলিভারি চার্জ
+                </label>
+                <div class="space-y-2.5">
+                    {{-- Dhaka City --}}
+                    <label class="block cursor-pointer select-none">
+                        <input type="radio" name="delivery_zone" value="inside" x-model="zone" class="sr-only">
+                        <div class="flex items-center justify-between px-4 py-3.5 sm:px-5 sm:py-4 rounded-xl border transition-all"
+                             :class="zone === 'inside' ? 'border-2 border-blue-600 bg-blue-50/70 shadow-2xs' : 'border-slate-200 bg-white hover:border-slate-300'">
+                            <div class="flex items-center gap-3">
+                                <span class="w-4.5 h-4.5 rounded-full border flex items-center justify-center transition-colors"
+                                      :class="zone === 'inside' ? 'border-blue-600 bg-blue-600' : 'border-slate-300 bg-white'">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-white" x-show="zone === 'inside'"></span>
+                                </span>
+                                <span class="text-xs sm:text-sm" :class="zone === 'inside' ? 'text-blue-950 font-extrabold' : 'text-slate-700 font-semibold'">ঢাকা সিটি</span>
                             </div>
+                            <span class="text-xs sm:text-sm font-mono" :class="zone === 'inside' ? 'text-blue-900 font-black' : 'text-slate-800 font-bold'">
+                                Tk <span x-text="deliveryInside.toFixed(2)"></span>
+                            </span>
                         </div>
-                        <a href="{{ route('shop.customer.dashboard') }}" class="font-bold underline text-[11px]">My Account</a>
-                    </div>
-                @else
-                    <div class="bg-blue-50 border border-blue-200/80 rounded-xl p-3 flex items-center justify-between text-xs text-blue-900">
-                        <div class="flex items-center gap-2">
-                            <i class="fas fa-info-circle text-blue-600"></i>
-                            <span>Have a customer account?</span>
-                        </div>
-                        <a href="{{ route('shop.customer.login') }}" class="font-bold text-blue-700 hover:underline">
-                            Sign In &rarr;
-                        </a>
-                    </div>
-                @endif
-
-                <div>
-                    <label class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-1.5">Full Name *</label>
-                    <input type="text" name="name" value="{{ old('name', $customer->name ?? '') }}" required
-                           class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-1.5">Phone Number *</label>
-                    <input type="text" name="phone" value="{{ old('phone', $customer->phone ?? '') }}" required
-                           class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand">
-                </div>
-
-                {{-- Cascading District & Thana --}}
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-1.5">
-                            District (জেলা) *
-                        </label>
-                        <div class="relative">
-                            <select name="district" x-model="selectedDistrict" @change="onDistrictChange()" required
-                                    class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand bg-white">
-                                <option value="" disabled>Select District</option>
-                                <template x-for="d in allDistricts" :key="d">
-                                    <option :value="d" x-text="d" :selected="d === selectedDistrict"></option>
-                                </template>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-1.5">
-                            Thana / Upazila (থানা) *
-                        </label>
-                        <div class="relative">
-                            <select name="thana" x-model="selectedThana" @change="syncZone()" required
-                                    class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand bg-white">
-                                <option value="" disabled>Select Thana</option>
-                                <template x-for="t in thanas" :key="t">
-                                    <option :value="t" x-text="t" :selected="t === selectedThana"></option>
-                                </template>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-
-                <div>
-                    <label class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-1.5">Full Delivery Address *</label>
-                    <textarea name="address" rows="2" required placeholder="House no, Road no, Area details..."
-                              class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand">{{ old('address', $customer->address ?? '') }}</textarea>
-                </div>
-
-                <div>
-                    <label class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-1.5 flex items-center justify-between">
-                        <span>Delivery Area</span>
-                        <span class="text-[11px] text-brand-dark font-semibold lowercase" x-text="selectedThana ? '(auto selected for ' + selectedThana + ', ' + selectedDistrict + ')' : '(auto selected for ' + selectedDistrict + ')'"></span>
                     </label>
-                    <div class="grid grid-cols-3 gap-2">
-                        {{-- Inside Dhaka --}}
-                        <label class="cursor-pointer">
-                            <input type="radio" name="delivery_zone" value="inside" x-model="zone" class="sr-only peer">
-                            <div class="border rounded-xl p-2 text-center text-xs font-semibold border-gray-200 text-gray-600 hover:border-brand/40 peer-checked:border-brand peer-checked:bg-brand-light peer-checked:text-brand-dark transition-all">
-                                <span class="block truncate">Inside Dhaka</span>
-                                <span class="block text-[10px] font-bold mt-0.5">{{ $currency }}<span x-text="deliveryInside"></span></span>
-                            </div>
-                        </label>
 
-                        {{-- Sub Dhaka --}}
-                        <label class="cursor-pointer">
-                            <input type="radio" name="delivery_zone" value="sub_dhaka" x-model="zone" class="sr-only peer">
-                            <div class="border rounded-xl p-2 text-center text-xs font-semibold border-gray-200 text-gray-600 hover:border-brand/40 peer-checked:border-brand peer-checked:bg-brand-light peer-checked:text-brand-dark transition-all">
-                                <span class="block truncate">Sub Dhaka</span>
-                                <span class="block text-[10px] font-bold mt-0.5">{{ $currency }}<span x-text="deliverySubDhaka"></span></span>
+                    {{-- Outside Dhaka --}}
+                    <label class="block cursor-pointer select-none">
+                        <input type="radio" name="delivery_zone" value="outside" x-model="zone" class="sr-only">
+                        <div class="flex items-center justify-between px-4 py-3.5 sm:px-5 sm:py-4 rounded-xl border transition-all"
+                             :class="zone === 'outside' ? 'border-2 border-blue-600 bg-blue-50/70 shadow-2xs' : 'border-slate-200 bg-white hover:border-slate-300'">
+                            <div class="flex items-center gap-3">
+                                <span class="w-4.5 h-4.5 rounded-full border flex items-center justify-center transition-colors"
+                                      :class="zone === 'outside' ? 'border-blue-600 bg-blue-600' : 'border-slate-300 bg-white'">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-white" x-show="zone === 'outside'"></span>
+                                </span>
+                                <span class="text-xs sm:text-sm" :class="zone === 'outside' ? 'text-blue-950 font-extrabold' : 'text-slate-700 font-semibold'">ঢাকার বাইরে</span>
                             </div>
-                        </label>
-
-                        {{-- Outside Dhaka --}}
-                        <label class="cursor-pointer">
-                            <input type="radio" name="delivery_zone" value="outside" x-model="zone" class="sr-only peer">
-                            <div class="border rounded-xl p-2 text-center text-xs font-semibold border-gray-200 text-gray-600 hover:border-brand/40 peer-checked:border-brand peer-checked:bg-brand-light peer-checked:text-brand-dark transition-all">
-                                <span class="block truncate">Outside Dhaka</span>
-                                <span class="block text-[10px] font-bold mt-0.5">{{ $currency }}<span x-text="deliveryOutside"></span></span>
-                            </div>
-                        </label>
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-1.5">Payment Method</label>
-                    <div class="grid grid-cols-2 gap-2">
-                        @foreach(['cash' => 'Cash on Delivery', 'bkash' => 'bKash', 'nagad' => 'Nagad', 'card' => 'Card'] as $val => $label)
-                        <label class="cursor-pointer">
-                            <input type="radio" name="payment_method" value="{{ $val }}" {{ $val === 'cash' ? 'checked' : '' }} class="sr-only peer">
-                            <div class="border rounded-xl px-2.5 py-2 text-center text-xs font-semibold border-gray-200 text-gray-600 hover:border-brand/40 peer-checked:border-brand peer-checked:bg-brand-light peer-checked:text-brand-dark transition-all">
-                                {{ $label }}
-                            </div>
-                        </label>
-                        @endforeach
-                    </div>
-                </div>
-
-                {{-- Coupon Code Application --}}
-                <div class="border-t border-gray-100 pt-3">
-                    <label class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-1.5">
-                        <i class="fas fa-tag text-brand mr-1"></i> Have a Promo / Coupon Code?
+                            <span class="text-xs sm:text-sm font-mono" :class="zone === 'outside' ? 'text-blue-900 font-black' : 'text-slate-800 font-bold'">
+                                Tk <span x-text="deliveryOutside.toFixed(2)"></span>
+                            </span>
+                        </div>
                     </label>
-                    <div class="flex gap-2">
-                        <input type="text" x-model="couponCode" placeholder="Enter coupon code"
+
+                    {{-- Sub Dhaka (Upazila) --}}
+                    <label class="block cursor-pointer select-none">
+                        <input type="radio" name="delivery_zone" value="sub_dhaka" x-model="zone" class="sr-only">
+                        <div class="flex items-center justify-between px-4 py-3.5 sm:px-5 sm:py-4 rounded-xl border transition-all"
+                             :class="zone === 'sub_dhaka' ? 'border-2 border-blue-600 bg-blue-50/70 shadow-2xs' : 'border-slate-200 bg-white hover:border-slate-300'">
+                            <div class="flex items-start sm:items-center gap-3 min-w-0 flex-1 pr-2">
+                                <span class="w-4.5 h-4.5 rounded-full border flex items-center justify-center transition-colors flex-shrink-0 mt-0.5 sm:mt-0"
+                                      :class="zone === 'sub_dhaka' ? 'border-blue-600 bg-blue-600' : 'border-slate-300 bg-white'">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-white" x-show="zone === 'sub_dhaka'"></span>
+                                </span>
+                                <div class="min-w-0 flex-1">
+                                    <span class="text-xs sm:text-sm block leading-tight" :class="zone === 'sub_dhaka' ? 'text-blue-950 font-extrabold' : 'text-slate-700 font-semibold'">ঢাকা উপজেলা</span>
+                                    @if(!empty($subDhakaUpazilaList))
+                                        <span class="text-[10.5px] text-slate-400 block mt-0.5 leading-snug break-words">
+                                            {{ implode(', ', $subDhakaUpazilaList) }}
+                                        </span>
+                                    @else
+                                        <span class="text-[10.5px] text-slate-400 block mt-0.5">সাভার, ডেমরা, কেরানীগঞ্জ ও নির্ধারিত উপজেলা</span>
+                                    @endif
+                                </div>
+                            </div>
+                            <span class="text-xs sm:text-sm font-mono flex-shrink-0" :class="zone === 'sub_dhaka' ? 'text-blue-900 font-black' : 'text-slate-800 font-bold'">
+                                Tk <span x-text="deliverySubDhaka.toFixed(2)"></span>
+                            </span>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            {{-- 6. Order Summary Box --}}
+            <div class="bg-blue-50/50 border border-blue-100 rounded-2xl p-5 sm:p-6 space-y-3 text-xs sm:text-sm">
+                <div class="flex items-center justify-between text-slate-600">
+                    <span>Subtotal</span>
+                    <span class="font-semibold font-mono">Tk <span x-text="subtotal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})"></span></span>
+                </div>
+                <div x-show="discount > 0" class="flex items-center justify-between text-emerald-600 font-bold" x-cloak>
+                    <span>Coupon Discount (<span x-text="appliedCoupon"></span>)</span>
+                    <span class="font-mono">-Tk <span x-text="discount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})"></span></span>
+                </div>
+                <div class="flex items-center justify-between text-slate-600">
+                    <span>Shipping</span>
+                    <span class="font-semibold font-mono">Tk <span x-text="deliveryCharge.toFixed(2)"></span></span>
+                </div>
+                <div class="pt-3 border-t border-blue-100 flex items-center justify-between text-slate-900">
+                    <span class="font-black text-sm sm:text-base">Total</span>
+                    <span class="font-black text-base sm:text-lg font-mono">Tk <span x-text="total.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})"></span></span>
+                </div>
+            </div>
+
+            {{-- 7. কুপন কোড (User requested: image-er note-er jaygay coupon add korar option) --}}
+            <div>
+                <label class="block text-xs sm:text-sm font-bold text-slate-800 mb-2 flex items-center justify-between">
+                    <span><i class="fas fa-ticket-alt text-blue-600 mr-1.5"></i> কুপন কোড (যদি থাকে)</span>
+                    <span x-show="appliedCoupon" class="text-xs text-emerald-600 font-bold" x-cloak>Applied!</span>
+                </label>
+                <div class="flex gap-2.5">
+                    <div class="relative flex-1">
+                        <span class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+                            <i class="fas fa-tag text-xs"></i>
+                        </span>
+                        <input type="text" x-model="couponCode" placeholder="কুপন কোড লিখুন"
                                :disabled="appliedCoupon !== null"
                                @keydown.enter.prevent="applyCoupon()"
-                               class="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-xs font-mono font-bold uppercase focus:outline-none focus:ring-2 focus:ring-brand uppercase bg-gray-50 disabled:bg-gray-100">
-                        <button type="button" @click="appliedCoupon ? removeCoupon() : applyCoupon()"
-                                :disabled="loadingCoupon || (!appliedCoupon && !couponCode.trim())"
-                                class="px-4 py-2 rounded-xl text-xs font-bold transition-all disabled:opacity-50"
-                                :class="appliedCoupon ? 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-200' : 'bg-gray-900 hover:bg-black text-white'">
-                            <span x-show="!loadingCoupon" x-text="appliedCoupon ? 'Remove' : 'Apply'"></span>
-                            <span x-show="loadingCoupon"><i class="fas fa-spinner fa-spin"></i></span>
-                        </button>
+                               class="w-full pl-11 pr-4 py-3 sm:py-3.5 text-xs sm:text-sm uppercase font-mono font-bold bg-white border border-slate-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition disabled:bg-slate-100 placeholder:normal-case placeholder:font-normal">
                     </div>
-                    <div x-show="couponMessage" x-text="couponMessage" class="text-xs font-bold text-emerald-600 mt-1.5 flex items-center gap-1"></div>
-                    <div x-show="couponError" x-text="couponError" class="text-xs font-bold text-red-600 mt-1.5 flex items-center gap-1"></div>
+                    <button type="button" @click="appliedCoupon ? removeCoupon() : applyCoupon()"
+                            :disabled="loadingCoupon || (!appliedCoupon && !couponCode.trim())"
+                            class="px-5 sm:px-6 py-3 sm:py-3.5 rounded-xl text-xs sm:text-sm font-bold transition-all disabled:opacity-50 flex items-center justify-center flex-shrink-0 cursor-pointer shadow-xs"
+                            :class="appliedCoupon ? 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-200' : 'bg-blue-600 hover:bg-blue-700 text-white'">
+                        <span x-show="!loadingCoupon" x-text="appliedCoupon ? 'Remove' : 'Apply'"></span>
+                        <span x-show="loadingCoupon"><i class="fas fa-spinner fa-spin"></i></span>
+                    </button>
                 </div>
+                <div x-show="couponMessage" x-text="couponMessage" class="text-xs font-bold text-emerald-600 mt-2 flex items-center gap-1" x-cloak></div>
+                <div x-show="couponError" x-text="couponError" class="text-xs font-bold text-red-600 mt-2 flex items-center gap-1" x-cloak></div>
+            </div>
 
-                <div class="border-t border-gray-100 pt-4 space-y-1.5 text-sm">
-                    <div class="flex justify-between text-gray-500">
-                        <span>Subtotal</span><span>{{ $currency }} <span x-text="subtotal.toLocaleString()"></span></span>
-                    </div>
-                    <div x-show="discount > 0" class="flex justify-between text-emerald-600 font-semibold">
-                        <span>Coupon Discount (<span x-text="appliedCoupon"></span>)</span>
-                        <span>-{{ $currency }} <span x-text="discount.toFixed(2)"></span></span>
-                    </div>
-                    <div class="flex justify-between text-gray-500">
-                        <span>Delivery Charge</span><span>{{ $currency }} <span x-text="deliveryCharge.toLocaleString()"></span></span>
-                    </div>
-                    <div class="flex justify-between font-extrabold text-gray-900 text-base border-t border-gray-100 pt-2 mt-1">
-                        <span>Total</span><span>{{ $currency }} <span x-text="total.toLocaleString()"></span></span>
-                    </div>
-                </div>
-
+            {{-- 8. Submit Order Button matching reference image --}}
+            <div class="pt-3 pb-2">
                 <button type="submit"
-                        class="w-full bg-brand hover:bg-brand-dark text-white py-3 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2 shadow-md shadow-brand/20">
-                    <i class="fas fa-check-circle text-xs"></i> Place Order
+                        class="w-full bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white py-4 sm:py-4.5 rounded-xl sm:rounded-2xl text-sm sm:text-base font-extrabold transition-all shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2 cursor-pointer">
+                    <span>অর্ডার নিশ্চিত করুন — TK <span x-text="total.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})"></span></span>
                 </button>
+                <p class="text-center text-[11px] sm:text-xs text-slate-400 mt-3 font-medium">
+                    Cash on delivery — pay when you receive your order
+                </p>
+            </div>
             </form>
         </div>
     </div>

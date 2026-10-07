@@ -48,7 +48,7 @@
     </style>
     @stack('styles')
 </head>
-<body class="h-full bg-slate-50 text-slate-800" x-data="{ sidebarOpen: false }">
+<body class="h-full bg-slate-50 text-slate-800" x-data="{ sidebarOpen: false }" x-effect="if (sidebarOpen) setTimeout(() => window.dispatchEvent(new CustomEvent('sidebar-opened')), 100)">
 
 {{-- Mobile overlay --}}
 <div x-show="sidebarOpen" @click="sidebarOpen=false" x-cloak
@@ -70,7 +70,7 @@
     </div>
 
     {{-- Nav Links --}}
-    <nav class="flex-1 overflow-y-auto sidebar-scroll py-4 px-3 space-y-1">
+    <nav id="supplierSidebarNav" class="flex-1 overflow-y-auto sidebar-scroll py-4 px-3 space-y-1">
 
         <a href="{{ route('supplier.dashboard') }}"
            class="sup-nav-link {{ request()->routeIs('supplier.dashboard') ? 'active' : '' }}">
@@ -172,6 +172,93 @@
     </div>
 
 </aside>
+
+{{-- ── Sidebar Scroll Position & Active Item View Manager ── --}}
+<script>
+(function() {
+    function getStoredScroll() {
+        try { return sessionStorage.getItem('supplier_sidebar_scroll'); } catch(e) { return null; }
+    }
+    function setStoredScroll(val) {
+        try { sessionStorage.setItem('supplier_sidebar_scroll', val); } catch(e) {}
+    }
+
+    function syncSidebarScroll(smooth) {
+        var nav = document.getElementById('supplierSidebarNav') || document.querySelector('aside.sup-sidebar nav');
+        if (!nav) return;
+
+        var savedScroll = getStoredScroll();
+        if (savedScroll !== null) {
+            nav.scrollTop = parseInt(savedScroll, 10);
+        }
+
+        var activeItem = nav.querySelector('.sup-nav-link.active, a.active');
+        if (activeItem) {
+            var navRect = nav.getBoundingClientRect();
+            var itemRect = activeItem.getBoundingClientRect();
+
+            if (navRect.height > 0 && itemRect.height > 0) {
+                var isVisible = (
+                    itemRect.top >= navRect.top + 20 &&
+                    itemRect.bottom <= navRect.bottom - 20
+                );
+
+                if (!isVisible) {
+                    var currentScroll = nav.scrollTop;
+                    var diff = (itemRect.top - navRect.top) - (navRect.height / 2) + (itemRect.height / 2);
+                    var targetScroll = Math.max(0, Math.round(currentScroll + diff));
+
+                    if (smooth) {
+                        nav.scrollTo({ top: targetScroll, behavior: 'smooth' });
+                    } else {
+                        nav.scrollTop = targetScroll;
+                    }
+                    setStoredScroll(nav.scrollTop);
+                }
+            }
+        }
+    }
+
+    syncSidebarScroll(false);
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function() { syncSidebarScroll(false); });
+    }
+    document.addEventListener('alpine:initialized', function() {
+        setTimeout(function() { syncSidebarScroll(false); }, 60);
+    });
+    window.addEventListener('load', function() { syncSidebarScroll(false); });
+    window.addEventListener('sidebar-opened', function() { syncSidebarScroll(false); });
+    window.addEventListener('resize', function() { syncSidebarScroll(false); });
+
+    function bindSupplierSidebarHandlers() {
+        var nav = document.getElementById('supplierSidebarNav') || document.querySelector('aside.sup-sidebar nav');
+        if (!nav || nav.dataset.scrollBound) return;
+        nav.dataset.scrollBound = '1';
+
+        nav.addEventListener('click', function(e) {
+            var a = e.target.closest('a');
+            if (a && nav.contains(a)) {
+                setStoredScroll(nav.scrollTop);
+            }
+        });
+
+        var scrollTimer = null;
+        nav.addEventListener('scroll', function() {
+            clearTimeout(scrollTimer);
+            scrollTimer = setTimeout(function() {
+                setStoredScroll(nav.scrollTop);
+            }, 80);
+        }, { passive: true });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', bindSupplierSidebarHandlers);
+    } else {
+        bindSupplierSidebarHandlers();
+    }
+})();
+</script>
 
 {{-- MAIN WRAPPER --}}
 <div class="lg:pl-[250px] min-h-screen flex flex-col">

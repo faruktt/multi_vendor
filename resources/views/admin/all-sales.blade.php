@@ -180,7 +180,15 @@
                     </td>
                     <td class="px-2.5 py-2">
                         <div class="flex items-center gap-1.5 flex-wrap">
-                            <p class="font-semibold text-slate-800 text-[12.5px] font-mono">{{ $sale->invoice_no }}</p>
+                            <a href="{{ route('branch.sales.show', [$sale->vendor_id, $sale]) }}"
+                               class="w-6 h-6 rounded-md bg-blue-50 hover:bg-blue-600 text-blue-600 hover:text-white border border-blue-200/80 flex items-center justify-center flex-shrink-0 transition-all hover:scale-105 shadow-2xs"
+                               title="View Sale">
+                                <i class="fas fa-eye text-[10px]"></i>
+                            </a>
+                            <a href="{{ route('branch.sales.show', [$sale->vendor_id, $sale]) }}"
+                               class="font-semibold text-slate-800 hover:text-blue-600 text-[12.5px] font-mono transition-colors">
+                                {{ $sale->invoice_no }}
+                            </a>
                             @if($isSupplier)
                             <span class="inline-flex items-center gap-1 text-[9px] font-black px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-900 border border-amber-300">
                                 <i class="fas fa-store text-[8px] text-amber-600"></i> SUP
@@ -467,11 +475,6 @@
                     </td>
                     <td class="px-4 py-3">
                         <div class="flex items-center justify-center gap-1">
-                            {{-- View --}}
-                            <a href="{{ route('branch.sales.show', [$sale->vendor_id, $sale]) }}"
-                               class="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors" title="View">
-                                <i class="fas fa-eye text-[11px]"></i>
-                            </a>
                             {{-- Print --}}
                             <a href="{{ route('branch.sales.show', [$sale->vendor_id, $sale]) }}?auto_print=1" target="_blank"
                                class="w-7 h-7 rounded-lg bg-purple-100 hover:bg-purple-200 text-purple-700 flex items-center justify-center transition-colors" title="Print">

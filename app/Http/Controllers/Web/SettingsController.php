@@ -72,6 +72,7 @@ class SettingsController extends Controller
             'commission_percentage'         => 'nullable|numeric|min:0|max:100',
             'logo'                          => 'nullable|image|max:2048',
             'delivery_charge_inside_dhaka'  => 'nullable|numeric|min:0',
+            'delivery_charge_sub_dhaka'     => 'nullable|numeric|min:0',
             'delivery_charge_outside_dhaka' => 'nullable|numeric|min:0',
         ]);
 
@@ -93,10 +94,21 @@ class SettingsController extends Controller
             'delivery_charge_inside_dhaka'  => $branch->is_online_store
                 ? ($request->delivery_charge_inside_dhaka ?? $branch->delivery_charge_inside_dhaka)
                 : $branch->delivery_charge_inside_dhaka,
+            'delivery_charge_sub_dhaka'     => $branch->is_online_store
+                ? ($request->delivery_charge_sub_dhaka ?? $branch->delivery_charge_sub_dhaka)
+                : $branch->delivery_charge_sub_dhaka,
             'delivery_charge_outside_dhaka' => $branch->is_online_store
                 ? ($request->delivery_charge_outside_dhaka ?? $branch->delivery_charge_outside_dhaka)
                 : $branch->delivery_charge_outside_dhaka,
         ]);
+
+        if ($branch->is_online_store) {
+            Vendor::query()->where('is_warehouse', true)->update([
+                'delivery_charge_inside_dhaka'  => $request->delivery_charge_inside_dhaka ?? $branch->delivery_charge_inside_dhaka,
+                'delivery_charge_sub_dhaka'     => $request->delivery_charge_sub_dhaka ?? $branch->delivery_charge_sub_dhaka,
+                'delivery_charge_outside_dhaka' => $request->delivery_charge_outside_dhaka ?? $branch->delivery_charge_outside_dhaka,
+            ]);
+        }
 
         return back()->with('success', 'Branch information updated.');
     }

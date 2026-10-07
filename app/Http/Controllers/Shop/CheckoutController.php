@@ -53,14 +53,36 @@ class CheckoutController extends Controller
 
         $allLocations    = BangladeshLocations::all();
         $allDistricts    = BangladeshLocations::districts();
-        $deliveryInside  = (float) ($branch->delivery_charge_inside_dhaka ?? 60);
-        $deliverySubDhaka= (float) ($branch->delivery_charge_sub_dhaka ?? 100);
-        $deliveryOutside = (float) ($branch->delivery_charge_outside_dhaka ?? 150);
+        $deliveryInside  = isset($branch->delivery_charge_inside_dhaka) && $branch->delivery_charge_inside_dhaka !== '' && $branch->delivery_charge_inside_dhaka !== null
+            ? (float) $branch->delivery_charge_inside_dhaka
+            : 60.0;
+        $deliverySubDhaka= isset($branch->delivery_charge_sub_dhaka) && $branch->delivery_charge_sub_dhaka !== '' && $branch->delivery_charge_sub_dhaka !== null
+            ? (float) $branch->delivery_charge_sub_dhaka
+            : 100.0;
+        $deliveryOutside = isset($branch->delivery_charge_outside_dhaka) && $branch->delivery_charge_outside_dhaka !== '' && $branch->delivery_charge_outside_dhaka !== null
+            ? (float) $branch->delivery_charge_outside_dhaka
+            : 150.0;
+
+        // Flatten admin-configured Sub-Dhaka upazilas/thanas
+        $subDhakaUpazilaList = [];
+        foreach ($subDhakaThanas as $dist => $thanas) {
+            if (is_array($thanas)) {
+                foreach ($thanas as $t) {
+                    if (is_string($t) && trim($t) !== '') {
+                        $subDhakaUpazilaList[] = trim($t);
+                    }
+                }
+            } elseif (is_string($thanas) && trim($thanas) !== '') {
+                $subDhakaUpazilaList[] = trim($thanas);
+            }
+        }
+        $subDhakaUpazilaList = array_values(array_unique($subDhakaUpazilaList));
 
         return view('shop.checkout.index', compact(
             'branch', 'lines', 'subtotal', 'customer',
             'allLocations', 'allDistricts', 'subDhakaDistricts', 'subDhakaThanas',
-            'deliveryInside', 'deliverySubDhaka', 'deliveryOutside'
+            'deliveryInside', 'deliverySubDhaka', 'deliveryOutside',
+            'subDhakaUpazilaList'
         ));
     }
 
@@ -110,12 +132,13 @@ class CheckoutController extends Controller
         $request->validate([
             'name'           => 'required|string|max:255',
             'phone'          => 'required|string|max:30',
-            'district'       => 'required|string|max:100',
-            'thana'          => 'required|string|max:100',
+            'district'       => 'nullable|string|max:100',
+            'thana'          => 'nullable|string|max:100',
             'address'        => 'required|string|max:500',
             'delivery_zone'  => 'required|in:inside,sub_dhaka,outside',
-            'payment_method' => 'required|in:cash,bkash,nagad,card',
+            'payment_method' => 'nullable|in:cash,bkash,nagad,card',
             'coupon_code'    => 'nullable|string',
+            'note'           => 'nullable|string|max:500',
         ]);
 
         $lines = Cart::lines($branch);
@@ -124,12 +147,27 @@ class CheckoutController extends Controller
         }
 
         $sale = DB::transaction(function () use ($request, $branch, $lines) {
+            $zone = $request->delivery_zone ?: 'inside';
+
+            // Derive district & thana from delivery_zone if not provided directly
+            $district = trim($request->district ?? '');
+            $thana    = trim($request->thana ?? '');
+
+            if (!$district) {
+                $district = match($zone) {
+                    'inside'    => 'Dhaka',
+                    'sub_dhaka' => 'Dhaka Suburb',
+                    'outside'   => 'Outside Dhaka',
+                    default     => 'Dhaka',
+                };
+            }
+
             $customerData = [
                 'name'     => $request->name,
                 'phone'    => $request->phone,
                 'address'  => $request->address,
-                'district' => $request->district,
-                'thana'    => $request->thana,
+                'district' => $district,
+                'thana'    => $thana ?: null,
             ];
 
             if (auth('customer')->check()) {
@@ -143,23 +181,16 @@ class CheckoutController extends Controller
                 $customer->update($customerData);
             }
 
-            // Determine zone & charge based on district, thana & store configuration
-            $subDhakaThanas = $branch->sub_dhaka_thanas;
-            if (is_string($subDhakaThanas)) {
-                $subDhakaThanas = json_decode($subDhakaThanas, true) ?: [];
-            }
-            if (empty($subDhakaThanas) || !is_array($subDhakaThanas)) {
-                $subDhakaThanas = BangladeshLocations::defaultSubDhakaThanas();
-            }
-
-            $district = trim($request->district);
-            $thana    = trim($request->thana);
-            $zone     = BangladeshLocations::determineZone($district, $thana, $subDhakaThanas);
-
             $deliveryCharge = match($zone) {
-                'inside'    => (float) ($branch->delivery_charge_inside_dhaka ?? 60),
-                'sub_dhaka' => (float) ($branch->delivery_charge_sub_dhaka ?? 100),
-                default     => (float) ($branch->delivery_charge_outside_dhaka ?? 150),
+                'inside'    => isset($branch->delivery_charge_inside_dhaka) && $branch->delivery_charge_inside_dhaka !== '' && $branch->delivery_charge_inside_dhaka !== null
+                    ? (float) $branch->delivery_charge_inside_dhaka
+                    : 60.0,
+                'sub_dhaka' => isset($branch->delivery_charge_sub_dhaka) && $branch->delivery_charge_sub_dhaka !== '' && $branch->delivery_charge_sub_dhaka !== null
+                    ? (float) $branch->delivery_charge_sub_dhaka
+                    : 100.0,
+                default     => isset($branch->delivery_charge_outside_dhaka) && $branch->delivery_charge_outside_dhaka !== '' && $branch->delivery_charge_outside_dhaka !== null
+                    ? (float) $branch->delivery_charge_outside_dhaka
+                    : 150.0,
             };
 
             $subtotal = (float) $lines->sum('subtotal');
@@ -199,7 +230,7 @@ class CheckoutController extends Controller
                 'paid_amount'     => 0,
                 'due_amount'      => $total,
                 'payment_status'  => 'pending',
-                'payment_method'  => $request->payment_method,
+                'payment_method'  => $request->payment_method ?: 'cash',
                 'order_status'    => 'pending',
                 'channel'         => 'web',
                 'created_by'      => $this->systemUserId($branch),

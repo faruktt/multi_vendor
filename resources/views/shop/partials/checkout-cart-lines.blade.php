@@ -1,69 +1,78 @@
 {{-- Expects: $lines (Collection). Re-rendered both on full page load and via AJAX cart updates. --}}
 @php $currency = $appSettings['currency'] ?? '৳'; @endphp
+
 @if($lines->isEmpty())
-<div class="p-10 text-center">
-    <i class="fas fa-cart-shopping text-gray-200 text-4xl mb-3"></i>
-    <p class="text-gray-500 text-sm font-semibold mb-3">Your cart is empty</p>
-    <a href="{{ route('shop.products.index') }}" class="inline-flex items-center gap-1.5 text-brand-dark text-sm font-bold hover:underline">
-        Browse products <i class="fas fa-arrow-right text-xs"></i>
+<div class="p-8 text-center bg-blue-50/30 rounded-2xl border border-blue-100">
+    <i class="fas fa-cart-shopping text-blue-200 text-3xl mb-2 block"></i>
+    <p class="text-slate-500 text-xs font-semibold mb-2">আপনার কার্ট খালি রয়েছে</p>
+    <a href="{{ route('shop.products.index') }}" class="inline-flex items-center gap-1.5 text-blue-600 text-xs font-bold hover:underline">
+        কেনাকাটা করুন <i class="fas fa-arrow-right text-[10px]"></i>
     </a>
 </div>
 @else
-{{-- Standalone remove forms — a <form> can't nest inside the qty forms below, so each
-     remove button targets one of these via the HTML5 form="" attribute instead. --}}
-@foreach($lines as $line)
-<form id="remove-form-{{ $line['key'] }}" method="POST" action="{{ route('shop.cart.remove', $line['key']) }}" class="hidden" @submit.prevent="submitCartForm($el)">
-    @csrf @method('DELETE')
-</form>
-@endforeach
-
-<div class="divide-y divide-gray-100">
+<div class="bg-blue-50/50 border border-blue-100/90 rounded-2xl p-4 sm:p-5 space-y-4">
     @foreach($lines as $line)
     @php
         $lineMax = $line['variant']->stock_qty ?? $line['product']->stock_qty;
     @endphp
-    <div class="flex items-center gap-3 p-4">
-        <div class="w-14 h-14 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center overflow-hidden flex-shrink-0">
+    <div class="flex items-center gap-3.5 sm:gap-4">
+        {{-- Thumbnail --}}
+        <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-white border border-blue-100 flex items-center justify-center overflow-hidden flex-shrink-0 shadow-2xs">
             @if($line['image_url'])
-            <img src="{{ $line['image_url'] }}" class="w-full h-full object-cover">
+            <img src="{{ $line['image_url'] }}" alt="{{ $line['product']->name }}" class="w-full h-full object-cover">
             @else
-            <i class="fas fa-box text-gray-300"></i>
+            <i class="fas fa-box text-slate-300 text-xl"></i>
             @endif
         </div>
+
+        {{-- Info + Stepper + Price --}}
         <div class="flex-1 min-w-0">
-            <p class="text-sm font-semibold text-gray-800 truncate">{{ $line['product']->name }}</p>
-            @if($line['variant'])
-            <p class="text-xs text-purple-600">{{ $line['variant']->variant_name }}</p>
-            @endif
-            <p class="text-xs text-gray-400">{{ $currency }} {{ number_format($line['price'], 0) }} each</p>
+            <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0 flex-1 pr-2">
+                    <h4 class="text-xs sm:text-sm font-bold text-slate-800 truncate leading-snug" title="{{ $line['product']->name }}">
+                        {{ $line['product']->name }}
+                    </h4>
+                    @if($line['variant'])
+                    <p class="text-[11px] text-slate-500 font-medium mt-0.5 truncate">{{ $line['variant']->variant_name }}</p>
+                    @endif
+                </div>
+                <div class="text-right flex-shrink-0">
+                    <p class="text-xs sm:text-sm font-black text-slate-900 font-mono">Tk {{ number_format($line['subtotal'], 2) }}</p>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between mt-2.5">
+                {{-- Stepper matching screenshot [ - 2 + ] (no nested form tags) --}}
+                <div x-data="{ qty: {{ $line['qty'] }}, max: {{ $lineMax }}, loading: false }"
+                     class="inline-flex items-center bg-white border border-slate-200 rounded-lg shadow-2xs overflow-hidden">
+                    <button type="button"
+                            :disabled="loading"
+                            @click="if (qty > 1 && !loading) { qty--; loading = true; window.updateCheckoutQty && window.updateCheckoutQty('{{ $line['key'] }}', qty) }"
+                            class="w-7 h-7 flex items-center justify-center text-slate-500 hover:text-blue-600 hover:bg-slate-50 transition-colors font-bold text-xs leading-none cursor-pointer disabled:opacity-50">−</button>
+                    <span class="w-7 text-center text-xs font-bold text-slate-800 select-none" x-text="qty"></span>
+                    <button type="button"
+                            :disabled="loading"
+                            @click="if (qty < max && !loading) { qty++; loading = true; window.updateCheckoutQty && window.updateCheckoutQty('{{ $line['key'] }}', qty) }"
+                            class="w-7 h-7 flex items-center justify-center text-slate-500 hover:text-blue-600 hover:bg-slate-50 transition-colors font-bold text-xs leading-none cursor-pointer disabled:opacity-50">+</button>
+                </div>
+
+                <button type="button"
+                        @click="window.removeCheckoutQty && window.removeCheckoutQty('{{ $line['key'] }}')"
+                        class="text-slate-300 hover:text-red-500 transition-colors p-1 cursor-pointer" title="মুছে ফেলুন">
+                    <i class="fas fa-trash-can text-xs"></i>
+                </button>
+            </div>
         </div>
-
-        <form method="POST" action="{{ route('shop.cart.update') }}"
-              x-data="{ qty: {{ $line['qty'] }}, max: {{ $lineMax }} }" class="flex items-center border border-gray-200 rounded-lg flex-shrink-0">
-            @csrf
-            <button type="button" @click="if (qty > 1) { qty--; $nextTick(() => submitCartForm($el.closest('form'))) }"
-                    class="w-8 h-9 flex items-center justify-center text-gray-500 hover:text-brand-dark">
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M5 12h14"/></svg>
-            </button>
-            <span class="w-7 text-center text-sm font-bold" x-text="qty"></span>
-            <button type="button" @click="if (qty < max) { qty++; $nextTick(() => submitCartForm($el.closest('form'))) }"
-                    class="w-8 h-9 flex items-center justify-center text-gray-500 hover:text-brand-dark">
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
-            </button>
-            <input type="hidden" :name="'qty[{{ $line['key'] }}]'" :value="qty">
-        </form>
-
-        <p class="w-20 text-right font-extrabold text-gray-900 text-sm flex-shrink-0">{{ $currency }} {{ number_format($line['subtotal'], 0) }}</p>
-        <button type="submit" form="remove-form-{{ $line['key'] }}"
-                class="w-8 h-8 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 flex items-center justify-center transition-colors flex-shrink-0">
-            <i class="fas fa-trash text-xs"></i>
-        </button>
     </div>
+    @if(!$loop->last)
+    <div class="border-t border-blue-100/70"></div>
+    @endif
     @endforeach
-</div>
-<div class="p-4 border-t border-gray-100 flex items-center justify-end">
-    <a href="{{ route('shop.products.index') }}" class="text-sm text-gray-500 hover:text-brand-dark font-semibold">
-        <i class="fas fa-plus text-xs mr-1"></i> Add more items
-    </a>
+
+    <div class="pt-2.5 pb-0.5 flex items-center justify-end border-t border-blue-100/60">
+        <a href="{{ route('shop.products.index') }}" class="text-[11px] sm:text-xs text-blue-600 hover:text-blue-700 font-bold inline-flex items-center gap-1">
+            <i class="fas fa-plus text-[10px]"></i> আরও প্রোডাক্ট যোগ করুন
+        </a>
+    </div>
 </div>
 @endif

@@ -26,7 +26,7 @@
     </style>
     @stack('styles')
 </head>
-<body class="h-full bg-slate-50" x-data="{ sidebarOpen: false }">
+<body class="h-full bg-slate-50" x-data="{ sidebarOpen: false }" x-effect="if (sidebarOpen) setTimeout(() => window.dispatchEvent(new CustomEvent('sidebar-opened')), 100)">
 
 {{-- Mobile overlay --}}
 <div x-show="sidebarOpen" @click="sidebarOpen=false" x-cloak
@@ -48,7 +48,7 @@
     </div>
 
     {{-- Nav --}}
-    <nav class="flex-1 overflow-y-auto sidebar-scroll py-3 px-3 space-y-0.5">
+    <nav id="resellerSidebarNav" class="flex-1 overflow-y-auto sidebar-scroll py-3 px-3 space-y-0.5">
 
         <a href="{{ route('reseller.dashboard') }}"
            class="rnav-link {{ request()->routeIs('reseller.dashboard') ? 'active' : '' }}">
@@ -153,6 +153,93 @@
         </a>
     </div>
 </aside>
+
+{{-- ── Sidebar Scroll Position & Active Item View Manager ── --}}
+<script>
+(function() {
+    function getStoredScroll() {
+        try { return sessionStorage.getItem('reseller_sidebar_scroll'); } catch(e) { return null; }
+    }
+    function setStoredScroll(val) {
+        try { sessionStorage.setItem('reseller_sidebar_scroll', val); } catch(e) {}
+    }
+
+    function syncSidebarScroll(smooth) {
+        var nav = document.getElementById('resellerSidebarNav') || document.querySelector('aside.rsidebar nav');
+        if (!nav) return;
+
+        var savedScroll = getStoredScroll();
+        if (savedScroll !== null) {
+            nav.scrollTop = parseInt(savedScroll, 10);
+        }
+
+        var activeItem = nav.querySelector('.rnav-link.active, a.active');
+        if (activeItem) {
+            var navRect = nav.getBoundingClientRect();
+            var itemRect = activeItem.getBoundingClientRect();
+
+            if (navRect.height > 0 && itemRect.height > 0) {
+                var isVisible = (
+                    itemRect.top >= navRect.top + 20 &&
+                    itemRect.bottom <= navRect.bottom - 20
+                );
+
+                if (!isVisible) {
+                    var currentScroll = nav.scrollTop;
+                    var diff = (itemRect.top - navRect.top) - (navRect.height / 2) + (itemRect.height / 2);
+                    var targetScroll = Math.max(0, Math.round(currentScroll + diff));
+
+                    if (smooth) {
+                        nav.scrollTo({ top: targetScroll, behavior: 'smooth' });
+                    } else {
+                        nav.scrollTop = targetScroll;
+                    }
+                    setStoredScroll(nav.scrollTop);
+                }
+            }
+        }
+    }
+
+    syncSidebarScroll(false);
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function() { syncSidebarScroll(false); });
+    }
+    document.addEventListener('alpine:initialized', function() {
+        setTimeout(function() { syncSidebarScroll(false); }, 60);
+    });
+    window.addEventListener('load', function() { syncSidebarScroll(false); });
+    window.addEventListener('sidebar-opened', function() { syncSidebarScroll(false); });
+    window.addEventListener('resize', function() { syncSidebarScroll(false); });
+
+    function bindResellerSidebarHandlers() {
+        var nav = document.getElementById('resellerSidebarNav') || document.querySelector('aside.rsidebar nav');
+        if (!nav || nav.dataset.scrollBound) return;
+        nav.dataset.scrollBound = '1';
+
+        nav.addEventListener('click', function(e) {
+            var a = e.target.closest('a');
+            if (a && nav.contains(a)) {
+                setStoredScroll(nav.scrollTop);
+            }
+        });
+
+        var scrollTimer = null;
+        nav.addEventListener('scroll', function() {
+            clearTimeout(scrollTimer);
+            scrollTimer = setTimeout(function() {
+                setStoredScroll(nav.scrollTop);
+            }, 80);
+        }, { passive: true });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', bindResellerSidebarHandlers);
+    } else {
+        bindResellerSidebarHandlers();
+    }
+})();
+</script>
 
 {{-- MAIN CONTENT --}}
 <div class="lg:ml-[240px] min-h-screen flex flex-col">
