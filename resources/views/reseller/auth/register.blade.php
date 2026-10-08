@@ -28,7 +28,7 @@
             </div>
         @endif
 
-        <form method="POST" action="{{ route('reseller.register.submit') }}" class="space-y-4">
+        <form method="POST" action="{{ route('reseller.register.submit') }}" enctype="multipart/form-data" class="space-y-4">
             @csrf
 
             <div class="grid grid-cols-2 gap-3">
@@ -54,8 +54,8 @@
             </div>
 
             <div>
-                <label class="block text-indigo-200 text-sm font-semibold mb-1.5">Phone</label>
-                <input type="text" name="phone" value="{{ old('phone') }}"
+                <label class="block text-indigo-200 text-sm font-semibold mb-1.5">Phone *</label>
+                <input type="text" name="phone" value="{{ old('phone') }}" required
                        class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-2.5 text-white placeholder-indigo-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
                        placeholder="01XXXXXXXXX">
             </div>
@@ -65,6 +65,55 @@
                 <textarea name="address" rows="2"
                           class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-2.5 text-white placeholder-indigo-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 resize-none"
                           placeholder="Your delivery address">{{ old('address') }}</textarea>
+            </div>
+
+            {{-- Profile Photo --}}
+            <div class="p-3.5 rounded-2xl bg-white/5 border border-white/15 space-y-1.5">
+                <label class="block text-xs font-bold text-indigo-200">
+                    <i class="fas fa-camera text-indigo-400 mr-1"></i> নিজের ছবি (Your Photo) <span class="text-rose-400">*</span>
+                </label>
+                <input type="file" name="image" accept="image/*" required
+                       class="w-full text-xs text-indigo-200 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-indigo-500/30 file:text-indigo-200 hover:file:bg-indigo-500/40">
+            </div>
+
+            {{-- Own NID --}}
+            <div class="p-3.5 rounded-2xl bg-white/5 border border-white/15 space-y-3">
+                <div class="text-xs font-bold text-indigo-200 flex items-center gap-1.5">
+                    <i class="fas fa-id-card text-indigo-400"></i>
+                    <span>নিজের জাতীয় পরিচয়পত্র (Your NID Card) <span class="text-rose-400">*</span></span>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[11px] font-medium text-indigo-300 mb-1">সামনের ছবি (Front) *</label>
+                        <input type="file" name="nid_front" accept="image/*" required
+                               class="w-full text-xs text-indigo-200 file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-indigo-500/30 file:text-indigo-200">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-medium text-indigo-300 mb-1">পেছনের ছবি (Back) *</label>
+                        <input type="file" name="nid_back" accept="image/*" required
+                               class="w-full text-xs text-indigo-200 file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-indigo-500/30 file:text-indigo-200">
+                    </div>
+                </div>
+            </div>
+
+            {{-- Guardian NID --}}
+            <div class="p-3.5 rounded-2xl bg-white/5 border border-white/15 space-y-3">
+                <div class="text-xs font-bold text-indigo-200 flex items-center gap-1.5">
+                    <i class="fas fa-user-shield text-purple-400"></i>
+                    <span>অভিভাবকের জাতীয় পরিচয়পত্র (Guardian NID Card) <span class="text-rose-400">*</span></span>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[11px] font-medium text-indigo-300 mb-1">সামনের ছবি (Front) *</label>
+                        <input type="file" name="guardian_nid_front" accept="image/*" required
+                               class="w-full text-xs text-indigo-200 file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-purple-500/30 file:text-purple-200">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-medium text-indigo-300 mb-1">পেছনের ছবি (Back) *</label>
+                        <input type="file" name="guardian_nid_back" accept="image/*" required
+                               class="w-full text-xs text-indigo-200 file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-purple-500/30 file:text-purple-200">
+                    </div>
+                </div>
             </div>
 
             <div class="grid grid-cols-2 gap-3">

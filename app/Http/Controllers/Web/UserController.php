@@ -29,19 +29,49 @@ class UserController extends Controller
     public function store(Request $request, Vendor $branch)
     {
         $request->validate([
-            'name'     => 'required|string|max:255',
-            'email'    => 'required|email|unique:users',
-            'password' => 'required|min:6',
-            'role'     => 'required|exists:roles,name',
+            'name'                => 'required|string|max:255',
+            'email'               => 'required|email|unique:users',
+            'phone'               => 'nullable|string|max:30',
+            'password'            => 'required|min:6',
+            'role'                => 'required|exists:roles,name',
+            'image'               => 'required|image|max:5120',
+            'nid_front'           => 'required|image|max:5120',
+            'nid_back'            => 'required|image|max:5120',
+            'guardian_nid_front'  => 'required|image|max:5120',
+            'guardian_nid_back'   => 'required|image|max:5120',
+        ], [
+            'image.required'              => 'নিজের প্রোফাইল ছবি আপলোড করা আবশ্যক।',
+            'nid_front.required'          => 'নিজের NID ফ্রন্ট পেজ ছবি আপলোড করা আবশ্যক।',
+            'nid_back.required'           => 'নিজের NID ব্যাক পেজ ছবি আপলোড করা আবশ্যক।',
+            'guardian_nid_front.required' => 'অভিভাবকের NID ফ্রন্ট পেজ ছবি আপলোড করা আবশ্যক।',
+            'guardian_nid_back.required'  => 'অভিভাবকের NID ব্যাক পেজ ছবি আপলোড করা আবশ্যক।',
         ]);
 
-        $user = User::create([
+        $userData = [
             'name'      => $request->name,
             'email'     => $request->email,
+            'phone'     => $request->phone,
             'password'  => Hash::make($request->password),
             'vendor_id' => $branch->id,
-        ]);
+        ];
 
+        if ($request->hasFile('image')) {
+            $userData['image'] = $request->file('image')->store('users', 'uploads');
+        }
+        if ($request->hasFile('nid_front')) {
+            $userData['nid_front'] = $request->file('nid_front')->store('user_docs', 'uploads');
+        }
+        if ($request->hasFile('nid_back')) {
+            $userData['nid_back'] = $request->file('nid_back')->store('user_docs', 'uploads');
+        }
+        if ($request->hasFile('guardian_nid_front')) {
+            $userData['guardian_nid_front'] = $request->file('guardian_nid_front')->store('user_docs', 'uploads');
+        }
+        if ($request->hasFile('guardian_nid_back')) {
+            $userData['guardian_nid_back'] = $request->file('guardian_nid_back')->store('user_docs', 'uploads');
+        }
+
+        $user = User::create($userData);
         $user->assignRole($request->role);
 
         return back()->with('success', 'Staff member added.');
@@ -50,14 +80,39 @@ class UserController extends Controller
     public function update(Request $request, Vendor $branch, User $user)
     {
         $request->validate([
-            'name'     => 'required|string|max:255',
-            'email'    => 'required|email|unique:users,email,' . $user->id,
-            'password' => 'nullable|min:6',
-            'role'     => 'required|exists:roles,name',
+            'name'                => 'required|string|max:255',
+            'email'               => 'required|email|unique:users,email,' . $user->id,
+            'phone'               => 'nullable|string|max:30',
+            'password'            => 'nullable|min:6',
+            'role'                => 'required|exists:roles,name',
+            'image'               => 'nullable|image|max:5120',
+            'nid_front'           => 'nullable|image|max:5120',
+            'nid_back'            => 'nullable|image|max:5120',
+            'guardian_nid_front'  => 'nullable|image|max:5120',
+            'guardian_nid_back'   => 'nullable|image|max:5120',
         ]);
 
-        $user->update(['name' => $request->name, 'email' => $request->email]);
-        if ($request->password) $user->update(['password' => Hash::make($request->password)]);
+        $updateData = ['name' => $request->name, 'email' => $request->email];
+        if ($request->filled('phone')) $updateData['phone'] = $request->phone;
+        if ($request->password) $updateData['password'] = Hash::make($request->password);
+
+        if ($request->hasFile('image')) {
+            $updateData['image'] = $request->file('image')->store('users', 'uploads');
+        }
+        if ($request->hasFile('nid_front')) {
+            $updateData['nid_front'] = $request->file('nid_front')->store('user_docs', 'uploads');
+        }
+        if ($request->hasFile('nid_back')) {
+            $updateData['nid_back'] = $request->file('nid_back')->store('user_docs', 'uploads');
+        }
+        if ($request->hasFile('guardian_nid_front')) {
+            $updateData['guardian_nid_front'] = $request->file('guardian_nid_front')->store('user_docs', 'uploads');
+        }
+        if ($request->hasFile('guardian_nid_back')) {
+            $updateData['guardian_nid_back'] = $request->file('guardian_nid_back')->store('user_docs', 'uploads');
+        }
+
+        $user->update($updateData);
         $user->syncRoles([$request->role]);
 
         return back()->with('success', 'Staff member updated.');
@@ -93,20 +148,50 @@ class UserController extends Controller
     public function adminStore(Request $request)
     {
         $request->validate([
-            'name'      => 'required|string|max:255',
-            'email'     => 'required|email|unique:users',
-            'password'  => 'required|min:6',
-            'role'      => 'required|exists:roles,name',
-            'vendor_id' => 'required|exists:vendors,id',
+            'name'                => 'required|string|max:255',
+            'email'               => 'required|email|unique:users',
+            'phone'               => 'nullable|string|max:30',
+            'password'            => 'required|min:6',
+            'role'                => 'required|exists:roles,name',
+            'vendor_id'           => 'required|exists:vendors,id',
+            'image'               => 'required|image|max:5120',
+            'nid_front'           => 'required|image|max:5120',
+            'nid_back'            => 'required|image|max:5120',
+            'guardian_nid_front'  => 'required|image|max:5120',
+            'guardian_nid_back'   => 'required|image|max:5120',
+        ], [
+            'image.required'              => 'নিজের প্রোফাইল ছবি আপলোড করা আবশ্যক।',
+            'nid_front.required'          => 'নিজের NID ফ্রন্ট পেজ ছবি আপলোড করা আবশ্যক।',
+            'nid_back.required'           => 'নিজের NID ব্যাক পেজ ছবি আপলোড করা আবশ্যক।',
+            'guardian_nid_front.required' => 'অভিভাবকের NID ফ্রন্ট পেজ ছবি আপলোড করা আবশ্যক।',
+            'guardian_nid_back.required'  => 'অভিভাবকের NID ব্যাক পেজ ছবি আপলোড করা আবশ্যক।',
         ]);
 
-        $user = User::create([
+        $userData = [
             'name'      => $request->name,
             'email'     => $request->email,
+            'phone'     => $request->phone,
             'password'  => Hash::make($request->password),
             'vendor_id' => $request->vendor_id,
-        ]);
+        ];
 
+        if ($request->hasFile('image')) {
+            $userData['image'] = $request->file('image')->store('users', 'uploads');
+        }
+        if ($request->hasFile('nid_front')) {
+            $userData['nid_front'] = $request->file('nid_front')->store('user_docs', 'uploads');
+        }
+        if ($request->hasFile('nid_back')) {
+            $userData['nid_back'] = $request->file('nid_back')->store('user_docs', 'uploads');
+        }
+        if ($request->hasFile('guardian_nid_front')) {
+            $userData['guardian_nid_front'] = $request->file('guardian_nid_front')->store('user_docs', 'uploads');
+        }
+        if ($request->hasFile('guardian_nid_back')) {
+            $userData['guardian_nid_back'] = $request->file('guardian_nid_back')->store('user_docs', 'uploads');
+        }
+
+        $user = User::create($userData);
         $user->assignRole($request->role);
 
         return back()->with('success', 'Staff member added.');
@@ -115,15 +200,40 @@ class UserController extends Controller
     public function adminUpdate(Request $request, User $user)
     {
         $request->validate([
-            'name'      => 'required|string|max:255',
-            'email'     => 'required|email|unique:users,email,' . $user->id,
-            'password'  => 'nullable|min:6',
-            'role'      => 'required|exists:roles,name',
-            'vendor_id' => 'required|exists:vendors,id',
+            'name'                => 'required|string|max:255',
+            'email'               => 'required|email|unique:users,email,' . $user->id,
+            'phone'               => 'nullable|string|max:30',
+            'password'            => 'nullable|min:6',
+            'role'                => 'required|exists:roles,name',
+            'vendor_id'           => 'required|exists:vendors,id',
+            'image'               => 'nullable|image|max:5120',
+            'nid_front'           => 'nullable|image|max:5120',
+            'nid_back'            => 'nullable|image|max:5120',
+            'guardian_nid_front'  => 'nullable|image|max:5120',
+            'guardian_nid_back'   => 'nullable|image|max:5120',
         ]);
 
-        $user->update(['name' => $request->name, 'email' => $request->email, 'vendor_id' => $request->vendor_id]);
-        if ($request->password) $user->update(['password' => Hash::make($request->password)]);
+        $updateData = ['name' => $request->name, 'email' => $request->email, 'vendor_id' => $request->vendor_id];
+        if ($request->filled('phone')) $updateData['phone'] = $request->phone;
+        if ($request->password) $updateData['password'] = Hash::make($request->password);
+
+        if ($request->hasFile('image')) {
+            $updateData['image'] = $request->file('image')->store('users', 'uploads');
+        }
+        if ($request->hasFile('nid_front')) {
+            $updateData['nid_front'] = $request->file('nid_front')->store('user_docs', 'uploads');
+        }
+        if ($request->hasFile('nid_back')) {
+            $updateData['nid_back'] = $request->file('nid_back')->store('user_docs', 'uploads');
+        }
+        if ($request->hasFile('guardian_nid_front')) {
+            $updateData['guardian_nid_front'] = $request->file('guardian_nid_front')->store('user_docs', 'uploads');
+        }
+        if ($request->hasFile('guardian_nid_back')) {
+            $updateData['guardian_nid_back'] = $request->file('guardian_nid_back')->store('user_docs', 'uploads');
+        }
+
+        $user->update($updateData);
         $user->syncRoles([$request->role]);
 
         return back()->with('success', 'Staff member updated.');

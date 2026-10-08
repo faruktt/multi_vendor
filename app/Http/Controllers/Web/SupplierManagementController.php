@@ -213,7 +213,7 @@ class SupplierManagementController extends Controller
         ];
 
         $withdrawals = $query->latest()->paginate(20)->withQueryString();
-        $allSuppliers = Supplier::orderBy('name')->get(['id', 'name', 'company_name', 'phone']);
+        $allSuppliers = Supplier::orderBy('name')->get();
 
         return view('admin.suppliers.withdrawals', compact('withdrawals', 'stats', 'allSuppliers'));
     }
@@ -265,5 +265,74 @@ class SupplierManagementController extends Controller
         ]);
 
         return back()->with('success', 'সাপ্লায়ারের উইথড্র রিকোয়েস্ট বাতিল করা হয়েছে এবং কারণ সংরক্ষণ করা হয়েছে।');
+    }
+
+    /**
+     * Admin directly withdraws profit for a specific supplier without a prior request
+     */
+    public function withdrawProfit(Request $request, Supplier $supplier)
+    {
+        $availableBalance = (float) $supplier->availableBalance();
+
+        $request->validate([
+            'amount'          => ['required', 'numeric', 'min:0.01', 'max:' . max(0.01, $availableBalance)],
+            'payment_method'  => 'required|string|in:bkash,nagad,rocket,bank,cash',
+            'payment_details' => 'nullable|string|max:500',
+            'note'            => 'nullable|string|max:1000',
+            'admin_note'      => 'nullable|string|max:1000',
+        ], [
+            'amount.required'         => 'উত্তোলনের পরিমাণ লিখুন।',
+            'amount.min'              => 'উত্তোলনের পরিমাণ কমপক্ষে ৳০.০১ হতে হবে।',
+            'amount.max'              => 'উত্তোলনের পরিমাণ বর্তমান উপলব্ধ ব্যালেন্স (৳' . number_format($availableBalance, 2) . ') এর বেশি হতে পারবে না।',
+            'payment_method.required' => 'পেমেন্ট মেথড নির্বাচন করুন।',
+            'payment_method.in'       => 'সঠিক পেমেন্ট মেথড নির্বাচন করুন।',
+        ]);
+
+        if ($availableBalance <= 0 || (float) $request->amount > $availableBalance) {
+            return back()->with('error', 'উত্তোলনের পরিমাণ বর্তমান উপলব্ধ ব্যালেন্স (৳' . number_format($availableBalance, 2) . ') এর বেশি হতে পারবে না। বর্তমান ব্যালেন্স: ৳' . number_format($availableBalance, 2));
+        }
+
+        $paymentDetails = $request->payment_details;
+        if (empty(trim((string) $paymentDetails))) {
+            $paymentDetails = match ($request->payment_method) {
+                'bkash'  => $supplier->bkash_number ? "bKash: {$supplier->bkash_number}" : 'Direct bKash Payout',
+                'bank'   => $supplier->bank_info ?: 'Direct Bank Transfer',
+                'cash'   => 'Cash Payout (ক্যাশ পেমেন্ট)',
+                'nagad'  => 'Nagad Payout',
+                'rocket' => 'Rocket Payout',
+                default  => 'Admin Direct Payout',
+            };
+        }
+
+        $withdrawal = SupplierWithdrawal::create([
+            'supplier_id'     => $supplier->id,
+            'amount'          => round((float) $request->amount, 2),
+            'payment_method'  => $request->payment_method,
+            'payment_details' => $paymentDetails,
+            'status'          => 'approved',
+            'note'            => $request->note ?: 'এডমিন কর্তৃক সরাসরি প্রফিট উত্তোলন / পরিশোধ',
+            'admin_note'      => $request->admin_note ?: ($request->note ?: 'Admin Direct Payout'),
+            'processed_by'    => auth()->id(),
+            'processed_at'    => Carbon::now(),
+        ]);
+
+        return back()->with('success', 'সাপ্লায়ার "' . $supplier->display_name . '" এর প্রফিট থেকে ৳' . number_format($withdrawal->amount, 2) . ' সফলভাবে উত্তোলন করা হয়েছে এবং ব্যালেন্স থেকে কর্তন করা হয়েছে।');
+    }
+
+    /**
+     * Admin directly withdraws profit from the withdrawals page (selecting supplier from dropdown)
+     */
+    public function withdrawProfitDirect(Request $request)
+    {
+        $request->validate([
+            'supplier_id' => 'required|exists:suppliers,id',
+        ], [
+            'supplier_id.required' => 'দয়া করে একজন সাপ্লায়ার নির্বাচন করুন।',
+            'supplier_id.exists'   => 'নির্বাচিত সাপ্লায়ার পাওয়া যায়নি।',
+        ]);
+
+        $supplier = Supplier::findOrFail($request->supplier_id);
+
+        return $this->withdrawProfit($request, $supplier);
     }
 }

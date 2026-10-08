@@ -11,7 +11,9 @@ class Reseller extends Authenticatable
     use HasFactory, Notifiable;
 
     protected $fillable = [
-        'name', 'email', 'password', 'phone', 'business_name', 'address', 'image', 'status', 'approved_at',
+        'name', 'email', 'password', 'phone', 'business_name', 'address', 'image',
+        'nid_front', 'nid_back', 'guardian_nid_front', 'guardian_nid_back',
+        'status', 'approved_at',
     ];
 
     protected $hidden = ['password', 'remember_token'];
@@ -22,19 +24,49 @@ class Reseller extends Authenticatable
 
     protected $appends = [
         'image_url',
+        'nid_front_url',
+        'nid_back_url',
+        'guardian_nid_front_url',
+        'guardian_nid_back_url',
+        'available_balance',
     ];
 
     public function getImageUrlAttribute(): ?string
     {
-        if (!$this->image) {
+        return $this->resolveFileUrl($this->image);
+    }
+
+    public function getNidFrontUrlAttribute(): ?string
+    {
+        return $this->resolveFileUrl($this->nid_front);
+    }
+
+    public function getNidBackUrlAttribute(): ?string
+    {
+        return $this->resolveFileUrl($this->nid_back);
+    }
+
+    public function getGuardianNidFrontUrlAttribute(): ?string
+    {
+        return $this->resolveFileUrl($this->guardian_nid_front);
+    }
+
+    public function getGuardianNidBackUrlAttribute(): ?string
+    {
+        return $this->resolveFileUrl($this->guardian_nid_back);
+    }
+
+    protected function resolveFileUrl(?string $path): ?string
+    {
+        if (!$path) {
             return null;
         }
 
-        if (str_starts_with($this->image, 'http://') || str_starts_with($this->image, 'https://')) {
-            return $this->image;
+        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+            return $path;
         }
 
-        return asset('uploads/' . ltrim($this->image, '/'));
+        return asset('uploads/' . ltrim($path, '/'));
     }
 
     public function isActive(): bool

@@ -359,10 +359,16 @@
                 $pendingSupplierWithdrawalsCount = \App\Models\SupplierWithdrawal::where('status', 'pending')->count();
             @endphp
 
-                  <a href="{{ route('admin.suppliers.manage') }}" class="nav-link {{ request()->routeIs('admin.suppliers.*') ? 'is-active' : '' }}">
+            <a href="{{ route('admin.suppliers.manage') }}" class="nav-link {{ request()->routeIs('admin.suppliers.manage*') ? 'is-active' : '' }}">
                 <span class="icon"><i class="fas fa-store text-[11px]"></i></span> Suppliers / Vendors
                 @if($pendingSupplierCount > 0)
                     <span class="ml-auto px-1.5 py-0.5 text-[10px] rounded-full bg-amber-400 text-amber-950 font-black animate-pulse">{{ $pendingSupplierCount }}</span>
+                @endif
+            </a>
+            <a href="{{ route('admin.suppliers.withdrawals') }}" class="nav-link {{ request()->routeIs('admin.suppliers.withdrawals*') ? 'is-active' : '' }}">
+                <span class="icon"><i class="fas fa-wallet text-[11px] text-emerald-400"></i></span> Supplier Withdrawals
+                @if($pendingSupplierWithdrawalsCount > 0)
+                    <span class="ml-auto px-1.5 py-0.5 text-[10px] rounded-full bg-amber-400 text-amber-950 font-black animate-pulse">{{ $pendingSupplierWithdrawalsCount }}</span>
                 @endif
             </a>
             <a href="{{ route('admin.supplier-sales.index') }}" class="nav-link {{ request()->routeIs('admin.supplier-sales.*') ? 'is-active' : '' }}">

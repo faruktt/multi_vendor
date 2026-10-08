@@ -418,4 +418,69 @@ class ModeratorManagementController extends Controller
 
         return back()->with('success', 'মডারেটরের উইথড্র রিকোয়েস্ট বাতিল করা হয়েছে এবং কারণ সংরক্ষণ করা হয়েছে।');
     }
+
+    /**
+     * Direct profit/salary withdrawal for a specific moderator by admin
+     */
+    public function withdrawProfit(Request $request, Moderator $moderator)
+    {
+        $request->validate([
+            'amount'          => 'required|numeric|min:0.01',
+            'payment_method'  => 'nullable|string|max:50',
+            'payment_details' => 'nullable|string|max:255',
+            'note'            => 'nullable|string|max:255',
+        ]);
+
+        $available = $moderator->availableBalance();
+        if ($available <= 0 || $request->amount > $available) {
+            return back()->with('error', 'উইথড্র পরিমাণ বিদ্যমান ব্যালেন্সের বেশি হতে পারবে না (সর্বোচ্চ ৳' . number_format($available, 2) . ')।');
+        }
+
+        ModeratorWithdrawal::create([
+            'moderator_id'    => $moderator->id,
+            'amount'          => round((float) $request->amount, 2),
+            'payment_method'  => $request->payment_method ?? 'bkash',
+            'payment_details' => $request->payment_details ?? 'Admin Direct Payout',
+            'note'            => $request->note,
+            'status'          => 'approved',
+            'processed_by'    => auth()->id(),
+            'processed_at'    => Carbon::now(),
+        ]);
+
+        return back()->with('success', 'মডারেটর (' . $moderator->name . ') এর বেতন/প্রফিট ৳' . number_format($request->amount, 2) . ' সফলভাবে উইথড্র ও কর্তন করা হয়েছে।');
+    }
+
+    /**
+     * Direct profit/salary withdrawal choosing moderator from modal
+     */
+    public function withdrawProfitDirect(Request $request)
+    {
+        $request->validate([
+            'moderator_id'    => 'required|exists:moderators,id',
+            'amount'          => 'required|numeric|min:0.01',
+            'payment_method'  => 'nullable|string|max:50',
+            'payment_details' => 'nullable|string|max:255',
+            'note'            => 'nullable|string|max:255',
+        ]);
+
+        $moderator = Moderator::findOrFail($request->moderator_id);
+        $available = $moderator->availableBalance();
+
+        if ($available <= 0 || $request->amount > $available) {
+            return back()->with('error', 'উইথড্র পরিমাণ বিদ্যমান ব্যালেন্সের বেশি হতে পারবে না (সর্বোচ্চ ৳' . number_format($available, 2) . ')।');
+        }
+
+        ModeratorWithdrawal::create([
+            'moderator_id'    => $moderator->id,
+            'amount'          => round((float) $request->amount, 2),
+            'payment_method'  => $request->payment_method ?? 'bkash',
+            'payment_details' => $request->payment_details ?? 'Admin Direct Payout',
+            'note'            => $request->note,
+            'status'          => 'approved',
+            'processed_by'    => auth()->id(),
+            'processed_at'    => Carbon::now(),
+        ]);
+
+        return back()->with('success', 'মডারেটর (' . $moderator->name . ') এর বেতন/প্রফিট ৳' . number_format($request->amount, 2) . ' সফলভাবে উইথড্র ও কর্তন করা হয়েছে।');
+    }
 }

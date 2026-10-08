@@ -1,131 +1,142 @@
 <!DOCTYPE html>
-<html lang="en" class="h-full">
+<html lang="bn" class="h-full">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Supplier Login — {{ config('app.name', 'Marketplace') }}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Plus Jakarta Sans', 'Hind Siliguri', sans-serif; }
+    </style>
+</head>
+<body class="min-h-full bg-gradient-to-br from-slate-950 via-[#042017] to-slate-900 flex items-center justify-center p-4 selection:bg-emerald-500 selection:text-white relative overflow-x-hidden">
+
+    <!-- Ambient Glowing Lights -->
+    <div class="fixed top-0 left-1/4 w-96 h-96 bg-emerald-500/20 rounded-full blur-[130px] pointer-events-none"></div>
+    <div class="fixed bottom-0 right-1/4 w-96 h-96 bg-teal-500/15 rounded-full blur-[130px] pointer-events-none"></div>
+
+    <div class="w-full max-w-[430px] relative z-10 py-6">
+
+        <!-- ── Main Card (কার্ড স্টাইল) ── -->
+        <div class="bg-white/10 backdrop-blur-2xl border border-white/20 rounded-3xl p-7 sm:p-9 shadow-2xl shadow-black/70 relative">
+
+            <!-- Card Header (Inside Card) -->
+            <div class="text-center mb-6">
+                <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center mx-auto mb-3.5 shadow-xl shadow-emerald-500/30">
+                    <i class="fas fa-boxes-stacked text-white text-2xl"></i>
+                </div>
+                <h1 class="text-2xl font-black text-white tracking-tight">সাপ্লায়ার লগইন</h1>
+                <p class="text-emerald-200/80 text-xs mt-1 font-medium">Supplier Portal</p>
+            </div>
+
+            <!-- Alerts -->
+            @if(session('success'))
+            <div class="mb-4 bg-emerald-500/20 border border-emerald-400/40 text-emerald-200 rounded-2xl px-4 py-3 text-xs flex items-center gap-2">
+                <i class="fas fa-circle-check text-emerald-400 flex-shrink-0"></i>
+                <span>{{ session('success') }}</span>
+            </div>
+            @endif
+
+            @if($errors->any())
+            <div class="mb-4 bg-rose-500/20 border border-rose-400/40 text-rose-200 rounded-2xl px-4 py-3 text-xs flex items-start gap-2">
+                <i class="fas fa-circle-exclamation text-rose-400 flex-shrink-0 mt-0.5"></i>
+                <div class="space-y-0.5 font-medium">
+                    @foreach($errors->all() as $err)
+                        <div>{{ $err }}</div>
+                    @endforeach
+                </div>
+            </div>
+            @endif
+
+            <!-- Form -->
+            <form method="POST" action="{{ route('supplier.login.submit') }}" class="space-y-4">
+                @csrf
+
+                <!-- Email -->
+                <div>
+                    <label class="block text-emerald-100 text-xs font-bold mb-1.5 uppercase tracking-wider">ইমেইল *</label>
+                    <div class="relative">
+                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-200/60 text-sm">
+                            <i class="fas fa-envelope"></i>
+                        </span>
+                        <input type="email" name="email" value="{{ old('email') }}" required autofocus
+                               placeholder="supplier@mail.com"
+                               class="w-full bg-white/10 border border-white/20 rounded-2xl pl-11 pr-4 py-3 text-white placeholder-emerald-100/40 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all">
+                    </div>
+                </div>
+
+                <!-- Password -->
+                <div>
+                    <label class="block text-emerald-100 text-xs font-bold mb-1.5 uppercase tracking-wider">পাসওয়ার্ড *</label>
+                    <div class="relative">
+                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-200/60 text-sm">
+                            <i class="fas fa-lock"></i>
+                        </span>
+                        <input type="password" id="supplier_password" name="password" required
+                               placeholder="••••••••"
+                               class="w-full bg-white/10 border border-white/20 rounded-2xl pl-11 pr-11 py-3 text-white placeholder-emerald-100/40 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all">
+                        <button type="button" onclick="togglePass('supplier_password', this)"
+                                class="absolute right-4 top-1/2 -translate-y-1/2 text-emerald-200/60 hover:text-white text-sm focus:outline-none">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Remember Me -->
+                <div class="flex items-center justify-between text-xs pt-0.5">
+                    <label class="flex items-center gap-2 cursor-pointer select-none text-emerald-100/80 hover:text-white">
+                        <input type="checkbox" name="remember" class="w-4 h-4 rounded border-white/30 bg-white/10 text-emerald-500 focus:ring-emerald-400 focus:ring-offset-0">
+                        <span>মনে রাখুন</span>
+                    </label>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit"
+                        class="w-full py-3 px-4 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-bold text-sm shadow-xl shadow-emerald-500/30 transition-all transform active:scale-[0.99] flex items-center justify-center gap-2 mt-2">
+                    <span>প্রবেশ করুন</span>
+                    <i class="fas fa-arrow-right text-xs"></i>
+                </button>
+            </form>
+
+            <!-- Card Footer -->
+            <div class="mt-6 pt-5 border-t border-white/15 text-center">
+                <p class="text-xs text-emerald-100/80">
+                    একাউন্ট নেই?
+                    <a href="{{ route('supplier.register') }}" class="text-white font-bold ml-1 hover:underline underline-offset-2">
+                        রেজিস্ট্রেশন করুন
+                    </a>
+                </p>
+            </div>
+
+        </div>
+
+        <!-- Back to Website -->
+        <div class="text-center mt-5">
+            <a href="{{ url('/') }}" class="text-xs text-emerald-200/60 hover:text-white inline-flex items-center gap-1.5 transition-colors">
+                <i class="fas fa-arrow-left text-[10px]"></i> ওয়েবসাইটে ফিরে যান
+            </a>
+        </div>
+
+    </div>
+
     <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        supplier: {
-                            500: '#10b981',
-                            600: '#059669',
-                            700: '#047857',
-                            900: '#064e3b',
-                        }
-                    }
-                }
+        function togglePass(id, btn) {
+            const input = document.getElementById(id);
+            const icon = btn.querySelector('i');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
             }
         }
     </script>
-</head>
-<body class="min-h-full bg-slate-900 flex items-center justify-center p-4 selection:bg-emerald-500 selection:text-white relative overflow-hidden">
-
-{{-- Background Glow / Mesh --}}
-<div class="absolute -top-40 -left-40 w-96 h-96 bg-emerald-600/20 rounded-full blur-3xl pointer-events-none"></div>
-<div class="absolute -bottom-40 -right-40 w-96 h-96 bg-teal-500/20 rounded-full blur-3xl pointer-events-none"></div>
-
-<div class="w-full max-w-md relative z-10">
-
-    {{-- Header / Logo --}}
-    <div class="text-center mb-6">
-        <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-400 text-white text-2xl shadow-xl shadow-emerald-500/25 mb-3">
-            <i class="fas fa-store"></i>
-        </div>
-        <h1 class="text-2xl font-black text-white tracking-tight">Supplier Portal</h1>
-        <p class="text-slate-400 text-xs mt-1">Sign in to manage your products, stock, and orders</p>
-    </div>
-
-    {{-- Card --}}
-    <div class="bg-slate-800/80 backdrop-blur-xl border border-slate-700/80 rounded-3xl p-7 shadow-2xl">
-
-        {{-- Alerts --}}
-        @if(session('success'))
-        <div class="mb-5 p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs flex items-start gap-2.5">
-            <i class="fas fa-circle-check text-base flex-shrink-0 mt-0.5"></i>
-            <div>{{ session('success') }}</div>
-        </div>
-        @endif
-
-        @if($errors->any())
-        <div class="mb-5 p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs flex items-start gap-2.5">
-            <i class="fas fa-circle-exclamation text-base flex-shrink-0 mt-0.5"></i>
-            <div>
-                @foreach($errors->all() as $err)
-                    <div>{{ $err }}</div>
-                @endforeach
-            </div>
-        </div>
-        @endif
-
-        <form method="POST" action="{{ route('supplier.login.submit') }}" class="space-y-4">
-            @csrf
-
-            {{-- Email --}}
-            <div>
-                <label class="block text-xs font-semibold text-slate-300 mb-1.5">Email Address</label>
-                <div class="relative">
-                    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500 text-xs pointer-events-none">
-                        <i class="fas fa-envelope"></i>
-                    </span>
-                    <input type="email" name="email" value="{{ old('email') }}" required autofocus
-                           placeholder="supplier@store.com"
-                           class="w-full bg-slate-900/90 border border-slate-700 rounded-xl pl-9 pr-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all">
-                </div>
-            </div>
-
-            {{-- Password --}}
-            <div>
-                <label class="block text-xs font-semibold text-slate-300 mb-1.5">Password</label>
-                <div class="relative">
-                    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500 text-xs pointer-events-none">
-                        <i class="fas fa-lock"></i>
-                    </span>
-                    <input type="password" name="password" required
-                           placeholder="••••••••"
-                           class="w-full bg-slate-900/90 border border-slate-700 rounded-xl pl-9 pr-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all">
-                </div>
-            </div>
-
-            {{-- Remember Me --}}
-            <div class="flex items-center justify-between pt-1">
-                <label class="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" name="remember" class="w-4 h-4 rounded border-slate-700 text-emerald-600 focus:ring-emerald-500 bg-slate-900">
-                    <span class="text-xs text-slate-400">Remember me</span>
-                </label>
-            </div>
-
-            {{-- Submit --}}
-            <button type="submit"
-                    class="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white font-bold text-sm shadow-lg shadow-emerald-600/30 transition-all transform active:scale-[0.99] flex items-center justify-center gap-2">
-                <span>Sign In to Portal</span>
-                <i class="fas fa-arrow-right text-xs"></i>
-            </button>
-        </form>
-
-        <div class="mt-6 pt-5 border-t border-slate-700/60 text-center">
-            <p class="text-xs text-slate-400">
-                Don't have a supplier account yet?
-                <a href="{{ route('supplier.register') }}" class="text-emerald-400 hover:text-emerald-300 font-bold ml-1 hover:underline">
-                    Register Here
-                </a>
-            </p>
-        </div>
-
-    </div>
-
-    {{-- Back to shop --}}
-    <div class="text-center mt-6">
-        <a href="{{ url('/') }}" class="text-xs text-slate-500 hover:text-slate-300 inline-flex items-center gap-1.5 transition-colors">
-            <i class="fas fa-arrow-left text-[10px]"></i> Back to Main Website
-        </a>
-    </div>
-
-</div>
-
 </body>
 </html>

@@ -3,7 +3,7 @@
 @section('heading', 'Reseller Management')
 
 @section('content')
-<div class="py-4 space-y-6">
+<div class="py-4 space-y-6" x-data="resellerAdminManager()">
 
     {{-- Sub Navigation Tabs --}}
     <div class="flex items-center gap-2 border-b border-slate-200 pb-3">
@@ -92,8 +92,13 @@
 
             <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200/80 pb-4 mb-6">
                 <div class="flex items-center gap-3">
-                    <div class="w-12 h-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center font-black text-xl shadow-md shadow-indigo-300">
-                        {{ strtoupper(substr($selectedReseller->name, 0, 1)) }}
+                    <div class="w-12 h-12 rounded-2xl bg-indigo-600 text-white overflow-hidden flex items-center justify-center font-black text-xl shadow-md shadow-indigo-300 flex-shrink-0">
+                        @if($selectedReseller->image_url)
+                            <img src="{{ $selectedReseller->image_url }}" alt="{{ $selectedReseller->name }}" class="w-full h-full object-cover cursor-pointer"
+                                 @click="previewImage('{{ $selectedReseller->image_url }}', '{{ addslashes($selectedReseller->name) }} (Profile Photo)')">
+                        @else
+                            {{ strtoupper(substr($selectedReseller->name, 0, 1)) }}
+                        @endif
                     </div>
                     <div>
                         <div class="flex items-center gap-2">
@@ -218,6 +223,48 @@
                         <span class="text-xs font-bold {{ $selectedReseller->status === 'active' ? 'text-emerald-600' : ($selectedReseller->status === 'pending' ? 'text-yellow-600' : 'text-red-600') }}">
                             {{ ucfirst($selectedReseller->status) }}
                         </span>
+                    </div>
+
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+                        <span class="text-xs font-medium text-slate-500">NID (নিজ)</span>
+                        <div class="flex items-center gap-1.5">
+                            @if($selectedReseller->nid_front_url)
+                                <button type="button" @click="previewImage('{{ $selectedReseller->nid_front_url }}', '{{ addslashes($selectedReseller->name) }} - Reseller NID Front')"
+                                        class="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 font-bold text-xs border border-indigo-200 hover:bg-indigo-100 cursor-pointer">
+                                    Front
+                                </button>
+                            @endif
+                            @if($selectedReseller->nid_back_url)
+                                <button type="button" @click="previewImage('{{ $selectedReseller->nid_back_url }}', '{{ addslashes($selectedReseller->name) }} - Reseller NID Back')"
+                                        class="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 font-bold text-xs border border-indigo-200 hover:bg-indigo-100 cursor-pointer">
+                                    Back
+                                </button>
+                            @endif
+                            @if(!$selectedReseller->nid_front_url && !$selectedReseller->nid_back_url)
+                                <span class="text-slate-300 text-xs">নেই</span>
+                            @endif
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+                        <span class="text-xs font-medium text-slate-500">Guardian NID</span>
+                        <div class="flex items-center gap-1.5">
+                            @if($selectedReseller->guardian_nid_front_url)
+                                <button type="button" @click="previewImage('{{ $selectedReseller->guardian_nid_front_url }}', '{{ addslashes($selectedReseller->name) }} - Guardian NID Front')"
+                                        class="px-2 py-0.5 rounded bg-teal-50 text-teal-700 font-bold text-xs border border-teal-200 hover:bg-teal-100 cursor-pointer">
+                                    Front
+                                </button>
+                            @endif
+                            @if($selectedReseller->guardian_nid_back_url)
+                                <button type="button" @click="previewImage('{{ $selectedReseller->guardian_nid_back_url }}', '{{ addslashes($selectedReseller->name) }} - Guardian NID Back')"
+                                        class="px-2 py-0.5 rounded bg-teal-50 text-teal-700 font-bold text-xs border border-teal-200 hover:bg-teal-100 cursor-pointer">
+                                    Back
+                                </button>
+                            @endif
+                            @if(!$selectedReseller->guardian_nid_front_url && !$selectedReseller->guardian_nid_back_url)
+                                <span class="text-slate-300 text-xs">নেই</span>
+                            @endif
+                        </div>
                     </div>
 
                     <div class="flex items-center justify-between pt-1">
@@ -447,6 +494,7 @@
                     <tr>
                         <th class="px-5 py-3.5 text-left">Reseller Info</th>
                         <th class="px-5 py-3.5 text-left">Business</th>
+                        <th class="px-4 py-3.5 text-center">NID ডকুমেন্টস</th>
                         <th class="px-5 py-3.5 text-center">Orders</th>
                         <th class="px-5 py-3.5 text-right">Total Sales</th>
                         <th class="px-5 py-3.5 text-right">Available Profit</th>
@@ -461,8 +509,13 @@
                         <tr class="hover:bg-indigo-50/30 transition-colors {{ (isset($selectedReseller) && $selectedReseller->id == $r->id) ? 'bg-indigo-50/60 font-semibold' : '' }}">
                             <td class="px-5 py-3.5">
                                 <div class="flex items-center gap-3">
-                                    <div class="w-9 h-9 rounded-xl bg-slate-100 text-slate-700 font-bold flex items-center justify-center text-sm flex-shrink-0">
-                                        {{ strtoupper(substr($r->name, 0, 1)) }}
+                                    <div class="w-9 h-9 rounded-xl bg-slate-100 text-slate-700 font-bold flex items-center justify-center text-sm flex-shrink-0 overflow-hidden">
+                                        @if($r->image_url)
+                                            <img src="{{ $r->image_url }}" alt="{{ $r->name }}" class="w-full h-full object-cover cursor-pointer"
+                                                 @click="previewImage('{{ $r->image_url }}', '{{ addslashes($r->name) }} (Profile Photo)')">
+                                        @else
+                                            {{ strtoupper(substr($r->name, 0, 1)) }}
+                                        @endif
                                     </div>
                                     <div>
                                         <div class="font-bold text-slate-800">{{ $r->name }}</div>
@@ -475,6 +528,50 @@
                             <td class="px-5 py-3.5">
                                 <div class="font-bold text-slate-700">{{ $r->business_name ?? '—' }}</div>
                                 <div class="text-xs text-slate-400 truncate max-w-[160px]">{{ $r->address ?? '' }}</div>
+                            </td>
+
+                            {{-- NID & Documents --}}
+                            <td class="px-4 py-3.5 text-center whitespace-nowrap">
+                                <div class="flex flex-col items-center gap-1 text-[10px]">
+                                    {{-- Reseller NID --}}
+                                    <div class="flex items-center gap-1">
+                                        <span class="text-slate-400 font-semibold">NID:</span>
+                                        @if($r->nid_front_url)
+                                            <button type="button" @click="previewImage('{{ $r->nid_front_url }}', '{{ addslashes($r->name) }} - Reseller NID Front')"
+                                                    class="px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 font-bold border border-indigo-200 hover:bg-indigo-100 cursor-pointer">
+                                                Front
+                                            </button>
+                                        @endif
+                                        @if($r->nid_back_url)
+                                            <button type="button" @click="previewImage('{{ $r->nid_back_url }}', '{{ addslashes($r->name) }} - Reseller NID Back')"
+                                                    class="px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 font-bold border border-indigo-200 hover:bg-indigo-100 cursor-pointer">
+                                                Back
+                                            </button>
+                                        @endif
+                                        @if(!$r->nid_front_url && !$r->nid_back_url)
+                                            <span class="text-slate-300">নেই</span>
+                                        @endif
+                                    </div>
+                                    {{-- Guardian NID --}}
+                                    <div class="flex items-center gap-1">
+                                        <span class="text-slate-400 font-semibold">G-NID:</span>
+                                        @if($r->guardian_nid_front_url)
+                                            <button type="button" @click="previewImage('{{ $r->guardian_nid_front_url }}', '{{ addslashes($r->name) }} - Guardian NID Front')"
+                                                    class="px-1.5 py-0.5 rounded bg-teal-50 text-teal-700 font-bold border border-teal-200 hover:bg-teal-100 cursor-pointer">
+                                                Front
+                                            </button>
+                                        @endif
+                                        @if($r->guardian_nid_back_url)
+                                            <button type="button" @click="previewImage('{{ $r->guardian_nid_back_url }}', '{{ addslashes($r->name) }} - Guardian NID Back')"
+                                                    class="px-1.5 py-0.5 rounded bg-teal-50 text-teal-700 font-bold border border-teal-200 hover:bg-teal-100 cursor-pointer">
+                                                Back
+                                            </button>
+                                        @endif
+                                        @if(!$r->guardian_nid_front_url && !$r->guardian_nid_back_url)
+                                            <span class="text-slate-300">নেই</span>
+                                        @endif
+                                    </div>
+                                </div>
                             </td>
 
                             <td class="px-5 py-3.5 text-center">
@@ -612,7 +709,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="px-5 py-12 text-center text-slate-400">
+                            <td colspan="9" class="px-5 py-12 text-center text-slate-400">
                                 <div class="flex flex-col items-center justify-center">
                                     <i class="fas fa-users-slash text-4xl mb-2 text-slate-300"></i>
                                     <span class="font-semibold text-slate-500">No resellers found</span>
@@ -632,5 +729,49 @@
         @endif
     </div>
 
+    {{-- ── Image Lightbox Preview Modal ── --}}
+    <div x-show="previewModalOpen" x-cloak
+         class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+         @keydown.escape.window="previewModalOpen = false">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-2xl w-full overflow-hidden flex flex-col" @click.outside="previewModalOpen = false">
+            <div class="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                <span class="text-xs font-bold text-slate-800 truncate" x-text="previewTitle"></span>
+                <button type="button" @click="previewModalOpen = false" class="text-slate-400 hover:text-slate-600">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="p-4 flex items-center justify-center bg-slate-900/5 max-h-[75vh] overflow-auto">
+                <img :src="previewSrc" :alt="previewTitle" class="max-w-full max-h-[70vh] rounded-xl object-contain shadow-md">
+            </div>
+            <div class="p-3 bg-slate-50 border-t border-slate-100 flex justify-between items-center text-xs">
+                <a :href="previewSrc" target="_blank" class="text-indigo-600 hover:underline font-bold flex items-center gap-1">
+                    <i class="fas fa-external-link-alt text-[10px]"></i>
+                    <span>আসল সাইজে দেখুন</span>
+                </a>
+                <button type="button" @click="previewModalOpen = false" class="px-4 py-1.5 rounded-xl bg-slate-200 text-slate-700 font-bold hover:bg-slate-300">
+                    বন্ধ করুন
+                </button>
+            </div>
+        </div>
+    </div>
+
 </div>
 @endsection
+
+@push('scripts')
+<script>
+function resellerAdminManager() {
+    return {
+        previewModalOpen: false,
+        previewSrc: '',
+        previewTitle: '',
+
+        previewImage(src, title) {
+            this.previewSrc = src;
+            this.previewTitle = title;
+            this.previewModalOpen = true;
+        }
+    };
+}
+</script>
+@endpush

@@ -239,7 +239,38 @@ class ResellerManagementController extends Controller
             'created_by'      => auth()->id(),
         ]);
 
-        return back()->with('success', 'Profit deducted successfully.');
+        return back()->with('success', 'রিসেলার (' . $reseller->name . ') এর প্রফিট ৳' . number_format($request->amount, 2) . ' সফলভাবে উইথড্র ও কর্তন করা হয়েছে।');
+    }
+
+    public function withdrawProfitDirect(Request $request)
+    {
+        $request->validate([
+            'reseller_id'     => 'required|exists:resellers,id',
+            'amount'          => 'required|numeric|min:0.01',
+            'payment_method'  => 'nullable|string|max:50',
+            'payment_details' => 'nullable|string|max:255',
+            'note'            => 'nullable|string|max:255',
+        ]);
+
+        $reseller = Reseller::findOrFail($request->reseller_id);
+
+        if ($reseller->available_balance <= 0 || $request->amount > $reseller->available_balance) {
+            return back()->with('error', 'উইথড্র পরিমাণ বিদ্যমান ব্যালেন্সের বেশি হতে পারবে না (সর্বোচ্চ ৳' . number_format(max(0, $reseller->available_balance), 2) . ')।');
+        }
+
+        ResellerWithdrawal::create([
+            'reseller_id'     => $reseller->id,
+            'amount'          => round((float) $request->amount, 2),
+            'payment_method'  => $request->payment_method ?? 'cash',
+            'payment_details' => $request->payment_details ?? 'Admin Direct Payout',
+            'note'            => $request->note,
+            'status'          => 'approved',
+            'processed_by'    => auth()->id(),
+            'processed_at'    => now(),
+            'created_by'      => auth()->id(),
+        ]);
+
+        return back()->with('success', 'রিসেলার (' . $reseller->name . ') এর প্রফিট ৳' . number_format($request->amount, 2) . ' সফলভাবে উইথড্র ও কর্তন করা হয়েছে।');
     }
 
     /** List all reseller withdrawal requests with filters and stats */

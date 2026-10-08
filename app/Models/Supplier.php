@@ -22,6 +22,11 @@ class Supplier extends Authenticatable
         'commission_percentage',
         'approved_at',
         'approved_by',
+        'image',
+        'nid_front',
+        'nid_back',
+        'guardian_nid_front',
+        'guardian_nid_back',
         'logo',
         'bank_info',
         'bkash_number',
@@ -36,6 +41,21 @@ class Supplier extends Authenticatable
         'approved_at'           => 'datetime',
         'commission_percentage' => 'decimal:2',
     ];
+
+    protected $appends = [
+        'display_name',
+        'available_balance',
+        'image_url',
+        'nid_front_url',
+        'nid_back_url',
+        'guardian_nid_front_url',
+        'guardian_nid_back_url',
+    ];
+
+    public function getAvailableBalanceAttribute(): float
+    {
+        return $this->availableBalance();
+    }
 
     public function isActive(): bool
     {
@@ -52,13 +72,47 @@ class Supplier extends Authenticatable
         return $this->company_name ?: $this->name;
     }
 
+    public function getImageUrlAttribute(): ?string
+    {
+        return $this->resolveFileUrl($this->image ?: $this->logo);
+    }
+
+    public function getNidFrontUrlAttribute(): ?string
+    {
+        return $this->resolveFileUrl($this->nid_front);
+    }
+
+    public function getNidBackUrlAttribute(): ?string
+    {
+        return $this->resolveFileUrl($this->nid_back);
+    }
+
+    public function getGuardianNidFrontUrlAttribute(): ?string
+    {
+        return $this->resolveFileUrl($this->guardian_nid_front);
+    }
+
+    public function getGuardianNidBackUrlAttribute(): ?string
+    {
+        return $this->resolveFileUrl($this->guardian_nid_back);
+    }
+
+    protected function resolveFileUrl(?string $path): ?string
+    {
+        if (!$path) {
+            return null;
+        }
+
+        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+            return $path;
+        }
+
+        return asset('uploads/' . ltrim($path, '/'));
+    }
+
     public function getLogoUrlAttribute(): ?string
     {
-        if (!$this->logo) return null;
-        if (str_contains($this->logo, 'http://') || str_contains($this->logo, 'https://')) {
-            return $this->logo;
-        }
-        return asset('uploads/' . $this->logo);
+        return $this->getImageUrlAttribute();
     }
 
     public function vendor()

@@ -3,30 +3,9 @@
 @section('heading', 'Supplier Withdrawals')
 
 @section('content')
-<div class="py-4 space-y-6" x-data="{
-    approveModalOpen: false,
-    rejectModalOpen: false,
-    selectedId: null,
-    selectedSupplier: '',
-    selectedAmount: 0,
-    adminNote: '',
-    openApprove(id, supplierName, amount) {
-        this.selectedId = id;
-        this.selectedSupplier = supplierName;
-        this.selectedAmount = amount;
-        this.adminNote = '';
-        this.approveModalOpen = true;
-    },
-    openReject(id, supplierName, amount) {
-        this.selectedId = id;
-        this.selectedSupplier = supplierName;
-        this.selectedAmount = amount;
-        this.adminNote = '';
-        this.rejectModalOpen = true;
-    }
-}">
+<div class="py-4 space-y-6" x-data="supplierWithdrawalsData()">
 
-    {{-- Sub Navigation Tabs --}}
+    {{-- Sub Navigation Tabs & Direct Action --}}
     <div class="flex items-center justify-between flex-wrap gap-3 border-b border-slate-200 pb-3">
         <div class="flex items-center gap-2 flex-wrap">
             <a href="{{ route('admin.suppliers.manage') }}"
@@ -48,6 +27,14 @@
                     <span class="ml-1.5 px-2 py-0.5 text-[10px] font-black bg-amber-400 text-amber-950 rounded-full animate-pulse">{{ $stats['pending_count'] }}</span>
                 @endif
             </a>
+        </div>
+
+        <div>
+            <button type="button" @click="openDirectWithdrawModal()"
+                    class="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-xs shadow-md shadow-emerald-600/20 transition-all flex items-center gap-2 hover:scale-[1.02] active:scale-[0.98]">
+                <i class="fas fa-hand-holding-dollar text-sm"></i>
+                <span>+ প্রফিট উইথড্র</span>
+            </button>
         </div>
     </div>
 
@@ -206,10 +193,16 @@
                                 @if($supplier)
                                     <div class="font-bold text-slate-800">{{ $supplier->display_name }}</div>
                                     <div class="text-[11px] text-slate-400">{{ $supplier->phone }}</div>
-                                    <div class="mt-0.5">
+                                    <div class="mt-0.5 flex items-center gap-1.5">
                                         <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
                                             Avail: ৳{{ number_format($currentBalance, 2) }}
                                         </span>
+                                        <button type="button"
+                                                @click="openDirectWithdrawModal({{ $supplier->id }})"
+                                                class="px-1.5 py-0.5 rounded-lg text-[10px] font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition"
+                                                title="Direct Profit Withdraw to {{ $supplier->display_name }}">
+                                            <i class="fas fa-plus"></i> Payout
+                                        </button>
                                     </div>
                                 @else
                                     <span class="text-rose-500">Deleted Supplier</span>
@@ -342,59 +335,53 @@
                  x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
                  x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
                  x-transition:leave="ease-in duration-200"
-                 x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
-                 x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
                  class="relative bg-white rounded-3xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:max-w-md w-full border border-slate-100">
 
                 <form :action="'{{ url('admin/suppliers-management/withdrawals') }}/' + selectedId + '/approve'" method="POST">
                     @csrf
 
-                    <div class="bg-gradient-to-r from-emerald-600 to-teal-700 px-6 py-5 text-white flex items-center justify-between">
+                    <div class="bg-gradient-to-r from-emerald-600 to-teal-700 px-5 py-4 text-white flex items-center justify-between">
                         <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-white text-lg">
+                            <div class="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center text-white text-base">
                                 <i class="fas fa-check-circle"></i>
                             </div>
-                            <div>
-                                <h3 class="font-black text-base">Approve Withdrawal Request</h3>
-                                <p class="text-xs text-emerald-100">অনুমোদন করলে ব্যালেন্স থেকে টাকা কর্তন হবে</p>
-                            </div>
+                            <h3 class="font-bold text-base">উইথড্র অনুমোদন</h3>
                         </div>
-                        <button type="button" @click="approveModalOpen = false" class="text-white/70 hover:text-white text-lg">
+                        <button type="button" @click="approveModalOpen = false" class="text-white/70 hover:text-white text-base">
                             <i class="fas fa-times"></i>
                         </button>
                     </div>
 
-                    <div class="p-6 space-y-4">
-                        <div class="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-900 space-y-1">
+                    <div class="p-5 space-y-3">
+                        <div class="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-900 space-y-1">
                             <div class="font-bold flex items-center justify-between">
-                                <span>Supplier:</span>
+                                <span>সাপ্লায়ার:</span>
                                 <span class="text-slate-800" x-text="selectedSupplier"></span>
                             </div>
                             <div class="font-bold flex items-center justify-between text-sm">
-                                <span>Amount:</span>
+                                <span>পরিমাণ:</span>
                                 <span class="text-emerald-700 font-black">৳<span x-text="Number(selectedAmount).toFixed(2)"></span></span>
                             </div>
                         </div>
 
                         <div>
-                            <label class="block text-xs font-bold text-slate-700 mb-1.5">
-                                Admin Note / Transaction ID (এডমিন নোট / Trx ID)
+                            <label class="block text-xs font-bold text-slate-700 mb-1">
+                                Trx ID / রেফারেন্স
                             </label>
-                            <textarea name="admin_note" x-model="adminNote" rows="3"
-                                      placeholder="e.g. bKash TrxID: 9XF120A, Paid from Admin Account or Bank Ref..."
-                                      class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-medium text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition"></textarea>
-                            <p class="text-[11px] text-slate-400 mt-1">This note and transaction reference will be shown to the supplier.</p>
+                            <input type="text" name="admin_note" x-model="adminNote"
+                                   placeholder="Trx ID বা রেফারেন্স..."
+                                   class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-medium text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition">
                         </div>
                     </div>
 
-                    <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-3">
+                    <div class="px-5 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-2">
                         <button type="button" @click="approveModalOpen = false"
-                                class="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 text-xs font-bold transition">
-                            Cancel
+                                class="px-3.5 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 text-xs font-bold transition">
+                            বাতিল
                         </button>
                         <button type="submit"
-                                class="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md shadow-emerald-600/30 transition flex items-center gap-1.5">
-                            <i class="fas fa-check"></i> Approve &amp; Deduct Balance
+                                class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow transition flex items-center gap-1.5">
+                            <i class="fas fa-check"></i> অনুমোদন করুন
                         </button>
                     </div>
                 </form>
@@ -429,52 +416,255 @@
                 <form :action="'{{ url('admin/suppliers-management/withdrawals') }}/' + selectedId + '/reject'" method="POST">
                     @csrf
 
-                    <div class="bg-gradient-to-r from-rose-600 to-red-700 px-6 py-5 text-white flex items-center justify-between">
+                    <div class="bg-gradient-to-r from-rose-600 to-red-700 px-5 py-4 text-white flex items-center justify-between">
                         <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-white text-lg">
+                            <div class="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center text-white text-base">
                                 <i class="fas fa-times-circle"></i>
                             </div>
-                            <div>
-                                <h3 class="font-black text-base">Reject Withdrawal Request</h3>
-                                <p class="text-xs text-rose-100">বাতিল করার কারণ সাপ্লায়ার দেখতে পাবে</p>
-                            </div>
+                            <h3 class="font-bold text-base">উইথড্র বাতিল</h3>
                         </div>
-                        <button type="button" @click="rejectModalOpen = false" class="text-white/70 hover:text-white text-lg">
+                        <button type="button" @click="rejectModalOpen = false" class="text-white/70 hover:text-white text-base">
                             <i class="fas fa-times"></i>
                         </button>
                     </div>
 
-                    <div class="p-6 space-y-4">
-                        <div class="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-xs text-rose-900 space-y-1">
+                    <div class="p-5 space-y-3">
+                        <div class="p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-900 space-y-1">
                             <div class="font-bold flex items-center justify-between">
-                                <span>Supplier:</span>
+                                <span>সাপ্লায়ার:</span>
                                 <span class="text-slate-800" x-text="selectedSupplier"></span>
                             </div>
                             <div class="font-bold flex items-center justify-between text-sm">
-                                <span>Amount:</span>
+                                <span>পরিমাণ:</span>
                                 <span class="text-rose-700 font-black">৳<span x-text="Number(selectedAmount).toFixed(2)"></span></span>
                             </div>
                         </div>
 
                         <div>
-                            <label class="block text-xs font-bold text-slate-700 mb-1.5">
-                                Rejection Reason / Note <span class="text-rose-500">*</span>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">
+                                বাতিলের কারণ <span class="text-rose-500">*</span>
                             </label>
-                            <textarea name="admin_note" x-model="adminNote" rows="3" required
-                                      placeholder="e.g. Incorrect account number, please provide valid bKash personal number..."
-                                      class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-medium text-slate-800 focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition"></textarea>
-                            <p class="text-[11px] text-slate-400 mt-1">Please provide a clear reason so the supplier can resubmit correctly.</p>
+                            <input type="text" name="admin_note" x-model="adminNote" required
+                                   placeholder="কারণ লিখুন..."
+                                   class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-medium text-slate-800 focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition">
                         </div>
                     </div>
 
-                    <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-3">
+                    <div class="px-5 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-2">
                         <button type="button" @click="rejectModalOpen = false"
-                                class="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 text-xs font-bold transition">
-                            Cancel
+                                class="px-3.5 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 text-xs font-bold transition">
+                            বন্ধ
                         </button>
                         <button type="submit"
-                                class="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-md shadow-rose-600/30 transition flex items-center gap-1.5">
-                            <i class="fas fa-ban"></i> Confirm Rejection
+                                class="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow transition flex items-center gap-1.5">
+                            <i class="fas fa-ban"></i> বাতিল করুন
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    {{-- Direct Profit Withdrawal Modal --}}
+    <div x-show="directModalOpen"
+         x-cloak
+         class="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true">
+        <div class="flex items-center justify-center min-h-screen p-4 text-center sm:p-0">
+            <div x-show="directModalOpen"
+                 x-transition:enter="ease-out duration-300"
+                 x-transition:enter-start="opacity-0"
+                 x-transition:enter-end="opacity-100"
+                 x-transition:leave="ease-in duration-200"
+                 x-transition:leave-start="opacity-100"
+                 x-transition:leave-end="opacity-0"
+                 @click="directModalOpen = false"
+                 class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity"></div>
+
+            <div x-show="directModalOpen"
+                 x-transition:enter="ease-out duration-300"
+                 x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                 x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                 x-transition:leave="ease-in duration-200"
+                 x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                 x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                 class="relative bg-white rounded-3xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:max-w-lg w-full border border-slate-100">
+
+                <form action="{{ route('admin.suppliers.withdrawals.direct') }}" method="POST">
+                    @csrf
+
+                    <div class="bg-gradient-to-r from-emerald-600 to-teal-700 px-5 py-4 text-white flex items-center justify-between">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center text-white text-base">
+                                <i class="fas fa-hand-holding-dollar"></i>
+                            </div>
+                            <h3 class="font-bold text-base">প্রফিট উইথড্র</h3>
+                        </div>
+                        <button type="button" @click="directModalOpen = false" class="text-white/70 hover:text-white text-base">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+
+                    <div class="p-5 space-y-3.5 max-h-[75vh] overflow-y-auto">
+                        {{-- Searchable Supplier Input --}}
+                        <div class="relative" @click.outside="dropdownOpen = false">
+                            <label class="block text-xs font-bold text-slate-700 mb-1">
+                                সাপ্লায়ার <span class="text-rose-500">*</span>
+                            </label>
+
+                            <input type="hidden" name="supplier_id" :value="selectedSupplierId" required>
+
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                                    <i class="fas fa-search text-xs"></i>
+                                </span>
+                                <input type="text"
+                                       x-model="supplierSearch"
+                                       @focus="dropdownOpen = true"
+                                       @input="dropdownOpen = true"
+                                       placeholder="নাম বা মোবাইল নম্বর লিখে খুঁজুন..."
+                                       autocomplete="off"
+                                       class="w-full pl-8 pr-8 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white transition">
+                                <template x-if="supplierSearch || selectedSupplierId">
+                                    <button type="button" @click="clearSelectedSupplier()"
+                                            class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600">
+                                        <i class="fas fa-times text-xs"></i>
+                                    </button>
+                                </template>
+                            </div>
+
+                            {{-- Dropdown list --}}
+                            <div x-show="dropdownOpen"
+                                 x-cloak
+                                 class="absolute left-0 right-0 mt-1 max-h-52 overflow-y-auto bg-white rounded-xl shadow-xl border border-slate-200 z-50 divide-y divide-slate-100">
+                                <template x-if="getFilteredSuppliers().length === 0">
+                                    <div class="p-3 text-xs text-slate-500 text-center">কোনো সাপ্লায়ার পাওয়া যায়নি</div>
+                                </template>
+                                <template x-for="sup in getFilteredSuppliers()" :key="sup.id">
+                                    <div @click="selectSupplier(sup)"
+                                         :class="selectedSupplierId == sup.id ? 'bg-emerald-50 text-emerald-900 font-bold' : 'hover:bg-slate-50 text-slate-700'"
+                                         class="p-2.5 cursor-pointer text-xs flex items-center justify-between transition">
+                                        <div>
+                                            <div class="font-bold text-slate-800" x-text="sup.display_name"></div>
+                                            <div class="text-[11px] text-slate-400" x-text="sup.phone || ''"></div>
+                                        </div>
+                                        <div class="text-right">
+                                            <span class="text-[10px] text-slate-400">ব্যালেন্স:</span>
+                                            <span class="font-extrabold text-emerald-600 ml-1">৳<span x-text="Number(sup.available_balance || 0).toFixed(2)"></span></span>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+
+                        {{-- Supplier Balance Info --}}
+                        <template x-if="selectedSupplierObj">
+                            <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+                                <div>
+                                    <div class="text-xs font-bold text-slate-800" x-text="selectedSupplierObj.display_name"></div>
+                                    <div class="text-[11px] text-slate-500" x-text="selectedSupplierObj.phone || 'ফোন নেই'"></div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-[10px] font-bold text-slate-400 uppercase">ব্যালেন্স</div>
+                                    <div class="text-base font-black text-emerald-600">৳<span x-text="Number(selectedSupplierObj.available_balance || 0).toFixed(2)"></span></div>
+                                </div>
+                            </div>
+                        </template>
+
+                        <template x-if="selectedSupplierObj && Number(selectedSupplierObj.available_balance || 0) <= 0">
+                            <div class="p-2 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-[11px] font-medium flex items-center gap-1.5">
+                                <i class="fas fa-exclamation-triangle text-amber-500"></i>
+                                <span>ব্যালেন্স নেই</span>
+                            </div>
+                        </template>
+
+                        {{-- Amount Input --}}
+                        <div>
+                            <div class="flex items-center justify-between mb-1">
+                                <label class="text-xs font-bold text-slate-700">
+                                    পরিমাণ (৳) <span class="text-rose-500">*</span>
+                                </label>
+                                <template x-if="selectedSupplierObj && Number(selectedSupplierObj.available_balance || 0) > 0">
+                                    <button type="button" @click="setFullDirectBalance()"
+                                            class="text-[11px] font-bold text-emerald-600 hover:text-emerald-800">
+                                        সব টাকা (৳<span x-text="Number(selectedSupplierObj.available_balance).toFixed(2)"></span>)
+                                    </button>
+                                </template>
+                            </div>
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 font-bold text-xs">৳</span>
+                                <input type="number" step="0.01" min="0.01"
+                                       :max="selectedSupplierObj ? selectedSupplierObj.available_balance : null"
+                                       name="amount" x-model="directAmount" required
+                                       placeholder="0.00"
+                                       class="w-full pl-7 pr-3 py-2 rounded-xl border border-slate-300 text-xs font-bold text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
+                            </div>
+                        </div>
+
+                        {{-- Payment Method Selection --}}
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">
+                                পেমেন্ট মেথড <span class="text-rose-500">*</span>
+                            </label>
+                            <input type="hidden" name="payment_method" :value="directPaymentMethod">
+                            <div class="grid grid-cols-5 gap-1.5">
+                                <button type="button" @click="setPaymentMethod('bkash')"
+                                        :class="directPaymentMethod === 'bkash' ? 'bg-pink-600 text-white font-bold' : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200'"
+                                        class="py-1.5 px-1 rounded-lg text-xs transition text-center">
+                                    bKash
+                                </button>
+                                <button type="button" @click="setPaymentMethod('nagad')"
+                                        :class="directPaymentMethod === 'nagad' ? 'bg-orange-600 text-white font-bold' : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200'"
+                                        class="py-1.5 px-1 rounded-lg text-xs transition text-center">
+                                    Nagad
+                                </button>
+                                <button type="button" @click="setPaymentMethod('rocket')"
+                                        :class="directPaymentMethod === 'rocket' ? 'bg-purple-600 text-white font-bold' : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200'"
+                                        class="py-1.5 px-1 rounded-lg text-xs transition text-center">
+                                    Rocket
+                                </button>
+                                <button type="button" @click="setPaymentMethod('bank')"
+                                        :class="directPaymentMethod === 'bank' ? 'bg-blue-600 text-white font-bold' : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200'"
+                                        class="py-1.5 px-1 rounded-lg text-xs transition text-center">
+                                    Bank
+                                </button>
+                                <button type="button" @click="setPaymentMethod('cash')"
+                                        :class="directPaymentMethod === 'cash' ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200'"
+                                        class="py-1.5 px-1 rounded-lg text-xs transition text-center">
+                                    Cash
+                                </button>
+                            </div>
+                        </div>
+
+                        {{-- Payment Details / Account / Trx ID --}}
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">
+                                অ্যাকাউন্ট / Trx ID
+                            </label>
+                            <input type="text" name="payment_details" x-model="directPaymentDetails"
+                                   placeholder="নম্বর বা Trx ID"
+                                   class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition">
+                        </div>
+
+                        {{-- Note --}}
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">
+                                নোট (ঐচ্ছিক)
+                            </label>
+                            <input type="text" name="note" x-model="directNote"
+                                   placeholder="নোট লিখুন..."
+                                   class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition">
+                        </div>
+                    </div>
+
+                    <div class="px-5 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-2">
+                        <button type="button" @click="directModalOpen = false"
+                                class="px-3.5 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 text-xs font-bold transition">
+                            বাতিল
+                        </button>
+                        <button type="submit"
+                                :disabled="!selectedSupplierId || !directAmount || Number(directAmount) <= 0 || (selectedSupplierObj && Number(directAmount) > Number(selectedSupplierObj.available_balance || 0))"
+                                class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-bold shadow transition flex items-center gap-1.5">
+                            <i class="fas fa-check"></i> উইথড্র করুন
                         </button>
                     </div>
                 </form>
@@ -483,4 +673,123 @@
     </div>
 
 </div>
+
+<script>
+function supplierWithdrawalsData() {
+    return {
+        approveModalOpen: false,
+        rejectModalOpen: false,
+        directModalOpen: false,
+        selectedId: null,
+        selectedSupplier: '',
+        selectedAmount: 0,
+        adminNote: '',
+
+        // Direct withdraw state
+        directSuppliers: @json($allSuppliers),
+        supplierSearch: '',
+        dropdownOpen: false,
+        selectedSupplierId: '',
+        selectedSupplierObj: null,
+        directAmount: '',
+        directPaymentMethod: 'bkash',
+        directPaymentDetails: '',
+        directNote: '',
+
+        getFilteredSuppliers() {
+            const q = (this.supplierSearch || '').trim().toLowerCase();
+            if (!q) {
+                return this.directSuppliers;
+            }
+            return this.directSuppliers.filter(s => {
+                const name = (s.name || '').toLowerCase();
+                const disp = (s.display_name || '').toLowerCase();
+                const comp = (s.company_name || '').toLowerCase();
+                const phone = (s.phone || '').toLowerCase();
+                return name.includes(q) || disp.includes(q) || comp.includes(q) || phone.includes(q);
+            });
+        },
+
+        openApprove(id, supplierName, amount) {
+            this.selectedId = id;
+            this.selectedSupplier = supplierName;
+            this.selectedAmount = amount;
+            this.adminNote = '';
+            this.approveModalOpen = true;
+        },
+        openReject(id, supplierName, amount) {
+            this.selectedId = id;
+            this.selectedSupplier = supplierName;
+            this.selectedAmount = amount;
+            this.adminNote = '';
+            this.rejectModalOpen = true;
+        },
+        openDirectWithdrawModal(supplierId = null) {
+            this.directAmount = '';
+            this.directNote = '';
+            this.dropdownOpen = false;
+            if (supplierId) {
+                const sup = this.directSuppliers.find(s => s.id == supplierId);
+                if (sup) {
+                    this.selectSupplier(sup);
+                } else {
+                    this.selectedSupplierId = supplierId;
+                    this.onSupplierChange();
+                }
+            } else {
+                this.selectedSupplierId = '';
+                this.selectedSupplierObj = null;
+                this.supplierSearch = '';
+                this.directPaymentDetails = '';
+            }
+            this.directModalOpen = true;
+        },
+        selectSupplier(sup) {
+            this.selectedSupplierId = sup.id;
+            this.selectedSupplierObj = sup;
+            this.supplierSearch = sup.display_name || sup.name || '';
+            this.dropdownOpen = false;
+            this.directAmount = '';
+            this.autoFillPaymentDetails();
+        },
+        clearSelectedSupplier() {
+            this.selectedSupplierId = '';
+            this.selectedSupplierObj = null;
+            this.supplierSearch = '';
+            this.directAmount = '';
+            this.directPaymentDetails = '';
+            this.dropdownOpen = true;
+        },
+        onSupplierChange() {
+            this.selectedSupplierObj = this.directSuppliers.find(s => s.id == this.selectedSupplierId) || null;
+            if (this.selectedSupplierObj) {
+                this.supplierSearch = this.selectedSupplierObj.display_name || this.selectedSupplierObj.name || '';
+            }
+            this.directAmount = '';
+            this.autoFillPaymentDetails();
+        },
+        setPaymentMethod(method) {
+            this.directPaymentMethod = method;
+            this.autoFillPaymentDetails();
+        },
+        autoFillPaymentDetails() {
+            if (!this.selectedSupplierObj) return;
+            if (this.directPaymentMethod === 'bkash' && this.selectedSupplierObj.bkash_number) {
+                this.directPaymentDetails = this.selectedSupplierObj.bkash_number;
+            } else if (this.directPaymentMethod === 'bank' && this.selectedSupplierObj.bank_info) {
+                this.directPaymentDetails = this.selectedSupplierObj.bank_info;
+            } else if (this.directPaymentMethod === 'cash') {
+                this.directPaymentDetails = 'Cash';
+            } else {
+                this.directPaymentDetails = '';
+            }
+        },
+        setFullDirectBalance() {
+            if (this.selectedSupplierObj && Number(this.selectedSupplierObj.available_balance || 0) > 0) {
+                this.directAmount = parseFloat(this.selectedSupplierObj.available_balance).toFixed(2);
+            }
+        }
+    };
+}
+</script>
 @endsection

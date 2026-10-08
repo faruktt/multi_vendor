@@ -3,24 +3,9 @@
 @section('heading', 'মডারেটর বেতন উত্তোলন রিকোয়েস্ট')
 
 @section('content')
-<div class="py-4 space-y-6" x-data="{
-    approveModalOpen: false,
-    rejectModalOpen: false,
-    selectedWithdrawal: null,
-    adminNote: '',
-    openApprove(item) {
-        this.selectedWithdrawal = item;
-        this.adminNote = '';
-        this.approveModalOpen = true;
-    },
-    openReject(item) {
-        this.selectedWithdrawal = item;
-        this.adminNote = '';
-        this.rejectModalOpen = true;
-    }
-}">
+<div class="py-4 space-y-6" x-data="moderatorWithdrawalsData()">
 
-    {{-- Sub Navigation Tabs --}}
+    {{-- Sub Navigation Tabs & Direct Action --}}
     <div class="flex items-center justify-between flex-wrap gap-3 border-b border-slate-200 pb-3">
         <div class="flex items-center gap-2 flex-wrap">
             <a href="{{ route('admin.moderators.index') }}"
@@ -38,6 +23,14 @@
                     <span class="ml-1.5 px-2 py-0.5 text-xs font-black bg-amber-400 text-amber-950 rounded-full">{{ $stats['pending_count'] }}</span>
                 @endif
             </a>
+        </div>
+
+        <div>
+            <button type="button" @click="openDirectWithdrawModal()"
+                    class="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-xs shadow-md shadow-emerald-600/20 transition-all flex items-center gap-2 hover:scale-[1.02] active:scale-[0.98]">
+                <i class="fas fa-hand-holding-dollar text-sm"></i>
+                <span>+ বেতন উইথড্র</span>
+            </button>
         </div>
     </div>
 
@@ -278,7 +271,7 @@
         @endif
     </div>
 
-    {{-- ── Approve Modal With Note ────────────────────────────────── --}}
+    {{-- ── Approve Modal ─────────────────────────────────────────── --}}
     <div x-show="approveModalOpen" x-cloak
          class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
          @keydown.escape.window="approveModalOpen = false">
@@ -286,57 +279,54 @@
             <div class="p-5 border-b border-slate-100 bg-emerald-50 flex items-center justify-between">
                 <div class="flex items-center gap-2.5 text-emerald-900 font-black text-sm sm:text-base">
                     <i class="fas fa-check-circle text-emerald-600 text-lg"></i>
-                    <span>উইথড্র রিকোয়েস্ট অ্যাপ্রুভ করুন</span>
+                    <span>উইথড্র অনুমোদন</span>
                 </div>
                 <button type="button" @click="approveModalOpen = false" class="text-slate-400 hover:text-slate-600">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
 
-            <form :action="'/admin/moderators/withdrawals/' + (selectedWithdrawal ? selectedWithdrawal.id : '') + '/approve'" method="POST" class="p-6 space-y-4">
+            <form :action="'/admin/moderators/withdrawals/' + (selectedWithdrawal ? selectedWithdrawal.id : '') + '/approve'" method="POST" class="p-5 space-y-3">
                 @csrf
-                <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-1.5 text-xs">
+                <div class="p-3 bg-emerald-50 border border-emerald-100 rounded-xl space-y-1.5 text-xs">
                     <div class="flex justify-between">
                         <span class="text-slate-500">মডারেটর:</span>
                         <span class="font-bold text-slate-800" x-text="selectedWithdrawal?.moderator?.name"></span>
                     </div>
                     <div class="flex justify-between">
-                        <span class="text-slate-500">উত্তোলনের পরিমাণ:</span>
-                        <span class="font-black font-mono text-emerald-600 text-sm" x-text="'৳' + Number(selectedWithdrawal?.amount || 0).toFixed(2)"></span>
+                        <span class="text-slate-500">পরিমাণ:</span>
+                        <span class="font-black text-emerald-700 text-sm" x-text="'৳' + Number(selectedWithdrawal?.amount || 0).toFixed(2)"></span>
                     </div>
                     <div class="flex justify-between">
-                        <span class="text-slate-500">পেমেন্ট মেথড:</span>
-                        <span class="font-bold uppercase font-mono text-indigo-600" x-text="selectedWithdrawal?.payment_method"></span>
-                    </div>
-                    <div class="flex justify-between">
-                        <span class="text-slate-500">অ্যাকাউন্ট নম্বর:</span>
-                        <span class="font-bold font-mono text-slate-800" x-text="selectedWithdrawal?.payment_details"></span>
+                        <span class="text-slate-500">মেথড / বিবরণ:</span>
+                        <span class="font-medium text-slate-800" x-text="(selectedWithdrawal?.payment_method || '') + ' - ' + (selectedWithdrawal?.payment_details || '')"></span>
                     </div>
                 </div>
 
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                        এডমিন নোট / ট্রানজেকশন রেফারেন্স (Admin Note)
+                    <label class="block text-xs font-bold text-slate-700 mb-1">
+                        Trx ID / রেফারেন্স
                     </label>
-                    <textarea name="admin_note" rows="3" x-model="adminNote"
-                              class="w-full text-xs sm:text-sm rounded-xl border border-slate-200 px-3.5 py-2.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                              placeholder="e.g. bKash TrxID: 9X82KJLS, টাকা সফলভাবে পাঠানো হয়েছে..."></textarea>
-                    <p class="text-[11px] text-slate-400 mt-1">এই নোটটি মডারেটর তার "আমার একাউন্ট" ড্যাশবোর্ডে দেখতে পাবেন।</p>
+                    <input type="text" name="admin_note" x-model="adminNote"
+                           placeholder="Trx ID বা রেফারেন্স..."
+                           class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition">
                 </div>
 
-                <div class="pt-2 border-t border-slate-100 flex items-center justify-end gap-2.5">
-                    <button type="button" @click="approveModalOpen = false" class="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl">
+                <div class="pt-2 border-t border-slate-100 flex items-center justify-end gap-2">
+                    <button type="button" @click="approveModalOpen = false"
+                            class="px-3.5 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition">
                         বাতিল
                     </button>
-                    <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm px-6 py-2.5 rounded-xl shadow-sm cursor-pointer">
-                        হ্যাঁ, অ্যাপ্রুভ করুন
+                    <button type="submit"
+                            class="px-4 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow transition flex items-center gap-1.5 cursor-pointer">
+                        <i class="fas fa-check"></i> অনুমোদন করুন
                     </button>
                 </div>
             </form>
         </div>
     </div>
 
-    {{-- ── Reject Modal With Note ─────────────────────────────────── --}}
+    {{-- ── Reject Modal ──────────────────────────────────────────── --}}
     <div x-show="rejectModalOpen" x-cloak
          class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
          @keydown.escape.window="rejectModalOpen = false">
@@ -344,47 +334,365 @@
             <div class="p-5 border-b border-slate-100 bg-rose-50 flex items-center justify-between">
                 <div class="flex items-center gap-2.5 text-rose-900 font-black text-sm sm:text-base">
                     <i class="fas fa-times-circle text-rose-600 text-lg"></i>
-                    <span>উইথড্র রিকোয়েস্ট বাতিল করুন</span>
+                    <span>উইথড্র বাতিল</span>
                 </div>
                 <button type="button" @click="rejectModalOpen = false" class="text-slate-400 hover:text-slate-600">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
 
-            <form :action="'/admin/moderators/withdrawals/' + (selectedWithdrawal ? selectedWithdrawal.id : '') + '/reject'" method="POST" class="p-6 space-y-4">
+            <form :action="'/admin/moderators/withdrawals/' + (selectedWithdrawal ? selectedWithdrawal.id : '') + '/reject'" method="POST" class="p-5 space-y-3">
                 @csrf
-                <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-1.5 text-xs">
+                <div class="p-3 bg-rose-50 border border-rose-100 rounded-xl space-y-1.5 text-xs">
                     <div class="flex justify-between">
                         <span class="text-slate-500">মডারেটর:</span>
                         <span class="font-bold text-slate-800" x-text="selectedWithdrawal?.moderator?.name"></span>
                     </div>
                     <div class="flex justify-between">
                         <span class="text-slate-500">পরিমাণ:</span>
-                        <span class="font-black font-mono text-slate-900" x-text="'৳' + Number(selectedWithdrawal?.amount || 0).toFixed(2)"></span>
+                        <span class="font-bold text-rose-700" x-text="'৳' + Number(selectedWithdrawal?.amount || 0).toFixed(2)"></span>
                     </div>
                 </div>
 
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                        বাতিল করার কারণ / এডমিন নোট (Admin Note) *
+                    <label class="block text-xs font-bold text-slate-700 mb-1">
+                        বাতিলের কারণ <span class="text-rose-500">*</span>
                     </label>
-                    <textarea name="admin_note" rows="3" required x-model="adminNote"
-                              class="w-full text-xs sm:text-sm rounded-xl border border-slate-200 px-3.5 py-2.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-500"
-                              placeholder="বাতিল করার সুনির্দিষ্ট কারণ লিখুন (যেমন: ভুল বিকাশ নম্বর দেওয়া হয়েছে, অনুগ্রহ করে সঠিক নম্বর দিয়ে পুনরায় রিকোয়েস্ট করুন)..."></textarea>
-                    <p class="text-[11px] text-slate-400 mt-1">মডারেটর এই কারণটি দেখতে পারবেন এবং টাকা তার ব্যালেন্সে ফেরত যুক্ত থাকবে।</p>
+                    <input type="text" name="admin_note" required x-model="adminNote"
+                           placeholder="কারণ লিখুন..."
+                           class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition">
                 </div>
 
-                <div class="pt-2 border-t border-slate-100 flex items-center justify-end gap-2.5">
-                    <button type="button" @click="rejectModalOpen = false" class="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl">
-                        বাতিল
+                <div class="pt-2 border-t border-slate-100 flex items-center justify-end gap-2">
+                    <button type="button" @click="rejectModalOpen = false"
+                            class="px-3.5 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition">
+                        বন্ধ
                     </button>
-                    <button type="submit" class="bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs sm:text-sm px-6 py-2.5 rounded-xl shadow-sm cursor-pointer">
-                        রিকোয়েস্ট বাতিল করুন
+                    <button type="submit"
+                            class="px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-xl shadow transition flex items-center gap-1.5 cursor-pointer">
+                        <i class="fas fa-ban"></i> বাতিল করুন
                     </button>
                 </div>
             </form>
         </div>
     </div>
 
+    {{-- Direct Moderator Salary/Profit Withdrawal Modal --}}
+    <div x-show="directModalOpen"
+         x-cloak
+         class="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true">
+        <div class="flex items-center justify-center min-h-screen p-4 text-center sm:p-0">
+            <div x-show="directModalOpen"
+                 x-transition:enter="ease-out duration-300"
+                 x-transition:enter-start="opacity-0"
+                 x-transition:enter-end="opacity-100"
+                 x-transition:leave="ease-in duration-200"
+                 x-transition:leave-start="opacity-100"
+                 x-transition:leave-end="opacity-0"
+                 @click="directModalOpen = false"
+                 class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity"></div>
+
+            <div x-show="directModalOpen"
+                 x-transition:enter="ease-out duration-300"
+                 x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                 x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                 x-transition:leave="ease-in duration-200"
+                 x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                 x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                 class="relative bg-white rounded-3xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:max-w-lg w-full border border-slate-100">
+
+                <form action="{{ route('admin.moderators.withdrawals.direct') }}" method="POST">
+                    @csrf
+
+                    <div class="bg-gradient-to-r from-emerald-600 to-teal-700 px-5 py-4 text-white flex items-center justify-between">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center text-white text-base">
+                                <i class="fas fa-hand-holding-dollar"></i>
+                            </div>
+                            <h3 class="font-bold text-base">মডারেটর বেতন উইথড্র</h3>
+                        </div>
+                        <button type="button" @click="directModalOpen = false" class="text-white/70 hover:text-white text-base">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+
+                    <div class="p-5 space-y-3.5 max-h-[75vh] overflow-y-auto">
+                        {{-- Searchable Moderator Input --}}
+                        <div class="relative" @click.outside="dropdownOpen = false">
+                            <label class="block text-xs font-bold text-slate-700 mb-1">
+                                মডারেটর <span class="text-rose-500">*</span>
+                            </label>
+
+                            <input type="hidden" name="moderator_id" :value="selectedModeratorId" required>
+
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                                    <i class="fas fa-search text-xs"></i>
+                                </span>
+                                <input type="text"
+                                       x-model="moderatorSearch"
+                                       @focus="dropdownOpen = true"
+                                       @input="dropdownOpen = true"
+                                       placeholder="নাম বা মোবাইল নম্বর লিখে খুঁজুন..."
+                                       autocomplete="off"
+                                       class="w-full pl-8 pr-8 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white transition">
+                                <template x-if="moderatorSearch || selectedModeratorId">
+                                    <button type="button" @click="clearSelectedModerator()"
+                                            class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600">
+                                        <i class="fas fa-times text-xs"></i>
+                                    </button>
+                                </template>
+                            </div>
+
+                            {{-- Dropdown list --}}
+                            <div x-show="dropdownOpen"
+                                 x-cloak
+                                 class="absolute left-0 right-0 mt-1 max-h-52 overflow-y-auto bg-white rounded-xl shadow-xl border border-slate-200 z-50 divide-y divide-slate-100">
+                                <template x-if="getFilteredModerators().length === 0">
+                                    <div class="p-3 text-xs text-slate-500 text-center">কোনো মডারেটর পাওয়া যায়নি</div>
+                                </template>
+                                <template x-for="m in getFilteredModerators()" :key="m.id">
+                                    <div @click="selectModerator(m)"
+                                         :class="selectedModeratorId == m.id ? 'bg-emerald-50 text-emerald-900 font-bold' : 'hover:bg-slate-50 text-slate-700'"
+                                         class="p-2.5 cursor-pointer text-xs flex items-center justify-between transition">
+                                        <div>
+                                            <div class="font-bold text-slate-800" x-text="m.name"></div>
+                                            <div class="text-[11px] text-slate-400" x-text="m.phone || m.email || ''"></div>
+                                        </div>
+                                        <div class="text-right">
+                                            <span class="text-[10px] text-slate-400">ব্যালেন্স:</span>
+                                            <span class="font-extrabold text-emerald-600 ml-1">৳<span x-text="Number(m.available_balance || 0).toFixed(2)"></span></span>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+
+                        {{-- Moderator Balance Info --}}
+                        <template x-if="selectedModeratorObj">
+                            <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+                                <div>
+                                    <div class="text-xs font-bold text-slate-800" x-text="selectedModeratorObj.name"></div>
+                                    <div class="text-[11px] text-slate-500" x-text="selectedModeratorObj.phone || selectedModeratorObj.email"></div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-[10px] font-bold text-slate-400 uppercase">ব্যালেন্স</div>
+                                    <div class="text-base font-black text-emerald-600">৳<span x-text="Number(selectedModeratorObj.available_balance || 0).toFixed(2)"></span></div>
+                                </div>
+                            </div>
+                        </template>
+
+                        <template x-if="selectedModeratorObj && Number(selectedModeratorObj.available_balance || 0) <= 0">
+                            <div class="p-2 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-[11px] font-medium flex items-center gap-1.5">
+                                <i class="fas fa-exclamation-triangle text-amber-500"></i>
+                                <span>উত্তোলনযোগ্য ব্যালেন্স নেই</span>
+                            </div>
+                        </template>
+
+                        {{-- Amount Input --}}
+                        <div>
+                            <div class="flex items-center justify-between mb-1">
+                                <label class="text-xs font-bold text-slate-700">
+                                    পরিমাণ (৳) <span class="text-rose-500">*</span>
+                                </label>
+                                <template x-if="selectedModeratorObj && Number(selectedModeratorObj.available_balance || 0) > 0">
+                                    <button type="button" @click="setFullDirectBalance()"
+                                            class="text-[11px] font-bold text-emerald-600 hover:text-emerald-800 cursor-pointer">
+                                        সব টাকা (৳<span x-text="Number(selectedModeratorObj.available_balance).toFixed(2)"></span>)
+                                    </button>
+                                </template>
+                            </div>
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 font-bold text-xs">৳</span>
+                                <input type="number" step="0.01" min="0.01"
+                                       :max="selectedModeratorObj ? selectedModeratorObj.available_balance : null"
+                                       name="amount" x-model="directAmount" required
+                                       placeholder="0.00"
+                                       class="w-full pl-7 pr-3 py-2 rounded-xl border border-slate-300 text-xs font-bold text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
+                            </div>
+                        </div>
+
+                        {{-- Payment Method Selection --}}
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">
+                                পেমেন্ট মেথড <span class="text-rose-500">*</span>
+                            </label>
+                            <input type="hidden" name="payment_method" :value="directPaymentMethod">
+                            <div class="grid grid-cols-5 gap-1.5">
+                                <button type="button" @click="setPaymentMethod('bkash')"
+                                        :class="directPaymentMethod === 'bkash' ? 'bg-pink-600 text-white font-bold' : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200'"
+                                        class="py-1.5 px-1 rounded-lg text-xs transition text-center cursor-pointer">
+                                    bKash
+                                </button>
+                                <button type="button" @click="setPaymentMethod('nagad')"
+                                        :class="directPaymentMethod === 'nagad' ? 'bg-orange-600 text-white font-bold' : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200'"
+                                        class="py-1.5 px-1 rounded-lg text-xs transition text-center cursor-pointer">
+                                    Nagad
+                                </button>
+                                <button type="button" @click="setPaymentMethod('rocket')"
+                                        :class="directPaymentMethod === 'rocket' ? 'bg-purple-600 text-white font-bold' : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200'"
+                                        class="py-1.5 px-1 rounded-lg text-xs transition text-center cursor-pointer">
+                                    Rocket
+                                </button>
+                                <button type="button" @click="setPaymentMethod('bank')"
+                                        :class="directPaymentMethod === 'bank' ? 'bg-blue-600 text-white font-bold' : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200'"
+                                        class="py-1.5 px-1 rounded-lg text-xs transition text-center cursor-pointer">
+                                    Bank
+                                </button>
+                                <button type="button" @click="setPaymentMethod('cash')"
+                                        :class="directPaymentMethod === 'cash' ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200'"
+                                        class="py-1.5 px-1 rounded-lg text-xs transition text-center cursor-pointer">
+                                    Cash
+                                </button>
+                            </div>
+                        </div>
+
+                        {{-- Payment Details / Account / Trx ID --}}
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">
+                                অ্যাকাউন্ট / Trx ID
+                            </label>
+                            <input type="text" name="payment_details" x-model="directPaymentDetails"
+                                   placeholder="নম্বর বা Trx ID"
+                                   class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition">
+                        </div>
+
+                        {{-- Note --}}
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">
+                                নোট (ঐচ্ছিক)
+                            </label>
+                            <input type="text" name="note" x-model="directNote"
+                                   placeholder="নোট লিখুন..."
+                                   class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition">
+                        </div>
+                    </div>
+
+                    <div class="px-5 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-2">
+                        <button type="button" @click="directModalOpen = false"
+                                class="px-3.5 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 text-xs font-bold transition cursor-pointer">
+                            বাতিল
+                        </button>
+                        <button type="submit"
+                                :disabled="!selectedModeratorId || !directAmount || Number(directAmount) <= 0 || (selectedModeratorObj && Number(directAmount) > Number(selectedModeratorObj.available_balance || 0))"
+                                class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-bold shadow transition flex items-center gap-1.5 cursor-pointer">
+                            <i class="fas fa-check"></i> উইথড্র করুন
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
 </div>
+
+<script>
+function moderatorWithdrawalsData() {
+    return {
+        approveModalOpen: false,
+        rejectModalOpen: false,
+        directModalOpen: false,
+        selectedWithdrawal: null,
+        adminNote: '',
+
+        // Direct withdraw state
+        directModerators: @json($allModerators),
+        moderatorSearch: '',
+        dropdownOpen: false,
+        selectedModeratorId: '',
+        selectedModeratorObj: null,
+        directAmount: '',
+        directPaymentMethod: 'bkash',
+        directPaymentDetails: '',
+        directNote: '',
+
+        getFilteredModerators() {
+            const q = (this.moderatorSearch || '').trim().toLowerCase();
+            if (!q) {
+                return this.directModerators;
+            }
+            return this.directModerators.filter(m => {
+                const name = (m.name || '').toLowerCase();
+                const phone = (m.phone || '').toLowerCase();
+                const email = (m.email || '').toLowerCase();
+                return name.includes(q) || phone.includes(q) || email.includes(q);
+            });
+        },
+
+        openApprove(item) {
+            this.selectedWithdrawal = item;
+            this.adminNote = '';
+            this.approveModalOpen = true;
+        },
+        openReject(item) {
+            this.selectedWithdrawal = item;
+            this.adminNote = '';
+            this.rejectModalOpen = true;
+        },
+        openDirectWithdrawModal(moderatorId = null) {
+            this.directAmount = '';
+            this.directNote = '';
+            this.dropdownOpen = false;
+            if (moderatorId) {
+                const m = this.directModerators.find(item => item.id == moderatorId);
+                if (m) {
+                    this.selectModerator(m);
+                } else {
+                    this.selectedModeratorId = moderatorId;
+                    this.onModeratorChange();
+                }
+            } else {
+                this.selectedModeratorId = '';
+                this.selectedModeratorObj = null;
+                this.moderatorSearch = '';
+                this.directPaymentDetails = '';
+            }
+            this.directModalOpen = true;
+        },
+        selectModerator(m) {
+            this.selectedModeratorId = m.id;
+            this.selectedModeratorObj = m;
+            this.moderatorSearch = m.name + (m.phone ? ' (' + m.phone + ')' : '');
+            this.dropdownOpen = false;
+            this.directAmount = '';
+            this.autoFillPaymentDetails();
+        },
+        clearSelectedModerator() {
+            this.selectedModeratorId = '';
+            this.selectedModeratorObj = null;
+            this.moderatorSearch = '';
+            this.directAmount = '';
+            this.directPaymentDetails = '';
+            this.dropdownOpen = true;
+        },
+        onModeratorChange() {
+            this.selectedModeratorObj = this.directModerators.find(m => m.id == this.selectedModeratorId) || null;
+            if (this.selectedModeratorObj) {
+                this.moderatorSearch = this.selectedModeratorObj.name;
+            }
+            this.directAmount = '';
+            this.autoFillPaymentDetails();
+        },
+        setPaymentMethod(method) {
+            this.directPaymentMethod = method;
+            this.autoFillPaymentDetails();
+        },
+        autoFillPaymentDetails() {
+            if (!this.selectedModeratorObj) return;
+            if (this.directPaymentMethod === 'cash') {
+                this.directPaymentDetails = 'Cash';
+            } else if (this.directPaymentMethod === 'bkash' && this.selectedModeratorObj.phone) {
+                this.directPaymentDetails = this.selectedModeratorObj.phone;
+            } else {
+                this.directPaymentDetails = '';
+            }
+        },
+        setFullDirectBalance() {
+            if (this.selectedModeratorObj && Number(this.selectedModeratorObj.available_balance || 0) > 0) {
+                this.directAmount = parseFloat(this.selectedModeratorObj.available_balance).toFixed(2);
+            }
+        }
+    };
+}
+</script>
 @endsection

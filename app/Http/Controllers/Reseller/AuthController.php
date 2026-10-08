@@ -20,23 +20,52 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         $request->validate([
-            'name'          => 'required|string|max:255',
-            'email'         => 'required|email|unique:resellers,email',
-            'password'      => 'required|min:6|confirmed',
-            'phone'         => 'nullable|string|max:30',
-            'business_name' => 'nullable|string|max:255',
-            'address'       => 'nullable|string|max:500',
+            'name'                => 'required|string|max:255',
+            'email'               => 'required|email|unique:resellers,email',
+            'password'            => 'required|min:6|confirmed',
+            'phone'               => 'required|string|max:30',
+            'business_name'       => 'nullable|string|max:255',
+            'address'             => 'nullable|string|max:500',
+            'image'               => 'required|image|max:5120',
+            'nid_front'           => 'required|image|max:5120',
+            'nid_back'            => 'required|image|max:5120',
+            'guardian_nid_front'  => 'required|image|max:5120',
+            'guardian_nid_back'   => 'required|image|max:5120',
+        ], [
+            'image.required'              => 'নিজের প্রোফাইল ছবি আপলোড করা আবশ্যক।',
+            'nid_front.required'          => 'নিজের NID ফ্রন্ট পেজ ছবি আপলোড করা আবশ্যক।',
+            'nid_back.required'           => 'নিজের NID ব্যাক পেজ ছবি আপলোড করা আবশ্যক।',
+            'guardian_nid_front.required' => 'অভিভাবকের NID ফ্রন্ট পেজ ছবি আপলোড করা আবশ্যক।',
+            'guardian_nid_back.required'  => 'অভিভাবকের NID ব্যাক পেজ ছবি আপলোড করা আবশ্যক।',
         ]);
 
-        Reseller::create([
+        $data = [
             'name'          => $request->name,
-            'email'         => $request->email,
+            'email'         => strtolower(trim($request->email)),
             'password'      => Hash::make($request->password),
             'phone'         => $request->phone,
             'business_name' => $request->business_name,
             'address'       => $request->address,
             'status'        => 'pending',
-        ]);
+        ];
+
+        if ($request->hasFile('image')) {
+            $data['image'] = $request->file('image')->store('resellers', 'uploads');
+        }
+        if ($request->hasFile('nid_front')) {
+            $data['nid_front'] = $request->file('nid_front')->store('reseller_docs', 'uploads');
+        }
+        if ($request->hasFile('nid_back')) {
+            $data['nid_back'] = $request->file('nid_back')->store('reseller_docs', 'uploads');
+        }
+        if ($request->hasFile('guardian_nid_front')) {
+            $data['guardian_nid_front'] = $request->file('guardian_nid_front')->store('reseller_docs', 'uploads');
+        }
+        if ($request->hasFile('guardian_nid_back')) {
+            $data['guardian_nid_back'] = $request->file('guardian_nid_back')->store('reseller_docs', 'uploads');
+        }
+
+        Reseller::create($data);
 
         return redirect()->route('reseller.login')
             ->with('success', 'রেজিস্ট্রেশন সফল হয়েছে! অ্যাডমিন অ্যাকাউন্ট যাচাই ও অনুমোদন করার পর আপনি লগইন করতে পারবেন।');

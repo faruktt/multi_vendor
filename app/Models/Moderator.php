@@ -43,6 +43,7 @@ class Moderator extends Authenticatable
         'nid_back_url',
         'guardian_nid_front_url',
         'guardian_nid_back_url',
+        'available_balance',
     ];
 
     /**
@@ -195,6 +196,11 @@ class Moderator extends Authenticatable
     {
         $balance = $this->totalEarnedAmount() - $this->totalWithdrawnAmount() - $this->pendingWithdrawnAmount();
         return max(0.00, round($balance, 2));
+    }
+
+    public function getAvailableBalanceAttribute(): float
+    {
+        return $this->availableBalance();
     }
 
     /**

@@ -395,21 +395,24 @@ Route::prefix('admin')->group(function () {
                 Route::get('/orders',              [ResellerManagementController::class, 'orders'])->name('orders');
                 Route::get('/report',              [ResellerManagementController::class, 'report'])->name('report');
                 Route::get('/withdrawals',                       [ResellerManagementController::class, 'withdrawals'])->name('withdrawals');
+                Route::post('/withdrawals/direct',                [ResellerManagementController::class, 'withdrawProfitDirect'])->name('withdrawals.direct');
                 Route::post('/withdrawals/{withdrawal}/approve', [ResellerManagementController::class, 'approveWithdrawal'])->name('withdrawals.approve');
                 Route::post('/withdrawals/{withdrawal}/reject',  [ResellerManagementController::class, 'rejectWithdrawal'])->name('withdrawals.reject');
             });
 
             // ── Supplier / Vendor Management ─────────────────────────────
             Route::prefix('suppliers-management')->name('suppliers.')->group(function () {
-                Route::get('/',                            [SupplierManagementController::class, 'index'])->name('manage');
-                Route::post('/{supplier}/approve',         [SupplierManagementController::class, 'approve'])->name('approve');
-                Route::post('/{supplier}/reject',          [SupplierManagementController::class, 'reject'])->name('reject');
-                Route::delete('/{supplier}',               [SupplierManagementController::class, 'destroy'])->name('destroy');
-                Route::post('/{supplier}/commission',      [SupplierManagementController::class, 'updateCommission'])->name('commission.update');
-                Route::get('/{supplier}/commission-report',[SupplierManagementController::class, 'commissionReport'])->name('commission.report');
-                Route::get('/withdrawals',                       [SupplierManagementController::class, 'withdrawals'])->name('withdrawals');
-                Route::post('/withdrawals/{withdrawal}/approve', [SupplierManagementController::class, 'approveWithdrawal'])->name('withdrawals.approve');
-                Route::post('/withdrawals/{withdrawal}/reject',  [SupplierManagementController::class, 'rejectWithdrawal'])->name('withdrawals.reject');
+                Route::get('/',                                   [SupplierManagementController::class, 'index'])->name('manage');
+                Route::get('/withdrawals',                        [SupplierManagementController::class, 'withdrawals'])->name('withdrawals');
+                Route::post('/withdrawals/direct',                [SupplierManagementController::class, 'withdrawProfitDirect'])->name('withdrawals.direct');
+                Route::post('/withdrawals/{withdrawal}/approve',  [SupplierManagementController::class, 'approveWithdrawal'])->name('withdrawals.approve');
+                Route::post('/withdrawals/{withdrawal}/reject',   [SupplierManagementController::class, 'rejectWithdrawal'])->name('withdrawals.reject');
+                Route::post('/{supplier}/withdraw',               [SupplierManagementController::class, 'withdrawProfit'])->name('withdraw');
+                Route::post('/{supplier}/approve',                [SupplierManagementController::class, 'approve'])->name('approve');
+                Route::post('/{supplier}/reject',                 [SupplierManagementController::class, 'reject'])->name('reject');
+                Route::delete('/{supplier}',                      [SupplierManagementController::class, 'destroy'])->name('destroy');
+                Route::post('/{supplier}/commission',             [SupplierManagementController::class, 'updateCommission'])->name('commission.update');
+                Route::get('/{supplier}/commission-report',       [SupplierManagementController::class, 'commissionReport'])->name('commission.report');
             });
 
             // ── Supplier Sales / Marketplace Orders ──────────────────────
@@ -455,6 +458,8 @@ Route::prefix('admin')->group(function () {
                 Route::delete('/{moderator}',                    [ModeratorManagementController::class, 'destroy'])->name('destroy');
                 Route::get('/reports',                           [ModeratorManagementController::class, 'reports'])->name('reports');
                 Route::get('/withdrawals',                       [ModeratorManagementController::class, 'withdrawals'])->name('withdrawals');
+                Route::post('/withdrawals/direct',                [ModeratorManagementController::class, 'withdrawProfitDirect'])->name('withdrawals.direct');
+                Route::post('/{moderator}/withdraw',             [ModeratorManagementController::class, 'withdrawProfit'])->name('withdraw');
                 Route::post('/withdrawals/{withdrawal}/approve', [ModeratorManagementController::class, 'approveWithdrawal'])->name('withdrawals.approve');
                 Route::post('/withdrawals/{withdrawal}/reject',  [ModeratorManagementController::class, 'rejectWithdrawal'])->name('withdrawals.reject');
             });

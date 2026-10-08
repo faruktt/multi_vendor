@@ -3,7 +3,7 @@
 @section('heading', 'Supplier Management')
 
 @section('content')
-<div class="py-4 space-y-6">
+<div class="py-4 space-y-6" x-data="supplierIndexData()">
 
     {{-- Top Section Navigation --}}
     <div class="flex items-center justify-between flex-wrap gap-3 border-b border-slate-200 pb-3">
@@ -27,6 +27,14 @@
                 @if($pendingW > 0)
                     <span class="ml-1.5 px-2 py-0.5 text-[10px] font-black bg-amber-400 text-amber-950 rounded-full animate-pulse">{{ $pendingW }}</span>
                 @endif
+            </a>
+        </div>
+
+        <div>
+            <a href="{{ route('admin.suppliers.withdrawals') }}"
+               class="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-xs shadow-md shadow-emerald-600/20 transition-all inline-flex items-center gap-2 hover:scale-[1.02] active:scale-[0.98]">
+                <i class="fas fa-hand-holding-dollar text-sm"></i>
+                <span>Supplier Withdrawals (প্রফিট উত্তোলন)</span>
             </a>
         </div>
     </div>
@@ -129,6 +137,7 @@
                     <tr>
                         <th class="px-5 py-3.5 font-semibold">Supplier / Store</th>
                         <th class="px-4 py-3.5 font-semibold">Contact Info</th>
+                        <th class="px-3 py-3.5 font-semibold text-center">NID ডকুমেন্টস</th>
                         <th class="px-3 py-3.5 font-semibold text-center">Products</th>
                         <th class="px-4 py-3.5 font-semibold text-center">Commission Rate</th>
                         <th class="px-4 py-3.5 font-semibold text-right">Total Sales</th>
@@ -145,8 +154,14 @@
                         <td class="px-5 py-3.5">
                             <div class="flex items-center gap-3">
                                 <div class="w-10 h-10 rounded-xl bg-slate-100 border border-slate-200 overflow-hidden flex-shrink-0 flex items-center justify-center font-bold text-emerald-800">
-                                    @if($supplier->logo_url)
-                                        <img src="{{ $supplier->logo_url }}" alt="{{ $supplier->display_name }}" class="w-full h-full object-cover">
+                                    @if($supplier->image_url)
+                                        <img src="{{ $supplier->image_url }}" alt="{{ $supplier->display_name }}"
+                                             class="w-full h-full object-cover cursor-pointer"
+                                             @click="previewImage('{{ $supplier->image_url }}', '{{ addslashes($supplier->display_name) }} (প্রোফাইল ছবি)')">
+                                    @elseif($supplier->logo_url)
+                                        <img src="{{ $supplier->logo_url }}" alt="{{ $supplier->display_name }}"
+                                             class="w-full h-full object-cover cursor-pointer"
+                                             @click="previewImage('{{ $supplier->logo_url }}', '{{ addslashes($supplier->display_name) }} (লোগো)')">
                                     @else
                                         {{ strtoupper(substr($supplier->display_name, 0, 1)) }}
                                     @endif
@@ -172,6 +187,50 @@
                         <td class="px-4 py-3.5">
                             <div class="font-semibold text-slate-800">{{ $supplier->email }}</div>
                             <div class="text-[11px] text-slate-500 mt-0.5">{{ $supplier->phone ?: 'No phone' }}</div>
+                        </td>
+
+                        {{-- NID & Documents --}}
+                        <td class="px-3 py-3.5 text-center whitespace-nowrap">
+                            <div class="flex flex-col items-center gap-1 text-[10px]">
+                                {{-- Supplier NID --}}
+                                <div class="flex items-center gap-1">
+                                    <span class="text-slate-400 font-semibold">NID:</span>
+                                    @if($supplier->nid_front_url)
+                                        <button type="button" @click="previewImage('{{ $supplier->nid_front_url }}', '{{ addslashes($supplier->display_name) }} - NID Front')"
+                                                class="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 font-bold border border-emerald-200 hover:bg-emerald-100 cursor-pointer">
+                                            Front
+                                        </button>
+                                    @endif
+                                    @if($supplier->nid_back_url)
+                                        <button type="button" @click="previewImage('{{ $supplier->nid_back_url }}', '{{ addslashes($supplier->display_name) }} - NID Back')"
+                                                class="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 font-bold border border-emerald-200 hover:bg-emerald-100 cursor-pointer">
+                                            Back
+                                        </button>
+                                    @endif
+                                    @if(!$supplier->nid_front_url && !$supplier->nid_back_url)
+                                        <span class="text-slate-300">নেই</span>
+                                    @endif
+                                </div>
+                                {{-- Guardian NID --}}
+                                <div class="flex items-center gap-1">
+                                    <span class="text-slate-400 font-semibold">G-NID:</span>
+                                    @if($supplier->guardian_nid_front_url)
+                                        <button type="button" @click="previewImage('{{ $supplier->guardian_nid_front_url }}', '{{ addslashes($supplier->display_name) }} - Guardian NID Front')"
+                                                class="px-1.5 py-0.5 rounded bg-teal-50 text-teal-700 font-bold border border-teal-200 hover:bg-teal-100 cursor-pointer">
+                                            Front
+                                        </button>
+                                    @endif
+                                    @if($supplier->guardian_nid_back_url)
+                                        <button type="button" @click="previewImage('{{ $supplier->guardian_nid_back_url }}', '{{ addslashes($supplier->display_name) }} - Guardian NID Back')"
+                                                class="px-1.5 py-0.5 rounded bg-teal-50 text-teal-700 font-bold border border-teal-200 hover:bg-teal-100 cursor-pointer">
+                                            Back
+                                        </button>
+                                    @endif
+                                    @if(!$supplier->guardian_nid_front_url && !$supplier->guardian_nid_back_url)
+                                        <span class="text-slate-300">নেই</span>
+                                    @endif
+                                </div>
+                            </div>
                         </td>
 
                         {{-- Products Count --}}
@@ -214,6 +273,9 @@
                         {{-- Supplier Net Share --}}
                         <td class="px-4 py-3.5 text-right font-bold text-slate-700 whitespace-nowrap">
                             ৳{{ number_format($supplier->total_supplier_earnings ?? 0, 2) }}
+                            <div class="text-[10px] text-emerald-600 font-bold mt-0.5">
+                                Avail: ৳{{ number_format($supplier->availableBalance(), 2) }}
+                            </div>
                         </td>
 
                         {{-- Status Badge --}}
@@ -238,6 +300,17 @@
 
                         {{-- Actions --}}
                         <td class="px-5 py-3.5 text-right whitespace-nowrap space-x-1">
+                            {{-- Direct Profit Withdraw --}}
+                            @if($supplier->isActive())
+                                <button type="button"
+                                        @click="openDirectWithdrawModal({{ $supplier->id }}, '{{ addslashes($supplier->display_name) }}', '{{ $supplier->phone }}', {{ (float) $supplier->availableBalance() }}, '{{ addslashes($supplier->bkash_number ?? '') }}', '{{ addslashes($supplier->bank_info ?? '') }}')"
+                                        class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-600 text-emerald-700 hover:text-white font-bold text-xs transition border border-emerald-200 shadow-sm"
+                                        title="Direct Profit Withdrawal (সরাসরি প্রফিট উত্তোলন)">
+                                    <i class="fas fa-hand-holding-dollar text-[11px]"></i>
+                                    <span>Withdraw</span>
+                                </button>
+                            @endif
+
                             {{-- Financial & Commission Report --}}
                             <a href="{{ route('admin.suppliers.commission.report', $supplier->id) }}"
                                class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs transition border border-indigo-200 shadow-sm"
@@ -284,7 +357,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="7" class="px-5 py-12 text-center text-slate-400">
+                        <td colspan="10" class="px-5 py-12 text-center text-slate-400">
                             <div class="w-16 h-16 rounded-2xl bg-slate-100 mx-auto flex items-center justify-center text-2xl text-slate-300 mb-3">
                                 <i class="fas fa-store-slash"></i>
                             </div>
@@ -304,5 +377,243 @@
         @endif
     </div>
 
+    {{-- Direct Profit Withdrawal Modal --}}
+    <div x-show="directModalOpen"
+         x-cloak
+         class="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true">
+        <div class="flex items-center justify-center min-h-screen p-4 text-center sm:p-0">
+            <div x-show="directModalOpen"
+                 x-transition:enter="ease-out duration-300"
+                 x-transition:enter-start="opacity-0"
+                 x-transition:enter-end="opacity-100"
+                 x-transition:leave="ease-in duration-200"
+                 x-transition:leave-start="opacity-100"
+                 x-transition:leave-end="opacity-0"
+                 @click="directModalOpen = false"
+                 class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity"></div>
+
+            <div x-show="directModalOpen"
+                 x-transition:enter="ease-out duration-300"
+                 x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                 x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                 x-transition:leave="ease-in duration-200"
+                 x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                 x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                 class="relative bg-white rounded-3xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:max-w-lg w-full border border-slate-100">
+
+                <form :action="'{{ url('admin/suppliers-management') }}/' + selectedSupplierId + '/withdraw'" method="POST">
+                    @csrf
+
+                    <div class="bg-gradient-to-r from-emerald-600 to-teal-700 px-5 py-4 text-white flex items-center justify-between">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center text-white text-base">
+                                <i class="fas fa-hand-holding-dollar"></i>
+                            </div>
+                            <h3 class="font-bold text-base">প্রফিট উইথড্র</h3>
+                        </div>
+                        <button type="button" @click="directModalOpen = false" class="text-white/70 hover:text-white text-base">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+
+                    <div class="p-5 space-y-3.5 max-h-[75vh] overflow-y-auto">
+                        {{-- Supplier Info Box --}}
+                        <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+                            <div>
+                                <div class="text-xs font-bold text-slate-800" x-text="selectedSupplierName"></div>
+                                <div class="text-[11px] text-slate-500" x-text="selectedSupplierPhone || 'ফোন নেই'"></div>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-[10px] font-bold text-slate-400 uppercase">ব্যালেন্স</div>
+                                <div class="text-base font-black text-emerald-600">৳<span x-text="Number(selectedAvailableBalance || 0).toFixed(2)"></span></div>
+                            </div>
+                        </div>
+
+                        <template x-if="Number(selectedAvailableBalance || 0) <= 0">
+                            <div class="p-2 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-[11px] font-medium flex items-center gap-1.5">
+                                <i class="fas fa-exclamation-triangle text-amber-500"></i>
+                                <span>ব্যালেন্স নেই</span>
+                            </div>
+                        </template>
+
+                        {{-- Amount Input --}}
+                        <div>
+                            <div class="flex items-center justify-between mb-1">
+                                <label class="text-xs font-bold text-slate-700">
+                                    পরিমাণ (৳) <span class="text-rose-500">*</span>
+                                </label>
+                                <template x-if="Number(selectedAvailableBalance || 0) > 0">
+                                    <button type="button" @click="setFullDirectBalance()"
+                                            class="text-[11px] font-bold text-emerald-600 hover:text-emerald-800">
+                                        সব টাকা (৳<span x-text="Number(selectedAvailableBalance).toFixed(2)"></span>)
+                                    </button>
+                                </template>
+                            </div>
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 font-bold text-xs">৳</span>
+                                <input type="number" step="0.01" min="0.01"
+                                       :max="selectedAvailableBalance"
+                                       name="amount" x-model="directAmount" required
+                                       placeholder="0.00"
+                                       class="w-full pl-7 pr-3 py-2 rounded-xl border border-slate-300 text-xs font-bold text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
+                            </div>
+                        </div>
+
+                        {{-- Payment Method Selection --}}
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">
+                                পেমেন্ট মেথড <span class="text-rose-500">*</span>
+                            </label>
+                            <input type="hidden" name="payment_method" :value="directPaymentMethod">
+                            <div class="grid grid-cols-5 gap-1.5">
+                                <button type="button" @click="setPaymentMethod('bkash')"
+                                        :class="directPaymentMethod === 'bkash' ? 'bg-pink-600 text-white font-bold' : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200'"
+                                        class="py-1.5 px-1 rounded-lg text-xs transition text-center">
+                                    bKash
+                                </button>
+                                <button type="button" @click="setPaymentMethod('nagad')"
+                                        :class="directPaymentMethod === 'nagad' ? 'bg-orange-600 text-white font-bold' : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200'"
+                                        class="py-1.5 px-1 rounded-lg text-xs transition text-center">
+                                    Nagad
+                                </button>
+                                <button type="button" @click="setPaymentMethod('rocket')"
+                                        :class="directPaymentMethod === 'rocket' ? 'bg-purple-600 text-white font-bold' : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200'"
+                                        class="py-1.5 px-1 rounded-lg text-xs transition text-center">
+                                    Rocket
+                                </button>
+                                <button type="button" @click="setPaymentMethod('bank')"
+                                        :class="directPaymentMethod === 'bank' ? 'bg-blue-600 text-white font-bold' : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200'"
+                                        class="py-1.5 px-1 rounded-lg text-xs transition text-center">
+                                    Bank
+                                </button>
+                                <button type="button" @click="setPaymentMethod('cash')"
+                                        :class="directPaymentMethod === 'cash' ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200'"
+                                        class="py-1.5 px-1 rounded-lg text-xs transition text-center">
+                                    Cash
+                                </button>
+                            </div>
+                        </div>
+
+                        {{-- Payment Details / Account / Trx ID --}}
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">
+                                অ্যাকাউন্ট / Trx ID
+                            </label>
+                            <input type="text" name="payment_details" x-model="directPaymentDetails"
+                                   placeholder="নম্বর বা Trx ID"
+                                   class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition">
+                        </div>
+
+                        {{-- Note --}}
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">
+                                নোট (ঐচ্ছিক)
+                            </label>
+                            <input type="text" name="note" x-model="directNote"
+                                   placeholder="নোট লিখুন..."
+                                   class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition">
+                        </div>
+                    </div>
+
+                    <div class="px-5 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-2">
+                        <button type="button" @click="directModalOpen = false"
+                                class="px-3.5 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 text-xs font-bold transition">
+                            বাতিল
+                        </button>
+                        <button type="submit"
+                                :disabled="!selectedSupplierId || !directAmount || Number(directAmount) <= 0 || Number(directAmount) > Number(selectedAvailableBalance || 0)"
+                                class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-bold shadow transition flex items-center gap-1.5">
+                            <i class="fas fa-check"></i> উইথড্র করুন
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    {{-- ── Image Lightbox Preview Modal ── --}}
+    <div x-show="previewModalOpen" x-cloak
+         class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+         @keydown.escape.window="previewModalOpen = false">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-2xl w-full overflow-hidden flex flex-col" @click.outside="previewModalOpen = false">
+            <div class="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                <span class="text-xs font-bold text-slate-800 truncate" x-text="previewTitle"></span>
+                <button type="button" @click="previewModalOpen = false" class="text-slate-400 hover:text-slate-600">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="p-4 flex items-center justify-center bg-slate-900/5 max-h-[75vh] overflow-auto">
+                <img :src="previewSrc" :alt="previewTitle" class="max-w-full max-h-[70vh] rounded-xl object-contain shadow-md">
+            </div>
+            <div class="p-3 bg-slate-50 border-t border-slate-100 flex justify-between items-center text-xs">
+                <a :href="previewSrc" target="_blank" class="text-emerald-600 hover:underline font-bold flex items-center gap-1">
+                    <i class="fas fa-external-link-alt text-[10px]"></i>
+                    <span>আসল সাইজে দেখুন</span>
+                </a>
+                <button type="button" @click="previewModalOpen = false" class="px-4 py-1.5 rounded-xl bg-slate-200 text-slate-700 font-bold hover:bg-slate-300">
+                    বন্ধ করুন
+                </button>
+            </div>
+        </div>
+    </div>
+
 </div>
+
+<script>
+function supplierIndexData() {
+    return {
+        previewModalOpen: false,
+        previewSrc: '',
+        previewTitle: '',
+        directModalOpen: false,
+        selectedSupplierId: null,
+        selectedSupplierName: '',
+        selectedSupplierPhone: '',
+        selectedAvailableBalance: 0,
+        selectedBkashNumber: '',
+        selectedBankInfo: '',
+        directAmount: '',
+        directPaymentMethod: 'bkash',
+        directPaymentDetails: '',
+        directNote: '',
+
+        previewImage(src, title) {
+            this.previewSrc = src;
+            this.previewTitle = title;
+            this.previewModalOpen = true;
+        },
+
+        openDirectWithdrawModal(id, name, phone, balance, bkash, bank) {
+            this.selectedSupplierId = id;
+            this.selectedSupplierName = name;
+            this.selectedSupplierPhone = phone;
+            this.selectedAvailableBalance = balance;
+            this.selectedBkashNumber = bkash;
+            this.selectedBankInfo = bank;
+            this.directAmount = '';
+            this.directPaymentMethod = bkash ? 'bkash' : (bank ? 'bank' : 'cash');
+            this.autoFillPaymentDetails();
+            this.directModalOpen = true;
+        },
+        setPaymentMethod(method) {
+            this.directPaymentMethod = method;
+            this.autoFillPaymentDetails();
+        },
+        autoFillPaymentDetails() {
+            if (this.directPaymentMethod === 'bkash' && this.selectedBkashNumber) {
+                this.directPaymentDetails = this.selectedBkashNumber;
+            } else if (this.directPaymentMethod === 'bank' && this.selectedBankInfo) {
+                this.directPaymentDetails = this.selectedBankInfo;
+            } else if (this.directPaymentMethod === 'cash') {
+                this.directPaymentDetails = 'Cash Payout (ক্যাশ পেমেন্ট)';
+            } else {
+                this.directPaymentDetails = '';
+            }
+        },
+        setFullDirectBalance() {
+            if (this.selectedAvailableBalance > 0) {
+                this.directAmount = parseFloat(this.selectedAvailableBalance).toFixed(2);
+            }
+        }
+    };
+}
+</script>
 @endsection
