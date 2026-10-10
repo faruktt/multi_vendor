@@ -20,7 +20,7 @@ class SupplierApprovedMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: '🎉 অভিনন্দন! আপনার সাপ্লায়ার অ্যাকাউন্ট অনুমোদিত হয়েছে — ব্যবসা শুরু করুন',
+            subject: '🎉 Congratulations! Your Supplier Account Has Been Approved',
         );
     }
 

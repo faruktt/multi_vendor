@@ -11,6 +11,7 @@ use App\Models\OrderStatus;
 use App\Models\PaymentMethod;
 use App\Models\Product;
 use App\Models\Purchase;
+use App\Models\Reseller;
 use App\Models\Sale;
 use App\Models\StockMovement;
 use App\Models\Supplier;
@@ -563,44 +564,206 @@ class AdminDataController extends Controller
         return view('admin.all-customers', compact('customers', 'vendors', 'branchSummary'));
     }
 
-    // ── Sales Report ──────────────────────────────────────────────────────
+    // ── Sales & Order Report ──────────────────────────────────────────────
     public function salesReport(Request $request)
     {
-        // Warehouse never sells — irrelevant here.
-        $vendors = Vendor::where('is_warehouse', false)->orderBy('name')->get();
+        $vendors       = Vendor::where('is_warehouse', false)->orderBy('name')->get();
+        $suppliers     = Supplier::orderBy('name')->get();
+        $resellers     = Reseller::orderBy('name')->get();
+        $orderStatuses = OrderStatus::orderBy('sort_order')->get();
 
-        // Per-branch summary
-        $branchSummary = $vendors->map(fn($v) => [
-            'vendor'  => $v,
-            'orders'  => Sale::withoutGlobalScopes()->where('vendor_id', $v->id)->count(),
-            'revenue' => Sale::withoutGlobalScopes()->where('vendor_id', $v->id)->sum('total'),
-            'due'     => Sale::withoutGlobalScopes()->where('vendor_id', $v->id)->sum('due_amount'),
-        ]);
+        // Base query for report filtering
+        $baseQuery = Sale::withoutGlobalScopes()
+            ->with([
+                'vendor',
+                'customer',
+                'reseller',
+                'supplier',
+                'saleItems.supplier',
+                'saleItems.product',
+                'saleItems.variant'
+            ]);
 
-        // Main paginated list (same as allSales but with extra filters)
-        $query = Sale::withoutGlobalScopes()
-            ->with(['vendor', 'customer'])
-            ->latest();
-
+        // Branch filter
         if ($request->filled('vendor_id')) {
-            $query->where('vendor_id', $request->vendor_id);
+            $baseQuery->where('vendor_id', $request->vendor_id);
         }
+        // Payment status filter
         if ($request->filled('status')) {
-            $query->where('payment_status', $request->status);
+            $baseQuery->where('payment_status', $request->status);
         }
+        // Order status filter
+        if ($request->filled('order_status')) {
+            $baseQuery->where('order_status', $request->order_status);
+        }
+        // Supplier filter
+        if ($request->filled('supplier_id')) {
+            $sId = (int) $request->supplier_id;
+            $baseQuery->where(fn($q) => $q->where('supplier_id', $sId)->orWhereHas('saleItems', fn($sq) => $sq->where('supplier_id', $sId)));
+        }
+        // Reseller filter
+        if ($request->filled('reseller_id')) {
+            $baseQuery->where('reseller_id', $request->reseller_id);
+        }
+        // Date range filter
         if ($request->filled('from')) {
-            $query->whereDate('created_at', '>=', $request->from);
+            $baseQuery->whereDate('created_at', '>=', $request->from);
         }
         if ($request->filled('to')) {
-            $query->whereDate('created_at', '<=', $request->to);
+            $baseQuery->whereDate('created_at', '<=', $request->to);
         }
+        // Search filter (invoice, tracking, customer)
         if ($request->filled('search')) {
-            $query->where('invoice_no', 'like', '%'.$request->search.'%');
+            $s = trim($request->search);
+            $baseQuery->where(function ($q) use ($s) {
+                $q->where('invoice_no', 'like', "%{$s}%")
+                  ->orWhere('courier_tracking_code', 'like', "%{$s}%")
+                  ->orWhereHas('customer', fn($cq) => $cq->where('name', 'like', "%{$s}%")->orWhere('phone', 'like', "%{$s}%"));
+            });
         }
 
-        $sales = $query->paginate(25)->withQueryString();
+        // Fetch all matching sales in this filter set to calculate complete statistics
+        $filteredAllSales = (clone $baseQuery)->get();
 
-        return view('admin.sales-report', compact('sales', 'vendors', 'branchSummary'));
+        // Categorize into: Admin in-house, Supplier products, and Reseller orders
+        $adminSales = $filteredAllSales->filter(function ($s) {
+            $isSupplier = !empty($s->supplier_id) || $s->saleItems->contains(fn($i) => !empty($i->supplier_id));
+            $isReseller = $s->channel === 'reseller' || !empty($s->reseller_id);
+            return !$isSupplier && !$isReseller;
+        });
+
+        $supplierSales = $filteredAllSales->filter(function ($s) {
+            $isSupplier = !empty($s->supplier_id) || $s->saleItems->contains(fn($i) => !empty($i->supplier_id));
+            $isReseller = $s->channel === 'reseller' || !empty($s->reseller_id);
+            return $isSupplier && !$isReseller;
+        });
+
+        $resellerSales = $filteredAllSales->filter(function ($s) {
+            return $s->channel === 'reseller' || !empty($s->reseller_id);
+        });
+
+        // Compute complete calculation metrics for each group
+        $globalStats   = $this->calculateSalesMetrics($filteredAllSales);
+        $adminStats    = $this->calculateSalesMetrics($adminSales);
+        $supplierStats = $this->calculateSalesMetrics($supplierSales);
+        $resellerStats = $this->calculateSalesMetrics($resellerSales);
+
+        // List of returned orders within the filtered scope (for detailed return audit)
+        $returnedOrders = $filteredAllSales->filter(fn($s) => in_array(strtolower((string)$s->order_status), ['return', 'returned']));
+
+        // Per-branch summary respecting active filters
+        $branchSummary = $vendors->map(function ($v) use ($filteredAllSales) {
+            $vSales = $filteredAllSales->where('vendor_id', $v->id);
+            $gross = (float) $vSales->sum('total');
+            $vReturns = $vSales->filter(fn($s) => in_array(strtolower((string)$s->order_status), ['return', 'returned']));
+            $vRetAmt = (float) $vReturns->sum('total');
+            $vRetShip = (float) $vReturns->sum('delivery_charge');
+            return [
+                'vendor'                 => $v,
+                'orders'                 => $vSales->count(),
+                'revenue'                => $gross,
+                'return_orders'          => $vReturns->count(),
+                'return_shipping_charge' => $vRetShip,
+                'net_revenue'            => (float) ($gross - $vRetAmt - $vRetShip),
+                'due'                    => (float) $vSales->sum('due_amount'),
+            ];
+        });
+
+        // Paginated orders list with optional source filter
+        $tableQuery = clone $baseQuery;
+        if ($request->filled('source')) {
+            $src = strtolower(trim($request->source));
+            if ($src === 'admin') {
+                $tableQuery->whereNull('reseller_id')
+                    ->where('channel', '!=', 'reseller')
+                    ->whereNull('supplier_id')
+                    ->whereDoesntHave('saleItems', fn($sq) => $sq->whereNotNull('supplier_id'));
+            } elseif ($src === 'supplier') {
+                $tableQuery->where(function ($q) {
+                    $q->whereNotNull('supplier_id')
+                      ->orWhereHas('saleItems', fn($sq) => $sq->whereNotNull('supplier_id'));
+                })->where(function ($q) {
+                    $q->whereNull('reseller_id')->where('channel', '!=', 'reseller');
+                });
+            } elseif ($src === 'reseller') {
+                $tableQuery->where(fn($q) => $q->whereNotNull('reseller_id')->orWhere('channel', 'reseller'));
+            } elseif ($src === 'return' || $src === 'returned') {
+                $tableQuery->whereIn('order_status', ['return', 'returned']);
+            }
+        }
+
+        $sales = $tableQuery->latest()->paginate(25)->withQueryString();
+
+        return view('admin.sales-report', compact(
+            'sales',
+            'vendors',
+            'suppliers',
+            'resellers',
+            'orderStatuses',
+            'branchSummary',
+            'globalStats',
+            'adminStats',
+            'supplierStats',
+            'resellerStats',
+            'returnedOrders'
+        ));
+    }
+
+    /**
+     * Helper to compute detailed sales calculations, returns, and shipping charge deductions
+     */
+    private function calculateSalesMetrics($sales): array
+    {
+        $totalOrders   = $sales->count();
+        $grossSales    = (float) $sales->sum('total');
+        $paidAmount    = (float) $sales->sum('paid_amount');
+        $dueAmount     = (float) $sales->sum('due_amount');
+        $totalShipping = (float) $sales->sum('delivery_charge');
+
+        $delivered = $sales->filter(fn($s) => in_array(strtolower((string)$s->order_status), ['delivered', 'completed']));
+        $deliveredCount = $delivered->count();
+        $deliveredAmount = (float) $delivered->sum('total');
+
+        $pending = $sales->filter(fn($s) => in_array(strtolower((string)$s->order_status), ['pending', 'processing', 'sent_to_courier', 'out_for_delivery']));
+        $pendingCount = $pending->count();
+        $pendingAmount = (float) $pending->sum('total');
+
+        $cancelled = $sales->filter(fn($s) => strtolower((string)$s->order_status) === 'cancelled');
+        $cancelledCount = $cancelled->count();
+        $cancelledAmount = (float) $cancelled->sum('total');
+
+        $returned = $sales->filter(fn($s) => in_array(strtolower((string)$s->order_status), ['return', 'returned']));
+        $returnCount = $returned->count();
+        $returnAmount = (float) $returned->sum('total');
+        // Return shipping charge (shipping cost lost on return — to be subtracted)
+        $returnShippingCharge = (float) $returned->sum('delivery_charge');
+
+        // Net calculation: Gross Sales minus Return Amount minus Return Shipping Charge Loss
+        $netRevenue = (float) ($grossSales - $returnAmount - $returnShippingCharge);
+
+        // Realized net calculation: Delivered Amount minus Return Shipping Charge Loss
+        $deliveredNet = (float) ($deliveredAmount - $returnShippingCharge);
+
+        return [
+            'total_orders'           => $totalOrders,
+            'gross_sales'            => $grossSales,
+            'paid_amount'            => $paidAmount,
+            'due_amount'             => $dueAmount,
+            'total_shipping'         => $totalShipping,
+            'delivered_count'        => $deliveredCount,
+            'delivered_amount'       => $deliveredAmount,
+            'pending_count'          => $pendingCount,
+            'pending_amount'         => $pendingAmount,
+            'cancelled_count'        => $cancelledCount,
+            'cancelled_amount'       => $cancelledAmount,
+            'return_count'           => $returnCount,
+            'return_amount'          => $returnAmount,
+            'return_shipping_charge' => $returnShippingCharge,
+            'net_revenue'            => $netRevenue,
+            'delivered_net'          => $deliveredNet,
+            'return_rate'            => $totalOrders > 0 ? round(($returnCount / $totalOrders) * 100, 1) : 0,
+            'delivery_rate'          => $totalOrders > 0 ? round(($deliveredCount / $totalOrders) * 100, 1) : 0,
+        ];
     }
 
     // ── Financial Report ──────────────────────────────────────────────────

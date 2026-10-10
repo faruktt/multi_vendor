@@ -101,6 +101,25 @@ class ProductController extends Controller
         return view('shop.products.show', compact('branch', 'product', 'related', 'categories'));
     }
 
+    public function quickView(Request $request, string $productSlug)
+    {
+        $branch = Vendor::onlineStore();
+        abort_unless($branch->status === 'active', 404);
+
+        $product = Product::withoutGlobalScopes()
+            ->where('vendor_id', $branch->id)
+            ->where('status', 'active')
+            ->where('slug', $productSlug)
+            ->where(function ($q) {
+                $q->whereNull('supplier_id')->orWhere('approval_status', 'approved');
+            })
+            ->with(['category', 'variants.color', 'variants.size', 'supplier'])
+            ->firstOrFail();
+
+        $currency = '৳';
+        return view('shop.partials.quick-view-drawer', compact('branch', 'product', 'currency'));
+    }
+
     public function supplierStore(Request $request, \App\Models\Supplier $supplier)
     {
         $branch = Vendor::onlineStore();

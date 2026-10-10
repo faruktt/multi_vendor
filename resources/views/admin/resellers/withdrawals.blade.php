@@ -33,7 +33,7 @@
             <button type="button" @click="openDirectWithdrawModal()"
                     class="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-xs shadow-md shadow-emerald-600/20 transition-all flex items-center gap-2 hover:scale-[1.02] active:scale-[0.98]">
                 <i class="fas fa-hand-holding-dollar text-sm"></i>
-                <span>+ প্রফিট উইথড্র</span>
+                <span>+ Withdraw Profit</span>
             </button>
         </div>
     </div>
@@ -393,7 +393,7 @@
                         <div class="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center text-white text-base">
                             <i class="fas fa-check-circle"></i>
                         </div>
-                        <h3 class="font-bold text-base">উইথড্র অনুমোদন</h3>
+                        <h3 class="font-bold text-base">Approve Withdrawal</h3>
                     </div>
                     <button type="button" @click="approveModalOpen = false" class="text-white/70 hover:text-white text-base">
                         <i class="fas fa-times"></i>
@@ -405,41 +405,41 @@
 
                     <div class="p-3 bg-emerald-50 border border-emerald-100 rounded-xl space-y-1.5 text-xs">
                         <div class="flex justify-between">
-                            <span class="text-slate-500">রিসেলার:</span>
+                            <span class="text-slate-500">Reseller:</span>
                             <span class="font-bold text-slate-800" x-text="selectedWithdrawal ? selectedWithdrawal.reseller_name : ''"></span>
                         </div>
                         <div class="flex justify-between">
-                            <span class="text-slate-500">পরিমাণ:</span>
+                            <span class="text-slate-500">Amount:</span>
                             <span class="font-black text-emerald-700 text-sm" x-text="selectedWithdrawal ? '৳' + selectedWithdrawal.amount : ''"></span>
                         </div>
                         <div class="flex justify-between">
-                            <span class="text-slate-500">মেথড / বিবরণ:</span>
+                            <span class="text-slate-500">Method / Details:</span>
                             <span class="font-medium text-slate-800" x-text="selectedWithdrawal ? selectedWithdrawal.payment_method + ' - ' + selectedWithdrawal.payment_details : ''"></span>
                         </div>
                         <div class="flex justify-between border-t border-emerald-200/60 pt-1.5">
-                            <span class="text-slate-500">বর্তমান ব্যালেন্স:</span>
+                            <span class="text-slate-500">Current Balance:</span>
                             <span class="font-bold text-slate-700" x-text="selectedWithdrawal ? '৳' + selectedWithdrawal.available : ''"></span>
                         </div>
                     </div>
 
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-1">
-                            Trx ID / রেফারেন্স
+                            Trx ID / Reference
                         </label>
                         <input type="text"
                                name="admin_note"
-                               placeholder="Trx ID বা রেফারেন্স..."
+                               placeholder="Trx ID or reference..."
                                class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition">
                     </div>
 
                     <div class="pt-2 border-t border-slate-100 flex items-center justify-end gap-2">
                         <button type="button" @click="approveModalOpen = false"
                                 class="px-3.5 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition">
-                            বাতিল
+                            Cancel
                         </button>
                         <button type="submit"
                                 class="px-4 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow transition flex items-center gap-1.5">
-                            <i class="fas fa-check"></i> অনুমোদন করুন
+                            <i class="fas fa-check"></i> Approve
                         </button>
                     </div>
                 </form>
@@ -468,7 +468,7 @@
                         <div class="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center text-white text-base">
                             <i class="fas fa-times-circle"></i>
                         </div>
-                        <h3 class="font-bold text-base">উইথড্র বাতিল</h3>
+                        <h3 class="font-bold text-base">Reject Withdrawal</h3>
                     </div>
                     <button type="button" @click="rejectModalOpen = false" class="text-white/70 hover:text-white text-base">
                         <i class="fas fa-times"></i>
@@ -480,34 +480,34 @@
 
                     <div class="p-3 bg-rose-50 border border-rose-100 rounded-xl space-y-1.5 text-xs">
                         <div class="flex justify-between">
-                            <span class="text-slate-500">রিসেলার:</span>
+                            <span class="text-slate-500">Reseller:</span>
                             <span class="font-bold text-slate-800" x-text="selectedWithdrawal ? selectedWithdrawal.reseller_name : ''"></span>
                         </div>
                         <div class="flex justify-between">
-                            <span class="text-slate-500">পরিমাণ:</span>
+                            <span class="text-slate-500">Amount:</span>
                             <span class="font-bold text-rose-700" x-text="selectedWithdrawal ? '৳' + selectedWithdrawal.amount : ''"></span>
                         </div>
                     </div>
 
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-1">
-                            বাতিলের কারণ <span class="text-rose-500">*</span>
+                            Rejection Reason <span class="text-rose-500">*</span>
                         </label>
                         <input type="text"
                                name="admin_note"
                                required
-                               placeholder="কারণ লিখুন..."
+                               placeholder="Enter reason..."
                                class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition">
                     </div>
 
                     <div class="pt-2 border-t border-slate-100 flex items-center justify-end gap-2">
                         <button type="button" @click="rejectModalOpen = false"
                                 class="px-3.5 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition">
-                            বন্ধ
+                            Close
                         </button>
                         <button type="submit"
                                 class="px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-xl shadow transition flex items-center gap-1.5">
-                            <i class="fas fa-ban"></i> বাতিল করুন
+                            <i class="fas fa-ban"></i> Reject
                         </button>
                     </div>
                 </form>
@@ -548,7 +548,7 @@
                             <div class="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center text-white text-base">
                                 <i class="fas fa-hand-holding-dollar"></i>
                             </div>
-                            <h3 class="font-bold text-base">রিসেলার প্রফিট উইথড্র</h3>
+                            <h3 class="font-bold text-base">Reseller Profit Withdrawal</h3>
                         </div>
                         <button type="button" @click="directModalOpen = false" class="text-white/70 hover:text-white text-base">
                             <i class="fas fa-times"></i>
@@ -559,7 +559,7 @@
                         {{-- Searchable Reseller Input --}}
                         <div class="relative" @click.outside="dropdownOpen = false">
                             <label class="block text-xs font-bold text-slate-700 mb-1">
-                                রিসেলার <span class="text-rose-500">*</span>
+                                Reseller <span class="text-rose-500">*</span>
                             </label>
 
                             <input type="hidden" name="reseller_id" :value="selectedResellerId" required>
@@ -572,7 +572,7 @@
                                        x-model="resellerSearch"
                                        @focus="dropdownOpen = true"
                                        @input="dropdownOpen = true"
-                                       placeholder="নাম বা মোবাইল নম্বর লিখে খুঁজুন..."
+                                       placeholder="Search by name or phone..."
                                        autocomplete="off"
                                        class="w-full pl-8 pr-8 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white transition">
                                 <template x-if="resellerSearch || selectedResellerId">
@@ -588,7 +588,7 @@
                                  x-cloak
                                  class="absolute left-0 right-0 mt-1 max-h-52 overflow-y-auto bg-white rounded-xl shadow-xl border border-slate-200 z-50 divide-y divide-slate-100">
                                 <template x-if="getFilteredResellers().length === 0">
-                                    <div class="p-3 text-xs text-slate-500 text-center">কোনো রিসেলার পাওয়া যায়নি</div>
+                                    <div class="p-3 text-xs text-slate-500 text-center">No resellers found</div>
                                 </template>
                                 <template x-for="r in getFilteredResellers()" :key="r.id">
                                     <div @click="selectReseller(r)"
@@ -599,7 +599,7 @@
                                             <div class="text-[11px] text-slate-400" x-text="r.phone || ''"></div>
                                         </div>
                                         <div class="text-right">
-                                            <span class="text-[10px] text-slate-400">ব্যালেন্স:</span>
+                                            <span class="text-[10px] text-slate-400">Balance:</span>
                                             <span class="font-extrabold text-emerald-600 ml-1">৳<span x-text="Number(r.available_balance || 0).toFixed(2)"></span></span>
                                         </div>
                                     </div>
@@ -612,10 +612,10 @@
                             <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
                                 <div>
                                     <div class="text-xs font-bold text-slate-800" x-text="selectedResellerObj.name"></div>
-                                    <div class="text-[11px] text-slate-500" x-text="selectedResellerObj.phone || 'ফোন নেই'"></div>
+                                    <div class="text-[11px] text-slate-500" x-text="selectedResellerObj.phone || 'No phone'"></div>
                                 </div>
                                 <div class="text-right">
-                                    <div class="text-[10px] font-bold text-slate-400 uppercase">ব্যালেন্স</div>
+                                    <div class="text-[10px] font-bold text-slate-400 uppercase">Balance</div>
                                     <div class="text-base font-black text-emerald-600">৳<span x-text="Number(selectedResellerObj.available_balance || 0).toFixed(2)"></span></div>
                                 </div>
                             </div>
@@ -624,7 +624,7 @@
                         <template x-if="selectedResellerObj && Number(selectedResellerObj.available_balance || 0) <= 0">
                             <div class="p-2 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-[11px] font-medium flex items-center gap-1.5">
                                 <i class="fas fa-exclamation-triangle text-amber-500"></i>
-                                <span>উত্তোলনযোগ্য ব্যালেন্স নেই</span>
+                                <span>No withdrawable balance available</span>
                             </div>
                         </template>
 
@@ -632,12 +632,12 @@
                         <div>
                             <div class="flex items-center justify-between mb-1">
                                 <label class="text-xs font-bold text-slate-700">
-                                    পরিমাণ (৳) <span class="text-rose-500">*</span>
+                                    Amount (৳) <span class="text-rose-500">*</span>
                                 </label>
                                 <template x-if="selectedResellerObj && Number(selectedResellerObj.available_balance || 0) > 0">
                                     <button type="button" @click="setFullDirectBalance()"
                                             class="text-[11px] font-bold text-emerald-600 hover:text-emerald-800">
-                                        সব টাকা (৳<span x-text="Number(selectedResellerObj.available_balance).toFixed(2)"></span>)
+                                        Full Amount (৳<span x-text="Number(selectedResellerObj.available_balance).toFixed(2)"></span>)
                                     </button>
                                 </template>
                             </div>
@@ -654,7 +654,7 @@
                         {{-- Payment Method Selection --}}
                         <div>
                             <label class="block text-xs font-bold text-slate-700 mb-1">
-                                পেমেন্ট মেথড <span class="text-rose-500">*</span>
+                                Payment Method <span class="text-rose-500">*</span>
                             </label>
                             <input type="hidden" name="payment_method" :value="directPaymentMethod">
                             <div class="grid grid-cols-5 gap-1.5">
@@ -689,20 +689,20 @@
                         {{-- Payment Details / Account / Trx ID --}}
                         <div>
                             <label class="block text-xs font-bold text-slate-700 mb-1">
-                                অ্যাকাউন্ট / Trx ID
+                                Account / Trx ID
                             </label>
                             <input type="text" name="payment_details" x-model="directPaymentDetails"
-                                   placeholder="নম্বর বা Trx ID"
+                                   placeholder="Number or Trx ID"
                                    class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition">
                         </div>
 
                         {{-- Note --}}
                         <div>
                             <label class="block text-xs font-bold text-slate-700 mb-1">
-                                নোট (ঐচ্ছিক)
+                                Note (Optional)
                             </label>
                             <input type="text" name="note" x-model="directNote"
-                                   placeholder="নোট লিখুন..."
+                                   placeholder="Enter note..."
                                    class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition">
                         </div>
                     </div>
@@ -710,12 +710,12 @@
                     <div class="px-5 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-2">
                         <button type="button" @click="directModalOpen = false"
                                 class="px-3.5 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 text-xs font-bold transition">
-                            বাতিল
+                            Cancel
                         </button>
                         <button type="submit"
                                 :disabled="!selectedResellerId || !directAmount || Number(directAmount) <= 0 || (selectedResellerObj && Number(directAmount) > Number(selectedResellerObj.available_balance || 0))"
                                 class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-bold shadow transition flex items-center gap-1.5">
-                            <i class="fas fa-check"></i> উইথড্র করুন
+                            <i class="fas fa-check"></i> Withdraw Profit
                         </button>
                     </div>
                 </form>

@@ -6,6 +6,10 @@
     <title>Reseller Register</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/solaimanlipi.css">
+    <style>
+        body { font-family: 'SolaimanLipi', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important; }
+    </style>
 </head>
 <body class="min-h-full bg-gradient-to-br from-indigo-900 via-purple-900 to-slate-900 flex items-center justify-center p-4 py-8">
 
@@ -70,7 +74,7 @@
             {{-- Profile Photo --}}
             <div class="p-3.5 rounded-2xl bg-white/5 border border-white/15 space-y-1.5">
                 <label class="block text-xs font-bold text-indigo-200">
-                    <i class="fas fa-camera text-indigo-400 mr-1"></i> নিজের ছবি (Your Photo) <span class="text-rose-400">*</span>
+                    <i class="fas fa-camera text-indigo-400 mr-1"></i> Profile Photo <span class="text-rose-400">*</span>
                 </label>
                 <input type="file" name="image" accept="image/*" required
                        class="w-full text-xs text-indigo-200 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-indigo-500/30 file:text-indigo-200 hover:file:bg-indigo-500/40">
@@ -80,16 +84,16 @@
             <div class="p-3.5 rounded-2xl bg-white/5 border border-white/15 space-y-3">
                 <div class="text-xs font-bold text-indigo-200 flex items-center gap-1.5">
                     <i class="fas fa-id-card text-indigo-400"></i>
-                    <span>নিজের জাতীয় পরিচয়পত্র (Your NID Card) <span class="text-rose-400">*</span></span>
+                    <span>National ID Card (Own NID) <span class="text-rose-400">*</span></span>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-[11px] font-medium text-indigo-300 mb-1">সামনের ছবি (Front) *</label>
+                        <label class="block text-[11px] font-medium text-indigo-300 mb-1">Front Side *</label>
                         <input type="file" name="nid_front" accept="image/*" required
                                class="w-full text-xs text-indigo-200 file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-indigo-500/30 file:text-indigo-200">
                     </div>
                     <div>
-                        <label class="block text-[11px] font-medium text-indigo-300 mb-1">পেছনের ছবি (Back) *</label>
+                        <label class="block text-[11px] font-medium text-indigo-300 mb-1">Back Side *</label>
                         <input type="file" name="nid_back" accept="image/*" required
                                class="w-full text-xs text-indigo-200 file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-indigo-500/30 file:text-indigo-200">
                     </div>
@@ -100,16 +104,16 @@
             <div class="p-3.5 rounded-2xl bg-white/5 border border-white/15 space-y-3">
                 <div class="text-xs font-bold text-indigo-200 flex items-center gap-1.5">
                     <i class="fas fa-user-shield text-purple-400"></i>
-                    <span>অভিভাবকের জাতীয় পরিচয়পত্র (Guardian NID Card) <span class="text-rose-400">*</span></span>
+                    <span>Guardian National ID Card <span class="text-rose-400">*</span></span>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-[11px] font-medium text-indigo-300 mb-1">সামনের ছবি (Front) *</label>
+                        <label class="block text-[11px] font-medium text-indigo-300 mb-1">Front Side *</label>
                         <input type="file" name="guardian_nid_front" accept="image/*" required
                                class="w-full text-xs text-indigo-200 file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-purple-500/30 file:text-purple-200">
                     </div>
                     <div>
-                        <label class="block text-[11px] font-medium text-indigo-300 mb-1">পেছনের ছবি (Back) *</label>
+                        <label class="block text-[11px] font-medium text-indigo-300 mb-1">Back Side *</label>
                         <input type="file" name="guardian_nid_back" accept="image/*" required
                                class="w-full text-xs text-indigo-200 file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-purple-500/30 file:text-purple-200">
                     </div>
@@ -144,7 +148,7 @@
 
         <div class="mt-4 bg-yellow-500/10 border border-yellow-400/20 rounded-xl px-4 py-3 text-yellow-200 text-xs text-center leading-relaxed">
             <i class="fas fa-info-circle mr-1"></i>
-            রেজিস্ট্রেশনের পর একজন অ্যাডমিন আপনার অ্যাকাউন্টটি যাচাই ও অনুমোদন করবেন, এরপর আপনি লগইন করতে পারবেন।
+            Upon submission, our admin team will review and approve your registration before you can sign in.
         </div>
     </div>
 </div>

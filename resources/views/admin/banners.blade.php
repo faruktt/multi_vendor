@@ -56,10 +56,10 @@
             <div>
                 <label class="block text-[12px] font-medium text-slate-600 mb-1.5">Show as</label>
                 <select name="position" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition">
-                    <option value="hero">Homepage Slider</option>
-                    <option value="mid">Mid-page Banner</option>
-                    <option value="promo1">Promo Card 1 (Top)</option>
-                    <option value="promo2">Promo Card 2 (Bottom)</option>
+                    <option value="hero">Homepage Slider (1376 × 768 px)</option>
+                    <option value="mid">Mid-page Banner (1400 × 400 px)</option>
+                    <option value="promo1">Promo Card 1 (Top) — 768 × 768 px (1:1 Square)</option>
+                    <option value="promo2">Promo Card 2 (Bottom) — 768 × 768 px (1:1 Square)</option>
                 </select>
             </div>
             <div>
@@ -77,16 +77,16 @@
 </div>
 
 {{-- ══ SLIDER BANNERS ══ --}}
-@include('admin.partials.banner-list', ['group' => 'hero', 'list' => $heroBanners, 'heading' => 'Homepage Slider', 'emptyText' => 'No slider banners yet. Upload one above — until then that section is hidden on the storefront.'])
+@include('admin.partials.banner-list', ['group' => 'hero', 'list' => $heroBanners, 'heading' => 'Homepage Slider (1376 × 768 px)', 'emptyText' => 'No slider banners yet. Upload one above — until then that section is hidden on the storefront.'])
 
 {{-- ══ MID-PAGE BANNER ══ --}}
-@include('admin.partials.banner-list', ['group' => 'mid', 'list' => $midBanners, 'heading' => 'Mid-page Banner', 'emptyText' => 'No mid-page banner yet. Upload one above — until then a text CTA is shown instead.'])
+@include('admin.partials.banner-list', ['group' => 'mid', 'list' => $midBanners, 'heading' => 'Mid-page Banner (1400 × 400 px)', 'emptyText' => 'No mid-page banner yet. Upload one above — until then a text CTA is shown instead.'])
 
 {{-- ══ PROMO CARD 1 ══ --}}
-@include('admin.partials.banner-list', ['group' => 'promo1', 'list' => $promo1Banners, 'heading' => 'Promo Card 1 (Top)', 'emptyText' => 'No image yet. Upload one above — until then this card is hidden on the storefront.'])
+@include('admin.partials.banner-list', ['group' => 'promo1', 'list' => $promo1Banners, 'heading' => 'Promo Card 1 (Top) — 768 × 768 px (1:1 Square)', 'emptyText' => 'No image yet. Upload one above — until then this card is hidden on the storefront.'])
 
 {{-- ══ PROMO CARD 2 ══ --}}
-@include('admin.partials.banner-list', ['group' => 'promo2', 'list' => $promo2Banners, 'heading' => 'Promo Card 2 (Bottom)', 'emptyText' => 'No image yet. Upload one above — until then this card is hidden on the storefront.'])
+@include('admin.partials.banner-list', ['group' => 'promo2', 'list' => $promo2Banners, 'heading' => 'Promo Card 2 (Bottom) — 768 × 768 px (1:1 Square)', 'emptyText' => 'No image yet. Upload one above — until then this card is hidden on the storefront.'])
 
 <form id="reorder-form" method="POST" action="{{ route('admin.banners.reorder') }}" class="hidden">
     @csrf

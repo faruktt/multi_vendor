@@ -1,5 +1,5 @@
 @extends('shop.layout')
-@section('title', 'ক্যাশ অন ডেলিভারিতে অর্ডার করুন — ' . ($branch->system_name ?? $branch->name))
+@section('title', 'Cash on Delivery Checkout — ' . ($branch->system_name ?? $branch->name))
 @section('main-class', 'w-full bg-slate-100/80 min-h-screen py-6 sm:py-12 px-4 sm:px-6')
 
 @php $currency = $appSettings['currency'] ?? '৳'; @endphp
@@ -61,16 +61,16 @@
                     if (data.success) {
                         this.appliedCoupon = data.code;
                         this.discount = parseFloat(data.discount_amount) || 0;
-                        this.couponMessage = `${data.code} কুপন সফলভাবে যুক্ত হয়েছে! ছাড়: ৳${this.discount.toFixed(2)}`;
+                        this.couponMessage = `Coupon ${data.code} applied successfully! Discount: ৳${this.discount.toFixed(2)}`;
                     } else {
-                        this.couponError = data.message || 'ভুল বা মেয়াদোত্তীর্ণ কুপন কোড';
+                        this.couponError = data.message || 'Invalid or expired coupon code';
                         this.appliedCoupon = null;
                         this.discount = 0;
                     }
                 })
                 .catch(err => {
                     this.loadingCoupon = false;
-                    this.couponError = 'কুপন যাচাই করতে সমস্যা হয়েছে';
+                    this.couponError = 'Failed to verify coupon code';
                 });
             },
 
@@ -94,13 +94,13 @@
                     </svg>
                 </div>
                 <div>
-                    <h2 class="text-sm sm:text-base font-extrabold text-slate-900 leading-tight">ক্যাশ অন ডেলিভারিতে অর্ডার করুন</h2>
-                    <p class="text-[11px] sm:text-xs text-slate-500 font-medium mt-1">আপনার বিস্তারিত তথ্য দিন</p>
+                    <h2 class="text-sm sm:text-base font-extrabold text-slate-900 leading-tight">Cash on Delivery Order</h2>
+                    <p class="text-[11px] sm:text-xs text-slate-500 font-medium mt-1">Enter your delivery details</p>
                 </div>
             </div>
             <a href="{{ route('root') }}"
                class="w-8 h-8 rounded-full bg-white hover:bg-slate-100 text-slate-400 hover:text-slate-600 border border-slate-200/80 flex items-center justify-center transition-colors shadow-2xs"
-               title="বন্ধ করুন">
+               title="Close">
                 <i class="fas fa-times text-xs"></i>
             </a>
         </div>
@@ -116,52 +116,52 @@
             <div class="bg-blue-50/70 border border-blue-100 rounded-xl px-4 py-3 flex items-center justify-between text-xs text-blue-900">
                 <div class="flex items-center gap-2">
                     <i class="fas fa-user-circle text-blue-600 text-sm"></i>
-                    <span class="font-bold">{{ auth('customer')->user()->name }} হিসেবে অর্ডার করছেন</span>
+                    <span class="font-bold">Ordering as {{ auth('customer')->user()->name }}</span>
                 </div>
                 <span class="text-[11px] text-blue-700 font-medium">{{ auth('customer')->user()->phone }}</span>
             </div>
             @endif
 
-            {{-- 1. নাম * --}}
+            {{-- 1. Full Name * --}}
             <div>
                 <label class="block text-xs sm:text-sm font-bold text-slate-800 mb-2">
-                    নাম <span class="text-red-500">*</span>
+                    Full Name <span class="text-red-500">*</span>
                 </label>
                 <div class="relative">
                     <span class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
                         <i class="fas fa-pencil-alt text-xs"></i>
                     </span>
-                    <input type="text" name="name" value="{{ old('name', $customer->name ?? '') }}" required placeholder="নাম"
+                    <input type="text" name="name" value="{{ old('name', $customer->name ?? '') }}" required placeholder="Your full name"
                            class="w-full pl-11 pr-4 py-3 sm:py-3.5 text-sm bg-white border border-slate-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition placeholder:text-slate-400 font-medium">
                 </div>
                 @error('name') <p class="text-xs text-red-500 mt-1.5 font-semibold">{{ $message }}</p> @enderror
             </div>
 
-            {{-- 2. মোবাইল নম্বর * --}}
+            {{-- 2. Phone Number * --}}
             <div>
                 <label class="block text-xs sm:text-sm font-bold text-slate-800 mb-2">
-                    মোবাইল নম্বর <span class="text-red-500">*</span>
+                    Phone Number <span class="text-red-500">*</span>
                 </label>
                 <div class="relative">
                     <span class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
                         <i class="fas fa-phone-alt text-xs"></i>
                     </span>
-                    <input type="tel" name="phone" value="{{ old('phone', $customer->phone ?? '') }}" required placeholder="অবশ্যই ১১ অংকের হতে হবে"
+                    <input type="tel" name="phone" value="{{ old('phone', $customer->phone ?? '') }}" required placeholder="11-digit mobile number"
                            class="w-full pl-11 pr-4 py-3 sm:py-3.5 text-sm bg-white border border-slate-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition placeholder:text-slate-400 font-medium">
                 </div>
                 @error('phone') <p class="text-xs text-red-500 mt-1.5 font-semibold">{{ $message }}</p> @enderror
             </div>
 
-            {{-- 3. সম্পূর্ণ ঠিকানা * (District and Thana dropdowns removed) --}}
+            {{-- 3. Delivery Address * (District and Thana dropdowns removed) --}}
             <div>
                 <label class="block text-xs sm:text-sm font-bold text-slate-800 mb-2">
-                    সম্পূর্ণ ঠিকানা <span class="text-red-500">*</span>
+                    Delivery Address <span class="text-red-500">*</span>
                 </label>
                 <div class="relative">
                     <span class="absolute top-3.5 left-4 flex items-start pointer-events-none text-slate-400">
                         <i class="fas fa-location-dot text-xs"></i>
                     </span>
-                    <textarea name="address" rows="2" required placeholder="আপনার জেলা, থানা ও বিস্তারিত ঠিকানা"
+                    <textarea name="address" rows="2" required placeholder="Your district, thana and full delivery address"
                               class="w-full pl-11 pr-4 py-3 sm:py-3.5 text-sm bg-white border border-slate-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition placeholder:text-slate-400 resize-none font-medium">{{ old('address', $customer->address ?? '') }}</textarea>
                 </div>
                 @error('address') <p class="text-xs text-red-500 mt-1.5 font-semibold">{{ $message }}</p> @enderror
@@ -172,10 +172,10 @@
                 @include('shop.partials.checkout-cart-lines', ['lines' => $lines])
             </div>
 
-            {{-- 5. ডেলিভারি চার্জ (Delivery Charge / Shipping Area) --}}
+            {{-- 5. Delivery Area (Delivery Charge / Shipping Area) --}}
             <div>
                 <label class="block text-xs sm:text-sm font-bold text-slate-800 mb-2.5">
-                    ডেলিভারি চার্জ
+                    Delivery Area
                 </label>
                 <div class="space-y-2.5">
                     {{-- Dhaka City --}}
@@ -188,7 +188,7 @@
                                       :class="zone === 'inside' ? 'border-blue-600 bg-blue-600' : 'border-slate-300 bg-white'">
                                     <span class="w-1.5 h-1.5 rounded-full bg-white" x-show="zone === 'inside'"></span>
                                 </span>
-                                <span class="text-xs sm:text-sm" :class="zone === 'inside' ? 'text-blue-950 font-extrabold' : 'text-slate-700 font-semibold'">ঢাকা সিটি</span>
+                                <span class="text-xs sm:text-sm" :class="zone === 'inside' ? 'text-blue-950 font-extrabold' : 'text-slate-700 font-semibold'">Inside Dhaka</span>
                             </div>
                             <span class="text-xs sm:text-sm font-mono" :class="zone === 'inside' ? 'text-blue-900 font-black' : 'text-slate-800 font-bold'">
                                 Tk <span x-text="deliveryInside.toFixed(2)"></span>
@@ -206,7 +206,7 @@
                                       :class="zone === 'outside' ? 'border-blue-600 bg-blue-600' : 'border-slate-300 bg-white'">
                                     <span class="w-1.5 h-1.5 rounded-full bg-white" x-show="zone === 'outside'"></span>
                                 </span>
-                                <span class="text-xs sm:text-sm" :class="zone === 'outside' ? 'text-blue-950 font-extrabold' : 'text-slate-700 font-semibold'">ঢাকার বাইরে</span>
+                                <span class="text-xs sm:text-sm" :class="zone === 'outside' ? 'text-blue-950 font-extrabold' : 'text-slate-700 font-semibold'">Outside Dhaka</span>
                             </div>
                             <span class="text-xs sm:text-sm font-mono" :class="zone === 'outside' ? 'text-blue-900 font-black' : 'text-slate-800 font-bold'">
                                 Tk <span x-text="deliveryOutside.toFixed(2)"></span>
@@ -225,13 +225,13 @@
                                     <span class="w-1.5 h-1.5 rounded-full bg-white" x-show="zone === 'sub_dhaka'"></span>
                                 </span>
                                 <div class="min-w-0 flex-1">
-                                    <span class="text-xs sm:text-sm block leading-tight" :class="zone === 'sub_dhaka' ? 'text-blue-950 font-extrabold' : 'text-slate-700 font-semibold'">ঢাকা উপজেলা</span>
+                                    <span class="text-xs sm:text-sm block leading-tight" :class="zone === 'sub_dhaka' ? 'text-blue-950 font-extrabold' : 'text-slate-700 font-semibold'">Sub Dhaka</span>
                                     @if(!empty($subDhakaUpazilaList))
                                         <span class="text-[10.5px] text-slate-400 block mt-0.5 leading-snug break-words">
-                                            {{ implode(', ', $subDhakaUpazilaList) }}
+                                             {{ implode(', ', $subDhakaUpazilaList) }}
                                         </span>
                                     @else
-                                        <span class="text-[10.5px] text-slate-400 block mt-0.5">সাভার, ডেমরা, কেরানীগঞ্জ ও নির্ধারিত উপজেলা</span>
+                                        <span class="text-[10.5px] text-slate-400 block mt-0.5">Savar, Demra, Keraniganj & designated upazilas</span>
                                     @endif
                                 </div>
                             </div>
@@ -263,10 +263,10 @@
                 </div>
             </div>
 
-            {{-- 7. কুপন কোড (User requested: image-er note-er jaygay coupon add korar option) --}}
+            {{-- 7. Coupon Code (User requested: image-er note-er jaygay coupon add korar option) --}}
             <div>
                 <label class="block text-xs sm:text-sm font-bold text-slate-800 mb-2 flex items-center justify-between">
-                    <span><i class="fas fa-ticket-alt text-blue-600 mr-1.5"></i> কুপন কোড (যদি থাকে)</span>
+                    <span><i class="fas fa-ticket-alt text-blue-600 mr-1.5"></i> Coupon Code (Optional)</span>
                     <span x-show="appliedCoupon" class="text-xs text-emerald-600 font-bold" x-cloak>Applied!</span>
                 </label>
                 <div class="flex gap-2.5">
@@ -274,7 +274,7 @@
                         <span class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
                             <i class="fas fa-tag text-xs"></i>
                         </span>
-                        <input type="text" x-model="couponCode" placeholder="কুপন কোড লিখুন"
+                        <input type="text" x-model="couponCode" placeholder="Enter coupon code"
                                :disabled="appliedCoupon !== null"
                                @keydown.enter.prevent="applyCoupon()"
                                class="w-full pl-11 pr-4 py-3 sm:py-3.5 text-xs sm:text-sm uppercase font-mono font-bold bg-white border border-slate-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition disabled:bg-slate-100 placeholder:normal-case placeholder:font-normal">
@@ -295,7 +295,7 @@
             <div class="pt-3 pb-2">
                 <button type="submit"
                         class="w-full bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white py-4 sm:py-4.5 rounded-xl sm:rounded-2xl text-sm sm:text-base font-extrabold transition-all shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2 cursor-pointer">
-                    <span>অর্ডার নিশ্চিত করুন — TK <span x-text="total.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})"></span></span>
+                    <span>Confirm Order — TK <span x-text="total.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})"></span></span>
                 </button>
                 <p class="text-center text-[11px] sm:text-xs text-slate-400 mt-3 font-medium">
                     Cash on delivery — pay when you receive your order

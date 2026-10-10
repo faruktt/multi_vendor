@@ -8,20 +8,20 @@
 <div class="max-w-[1440px] mx-auto px-4 py-4">
     <div class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
 
-        {{-- ══ Hero row: Main slider and side promo banner expand across full width ══ --}}
-        <div class="grid grid-cols-1 lg:grid-cols-[1.85fr_1fr] gap-3.5">
+        {{-- ══ Hero row: Main slider (1376x768 exact 1.792:1) and side promo banner (768x768 exact 1:1) ══ --}}
+        <div class="grid grid-cols-1 lg:grid-cols-[1.792fr_1fr] gap-3.5 items-stretch">
 
             {{-- LEFT: hero slider if banners uploaded, else the original brand/stats tile --}}
             @if($heroBanners->isNotEmpty())
-            <div class="relative rounded-xl overflow-hidden border border-gray-200 min-h-[240px] sm:min-h-[280px] md:min-h-[320px] lg:min-h-[350px] bg-gray-50 group">
-                <div id="heroTrack" class="flex overflow-x-auto scroll-smooth snap-x snap-mandatory h-full min-h-[240px] sm:min-h-[280px] md:min-h-[320px] lg:min-h-[350px]">
+            <div class="relative rounded-xl overflow-hidden border border-gray-200 bg-gray-50 group w-full aspect-[1376/768]">
+                <div id="heroTrack" class="flex overflow-x-auto scroll-smooth snap-x snap-mandatory w-full h-full">
                     @foreach($heroBanners as $banner)
                     @if($banner->link)
-                    <a href="{{ $banner->link }}" class="snap-start flex-shrink-0 w-full min-h-[240px] sm:min-h-[280px] md:min-h-[320px] lg:min-h-[350px] block">
+                    <a href="{{ $banner->link }}" class="snap-start flex-shrink-0 w-full h-full block">
                         <img src="{{ $banner->image_url }}" alt="{{ $banner->title ?? 'Banner' }}" class="w-full h-full object-cover">
                     </a>
                     @else
-                    <div class="snap-start flex-shrink-0 w-full min-h-[240px] sm:min-h-[280px] md:min-h-[320px] lg:min-h-[350px]">
+                    <div class="snap-start flex-shrink-0 w-full h-full">
                         <img src="{{ $banner->image_url }}" alt="{{ $banner->title ?? 'Banner' }}" class="w-full h-full object-cover">
                     </div>
                     @endif
@@ -38,7 +38,7 @@
                 @endif
             </div>
             @else
-            <div class="relative rounded-xl border border-gray-200 bg-gradient-to-br from-brand-light to-[#F5F8EF] min-h-[240px] sm:min-h-[280px] md:min-h-[320px] lg:min-h-[350px] overflow-hidden px-8 py-6 flex items-center gap-4">
+            <div class="relative rounded-xl border border-gray-200 bg-gradient-to-br from-brand-light to-[#F5F8EF] aspect-[1376/768] overflow-hidden px-8 py-6 flex items-center gap-4">
                 <div class="flex-shrink-0 w-[150px] text-center">
                     <div class="text-5xl font-extrabold text-brand leading-none tracking-tight">{{ Str::substr($branch->system_name ?? $branch->name, 0, 1) }}</div>
                     <strong class="block text-lg font-extrabold text-gray-900 -mt-1">{{ $branch->system_name ?? $branch->name }}</strong>
@@ -76,16 +76,16 @@
             {{-- RIGHT: Promo Card 1 (Top) if uploaded, else the original deal tile --}}
             @if($promo1Banner)
             @if($promo1Banner->link)
-            <a href="{{ $promo1Banner->link }}" class="block rounded-xl overflow-hidden border border-gray-200 bg-gray-50 min-h-[240px] sm:min-h-[280px] md:min-h-[320px] lg:min-h-[350px]">
+            <a href="{{ $promo1Banner->link }}" class="block rounded-xl overflow-hidden border border-gray-200 bg-gray-50 w-full h-full aspect-square">
                 <img src="{{ $promo1Banner->image_url }}" alt="{{ $promo1Banner->title ?? 'Promo' }}" class="w-full h-full object-cover">
             </a>
             @else
-            <div class="rounded-xl overflow-hidden border border-gray-200 bg-gray-50 min-h-[240px] sm:min-h-[280px] md:min-h-[320px] lg:min-h-[350px]">
+            <div class="rounded-xl overflow-hidden border border-gray-200 bg-gray-50 w-full h-full aspect-square">
                 <img src="{{ $promo1Banner->image_url }}" alt="{{ $promo1Banner->title ?? 'Promo' }}" class="w-full h-full object-cover">
             </div>
             @endif
             @else
-            <div class="relative rounded-xl min-h-[240px] sm:min-h-[280px] md:min-h-[320px] lg:min-h-[350px] p-6 overflow-hidden bg-gradient-to-br from-brand to-brand-dark flex flex-col justify-center gap-4 text-white">
+            <div class="relative rounded-xl w-full h-full aspect-square p-6 overflow-hidden bg-gradient-to-br from-brand to-brand-dark flex flex-col justify-center gap-4 text-white">
                 <div>
                     <p class="text-[11px] font-extrabold uppercase tracking-widest text-white/75">Every Category</p>
                     <p class="text-2xl font-extrabold leading-tight mt-1">One Cart,<br>One Delivery</p>
@@ -238,175 +238,324 @@
 </div>
 @endforeach
 
-{{-- ══ Homepage Rich Content Section: Reseller & Supplier Cards (Side-by-Side Flex/Grid) ══ --}}
+{{-- ══ Homepage Partnership Opportunities: Reseller & Supplier Cards ══ --}}
 @if((isset($resellerContents) && $resellerContents->isNotEmpty()) || (isset($supplierContents) && $supplierContents->isNotEmpty()) || (isset($homeContents) && $homeContents->isNotEmpty()))
-<div class="max-w-[1440px] mx-auto px-4 mt-10 mb-14">
+<div class="max-w-[1440px] mx-auto px-4 sm:px-6 my-10 sm:my-14">
+    <div class="relative rounded-3xl bg-gradient-to-b from-[#F7F9F5] via-white to-[#F7F9F5] border border-gray-200/80 p-6 sm:p-8 lg:p-10 shadow-sm overflow-hidden">
+        {{-- Subtle ambient mesh glows in background --}}
+        <div class="absolute -top-24 -left-24 w-80 h-80 bg-indigo-500/5 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute -bottom-24 -right-24 w-80 h-80 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none"></div>
 
-    {{-- Section Header --}}
-    <div class="text-center max-w-2xl mx-auto mb-8">
-        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-light text-brand-dark text-xs font-black uppercase tracking-wider mb-2">
-            <i class="fas fa-handshake-angle text-brand"></i> Partnership Opportunities
+        {{-- Section Header --}}
+        <div class="relative z-10 text-center max-w-2xl mx-auto mb-8">
+            <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white border border-gray-200/90 text-gray-700 text-xs font-bold uppercase tracking-wider shadow-2xs mb-2.5">
+                <span class="w-2 h-2 rounded-full bg-brand animate-pulse"></span>
+                <span>Business Partnerships</span>
+            </div>
+            <h2 class="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">
+                Partner With Us & Grow
+            </h2>
+            <p class="text-gray-500 text-xs sm:text-sm mt-1.5 font-normal leading-relaxed">
+                Start reselling with zero initial investment, or join as a trusted supplier to distribute your products nationwide.
+            </p>
         </div>
-        <h2 class="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">
-            আমাদের সাথে ব্যবসা শুরু করুন
-        </h2>
-        <p class="text-gray-500 text-xs sm:text-sm mt-1.5 leading-relaxed">
-            রিসেলার হিসেবে শূন্য বিনিয়োগে ব্যবসা শুরু করুন অথবা বিশ্বস্ত সাপ্লায়ার হয়ে আপনার পণ্যের পরিধি দেশব্যাপী ছড়িয়ে দিন।
-        </p>
-    </div>
 
-    {{-- 2-Column Side-by-Side Grid --}}
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 items-stretch">
+        {{-- 2-Column Side-by-Side Grid --}}
+        <div class="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 items-stretch">
 
-        {{-- ════ LEFT: RESELLER CARD ════ --}}
-        @if(isset($resellerContents) && $resellerContents->isNotEmpty())
-            @foreach($resellerContents as $resellerSection)
-            <div class="rounded-3xl border border-indigo-100/80 bg-white shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col justify-between group relative">
-                {{-- Top Gradient Accent Bar --}}
-                <div class="h-2 w-full bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500"></div>
+            {{-- ════ LEFT: RESELLER CARDS (DYNAMIC FROM ADMIN PANEL) ════ --}}
+            @if(isset($resellerContents) && $resellerContents->isNotEmpty())
+                @foreach($resellerContents as $resellerSection)
+                <div class="rounded-2xl border border-indigo-100 bg-white shadow-sm hover:shadow-xl hover:border-indigo-200 transition-all duration-300 flex flex-col justify-between overflow-hidden group relative">
+                    {{-- Top Accent Bar --}}
+                    <div class="h-1 w-full bg-gradient-to-r from-indigo-500 via-indigo-600 to-purple-600"></div>
 
-                <div class="p-6 sm:p-8 flex-1">
-                    {{-- Header with Badge & Icon --}}
-                    <div class="flex items-start justify-between gap-4 mb-5">
-                        <div class="flex items-center gap-3">
-                            <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-600 text-white flex items-center justify-center text-lg shadow-md shadow-indigo-200 flex-shrink-0 group-hover:scale-105 transition-transform">
-                                <i class="fas fa-handshake"></i>
+                    <div class="p-6 sm:p-7 flex-1 flex flex-col">
+                        {{-- Top Header Row --}}
+                        <div class="flex items-center justify-between gap-3 mb-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-100/80 text-indigo-600 flex items-center justify-center text-xl shadow-2xs group-hover:scale-105 group-hover:bg-indigo-600 group-hover:text-white transition-all duration-200 flex-shrink-0">
+                                    <i class="fas fa-handshake"></i>
+                                </div>
+                                <div>
+                                    <span class="text-[11px] font-black uppercase tracking-wider text-indigo-600 block">
+                                        Reseller Program
+                                    </span>
+                                    <h3 class="text-lg sm:text-xl font-black text-gray-900 tracking-tight leading-snug">
+                                        {{ $resellerSection->title }}
+                                    </h3>
+                                </div>
                             </div>
-                            <div>
-                                <span class="inline-block text-[11px] font-black uppercase tracking-wider text-indigo-700 bg-indigo-50 border border-indigo-200/60 px-2.5 py-0.5 rounded-full mb-1">
-                                    Reseller Program
-                                </span>
-                                @if(!empty($resellerSection->title))
-                                <h3 class="text-lg sm:text-xl font-black text-gray-900 tracking-tight leading-snug">
-                                    {{ $resellerSection->title }}
-                                </h3>
-                                @endif
-                            </div>
+                            <span class="text-[11px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-100 px-3 py-1 rounded-full whitespace-nowrap hidden sm:inline-block">
+                                Zero Investment
+                            </span>
+                        </div>
+
+                        {{-- Dynamic Content Body --}}
+                        <div class="partnership-rich reseller-rich text-gray-700 text-xs sm:text-sm leading-relaxed border-t border-gray-100 pt-4 flex-1">
+                            {!! $resellerSection->content !!}
                         </div>
                     </div>
 
-                    {{-- Body Content --}}
-                    <div class="home-rich-content reseller-rich text-gray-700 text-xs sm:text-sm leading-relaxed border-t border-gray-100 pt-4">
-                        {!! $resellerSection->content !!}
+                    {{-- Bottom Action Area --}}
+                    <div class="p-4 sm:p-6 bg-gradient-to-r from-indigo-50/40 via-white to-purple-50/20 border-t border-indigo-50 flex items-center justify-between gap-3 flex-wrap">
+                        <div class="flex items-center gap-2 flex-wrap text-[11px] font-semibold text-indigo-900">
+                            <span class="inline-flex items-center gap-1 bg-white px-2.5 py-1 rounded-lg border border-indigo-100/80 shadow-2xs">
+                                <i class="fas fa-check-circle text-indigo-600 text-[10px]"></i> Zero Investment
+                            </span>
+                            <span class="inline-flex items-center gap-1 bg-white px-2.5 py-1 rounded-lg border border-indigo-100/80 shadow-2xs">
+                                <i class="fas fa-check-circle text-indigo-600 text-[10px]"></i> Guaranteed Margin
+                            </span>
+                        </div>
+
+                        <div class="flex items-center gap-2 w-full sm:w-auto">
+                            <a href="{{ route('reseller.register') }}"
+                               class="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold text-xs sm:text-sm px-5 py-2.5 rounded-xl shadow-md shadow-indigo-600/20 hover:shadow-lg transition-all">
+                                <span>Reseller Register</span>
+                                <i class="fas fa-arrow-right text-[10px]"></i>
+                            </a>
+                            <a href="{{ route('reseller.login') }}"
+                               class="inline-flex items-center justify-center text-xs sm:text-sm font-bold text-indigo-700 hover:text-indigo-900 px-3 py-2 rounded-xl hover:bg-indigo-50 transition-colors">
+                                Sign In
+                            </a>
+                        </div>
                     </div>
                 </div>
+                @endforeach
+            @endif
 
-                {{-- Bottom Action Area --}}
-                <div class="p-5 sm:p-6 bg-gradient-to-br from-indigo-50/50 via-white to-purple-50/30 border-t border-indigo-50 flex flex-col sm:flex-row items-center justify-between gap-3">
-                    <div class="flex items-center gap-2 text-[11px] font-bold text-indigo-900 flex-wrap">
-                        <span class="inline-flex items-center gap-1 bg-white px-2.5 py-1 rounded-lg border border-indigo-100 shadow-2xs">
-                            <i class="fas fa-check-circle text-indigo-600 text-[10px]"></i> ০ বিনিয়োগ
-                        </span>
-                        <span class="inline-flex items-center gap-1 bg-white px-2.5 py-1 rounded-lg border border-indigo-100 shadow-2xs">
-                            <i class="fas fa-check-circle text-indigo-600 text-[10px]"></i> নিশ্চিত লাভ
-                        </span>
-                        <span class="inline-flex items-center gap-1 bg-white px-2.5 py-1 rounded-lg border border-indigo-100 shadow-2xs">
-                            <i class="fas fa-check-circle text-indigo-600 text-[10px]"></i> সহজ প্রসেস
-                        </span>
-                    </div>
+            {{-- ════ RIGHT: SUPPLIER CARDS (DYNAMIC FROM ADMIN PANEL) ════ --}}
+            @if(isset($supplierContents) && $supplierContents->isNotEmpty())
+                @foreach($supplierContents as $supplierSection)
+                <div class="rounded-2xl border border-emerald-100 bg-white shadow-sm hover:shadow-xl hover:border-emerald-200 transition-all duration-300 flex flex-col justify-between overflow-hidden group relative">
+                    {{-- Top Accent Bar --}}
+                    <div class="h-1 w-full bg-gradient-to-r from-emerald-500 via-teal-600 to-brand"></div>
 
-                    <div class="flex items-center gap-2.5 w-full sm:w-auto flex-shrink-0">
-                        <a href="{{ route('reseller.register') }}"
-                           class="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow-md shadow-indigo-200 transition-all hover:shadow-lg hover:scale-102">
-                            <span>রিসেলার রেজিস্ট্রেশন</span>
-                            <i class="fas fa-arrow-right text-[10px]"></i>
-                        </a>
-                        <a href="{{ route('reseller.login') }}"
-                           class="inline-flex items-center justify-center text-xs font-bold text-indigo-700 hover:text-indigo-900 px-3 py-2 rounded-xl hover:bg-indigo-100/50 transition-colors">
-                            লগইন
-                        </a>
-                    </div>
-                </div>
-            </div>
-            @endforeach
-        @endif
-
-        {{-- ════ RIGHT: SUPPLIER CARD ════ --}}
-        @if(isset($supplierContents) && $supplierContents->isNotEmpty())
-            @foreach($supplierContents as $supplierSection)
-            <div class="rounded-3xl border border-emerald-100/80 bg-white shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col justify-between group relative">
-                {{-- Top Gradient Accent Bar --}}
-                <div class="h-2 w-full bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-500"></div>
-
-                <div class="p-6 sm:p-8 flex-1">
-                    {{-- Header with Badge & Icon --}}
-                    <div class="flex items-start justify-between gap-4 mb-5">
-                        <div class="flex items-center gap-3">
-                            <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-600 text-white flex items-center justify-center text-lg shadow-md shadow-emerald-200 flex-shrink-0 group-hover:scale-105 transition-transform">
-                                <i class="fas fa-store"></i>
+                    <div class="p-6 sm:p-7 flex-1 flex flex-col">
+                        {{-- Top Header Row --}}
+                        <div class="flex items-center justify-between gap-3 mb-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-100/80 text-emerald-600 flex items-center justify-center text-xl shadow-2xs group-hover:scale-105 group-hover:bg-emerald-600 group-hover:text-white transition-all duration-200 flex-shrink-0">
+                                    <i class="fas fa-store"></i>
+                                </div>
+                                <div>
+                                    <span class="text-[11px] font-black uppercase tracking-wider text-emerald-600 block">
+                                        Supplier & Vendor
+                                    </span>
+                                    <h3 class="text-lg sm:text-xl font-black text-gray-900 tracking-tight leading-snug">
+                                        {{ $supplierSection->title }}
+                                    </h3>
+                                </div>
                             </div>
-                            <div>
-                                <span class="inline-block text-[11px] font-black uppercase tracking-wider text-emerald-700 bg-emerald-50 border border-emerald-200/60 px-2.5 py-0.5 rounded-full mb-1">
-                                    Supplier & Vendor
-                                </span>
-                                @if(!empty($supplierSection->title))
-                                <h3 class="text-lg sm:text-xl font-black text-gray-900 tracking-tight leading-snug">
-                                    {{ $supplierSection->title }}
-                                </h3>
-                                @endif
-                            </div>
+                            <span class="text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-100 px-3 py-1 rounded-full whitespace-nowrap hidden sm:inline-block">
+                                Nationwide Reach
+                            </span>
+                        </div>
+
+                        {{-- Dynamic Content Body --}}
+                        <div class="partnership-rich supplier-rich text-gray-700 text-xs sm:text-sm leading-relaxed border-t border-gray-100 pt-4 flex-1">
+                            {!! $supplierSection->content !!}
                         </div>
                     </div>
 
-                    {{-- Body Content --}}
-                    <div class="home-rich-content supplier-rich text-gray-700 text-xs sm:text-sm leading-relaxed border-t border-gray-100 pt-4">
-                        {!! $supplierSection->content !!}
+                    {{-- Bottom Action Area --}}
+                    <div class="p-4 sm:p-6 bg-gradient-to-r from-emerald-50/40 via-white to-teal-50/20 border-t border-emerald-50 flex items-center justify-between gap-3 flex-wrap">
+                        <div class="flex items-center gap-2 flex-wrap text-[11px] font-semibold text-emerald-900">
+                            <span class="inline-flex items-center gap-1 bg-white px-2.5 py-1 rounded-lg border border-emerald-100/80 shadow-2xs">
+                                <i class="fas fa-check-circle text-emerald-600 text-[10px]"></i> Nationwide Reach
+                            </span>
+                            <span class="inline-flex items-center gap-1 bg-white px-2.5 py-1 rounded-lg border border-emerald-100/80 shadow-2xs">
+                                <i class="fas fa-check-circle text-emerald-600 text-[10px]"></i> Fast Payouts
+                            </span>
+                        </div>
+
+                        <div class="flex items-center gap-2 w-full sm:w-auto">
+                            <a href="{{ route('supplier.register') }}"
+                               class="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-xs sm:text-sm px-5 py-2.5 rounded-xl shadow-md shadow-emerald-600/20 hover:shadow-lg transition-all">
+                                <span>Supplier Register</span>
+                                <i class="fas fa-arrow-right text-[10px]"></i>
+                            </a>
+                            <a href="{{ route('supplier.login') }}"
+                               class="inline-flex items-center justify-center text-xs sm:text-sm font-bold text-emerald-700 hover:text-emerald-900 px-3 py-2 rounded-xl hover:bg-emerald-50 transition-colors">
+                                Supplier Login
+                            </a>
+                        </div>
                     </div>
                 </div>
+                @endforeach
+            @endif
 
-                {{-- Bottom Action Area --}}
-                <div class="p-5 sm:p-6 bg-gradient-to-br from-emerald-50/50 via-white to-teal-50/30 border-t border-emerald-50 flex flex-col sm:flex-row items-center justify-between gap-3">
-                    <div class="flex items-center gap-2 text-[11px] font-bold text-emerald-900 flex-wrap">
-                        <span class="inline-flex items-center gap-1 bg-white px-2.5 py-1 rounded-lg border border-emerald-100 shadow-2xs">
-                            <i class="fas fa-check-circle text-emerald-600 text-[10px]"></i> দেশব্যাপী সেল
-                        </span>
-                        <span class="inline-flex items-center gap-1 bg-white px-2.5 py-1 rounded-lg border border-emerald-100 shadow-2xs">
-                            <i class="fas fa-check-circle text-emerald-600 text-[10px]"></i> দ্রুত পেমেন্ট
-                        </span>
-                        <span class="inline-flex items-center gap-1 bg-white px-2.5 py-1 rounded-lg border border-emerald-100 shadow-2xs">
-                            <i class="fas fa-check-circle text-emerald-600 text-[10px]"></i> অটো স্টক
-                        </span>
-                    </div>
-
-                    <div class="flex items-center gap-2.5 w-full sm:w-auto flex-shrink-0">
-                        <a href="{{ route('supplier.register') }}"
-                           class="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow-md shadow-emerald-200 transition-all hover:shadow-lg hover:scale-102">
-                            <span>ভেন্ডর রেজিস্ট্রেশন</span>
-                            <i class="fas fa-arrow-right text-[10px]"></i>
-                        </a>
-                        <a href="{{ route('supplier.login') }}"
-                           class="inline-flex items-center justify-center text-xs font-bold text-emerald-700 hover:text-emerald-900 px-3 py-2 rounded-xl hover:bg-emerald-100/50 transition-colors">
-                            পোর্টাল লগইন
-                        </a>
-                    </div>
-                </div>
-            </div>
-            @endforeach
-        @endif
-
+        </div>
     </div>
 </div>
 
 <style>
-.home-rich-content h1 { font-size: 1.4rem; font-weight: 800; margin-top: 0.9rem; margin-bottom: 0.4rem; color: #111827; line-height: 1.3; }
-.home-rich-content h2 { font-size: 1.25rem; font-weight: 700; margin-top: 0.9rem; margin-bottom: 0.4rem; color: #111827; line-height: 1.3; }
-.home-rich-content h3 { font-size: 1.1rem; font-weight: 700; margin-top: 0.75rem; margin-bottom: 0.35rem; color: #1f2937; }
-.home-rich-content h4, .home-rich-content h5, .home-rich-content h6 { font-weight: 700; margin-top: 0.5rem; margin-bottom: 0.25rem; color: #374151; }
-.home-rich-content p { margin-bottom: 0.65rem; }
-.home-rich-content ul { list-style-type: disc !important; margin-left: 1.25rem !important; margin-bottom: 0.65rem; }
-.home-rich-content ol { list-style-type: decimal !important; margin-left: 1.25rem !important; margin-bottom: 0.65rem; }
-.home-rich-content li { margin-bottom: 0.3rem; }
-.home-rich-content a { color: #0284c7; text-decoration: underline; }
-.home-rich-content a:hover { color: #0369a1; }
-.home-rich-content table { width: 100%; border-collapse: collapse; margin-bottom: 0.75rem; font-size: 12px; }
-.home-rich-content table, .home-rich-content th, .home-rich-content td { border: 1px solid #e5e7eb; }
-.home-rich-content th, .home-rich-content td { padding: 0.4rem 0.6rem; }
-.home-rich-content th { background-color: #f9fafb; font-weight: 700; }
-.home-rich-content img { max-width: 100%; height: auto; border-radius: 0.5rem; margin: 0.5rem 0; }
-.home-rich-content blockquote { border-left: 4px solid #cbd5e1; padding-left: 0.75rem; color: #64748b; font-style: italic; margin: 0.5rem 0; }
-
-.reseller-rich strong { color: #4338ca; }
-.supplier-rich strong { color: #047857; }
+/* ── Partnership Dynamic Content Typography System ── */
+.partnership-rich {
+    font-size: 0.8125rem;
+    line-height: 1.65;
+    color: #4b5563;
+}
+.partnership-rich p {
+    margin-bottom: 0.65rem;
+    color: #4b5563;
+}
+.partnership-rich > p:first-of-type {
+    font-size: 0.875rem;
+    color: #374151;
+    line-height: 1.6;
+    margin-bottom: 0.85rem;
+}
+.partnership-rich h1,
+.partnership-rich h2,
+.partnership-rich h3,
+.partnership-rich h4 {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.875rem;
+    font-weight: 800;
+    margin-top: 1rem;
+    margin-bottom: 0.45rem;
+    letter-spacing: -0.01em;
+}
+.reseller-rich h1, .reseller-rich h2, .reseller-rich h3, .reseller-rich h4 {
+    color: #3730a3;
+}
+.reseller-rich h1::before, .reseller-rich h2::before, .reseller-rich h3::before, .reseller-rich h4::before {
+    content: '';
+    display: inline-block;
+    width: 4px;
+    height: 13px;
+    border-radius: 9999px;
+    background: #4f46e5;
+    flex-shrink: 0;
+}
+.supplier-rich h1, .supplier-rich h2, .supplier-rich h3, .supplier-rich h4 {
+    color: #065f46;
+}
+.supplier-rich h1::before, .supplier-rich h2::before, .supplier-rich h3::before, .supplier-rich h4::before {
+    content: '';
+    display: inline-block;
+    width: 4px;
+    height: 13px;
+    border-radius: 9999px;
+    background: #059669;
+    flex-shrink: 0;
+}
+/* Bullet lists: Modern checkmark chips grid */
+.partnership-rich ul {
+    list-style: none !important;
+    padding-left: 0 !important;
+    margin: 0.5rem 0 0.85rem 0 !important;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.4rem;
+}
+@media (min-width: 640px) {
+    .partnership-rich ul {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.4rem 0.65rem;
+    }
+}
+.partnership-rich ul li {
+    position: relative;
+    padding: 0.4rem 0.6rem 0.4rem 1.6rem;
+    background-color: #f9fafb;
+    border: 1px solid #f3f4f6;
+    border-radius: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #374151;
+    line-height: 1.35;
+    transition: all 0.2s ease;
+}
+.partnership-rich ul li:hover {
+    background-color: #ffffff;
+    border-color: #e5e7eb;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+.reseller-rich ul li::before {
+    content: '✓';
+    position: absolute;
+    left: 0.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 10px;
+    font-weight: 900;
+    color: #4f46e5;
+}
+.supplier-rich ul li::before {
+    content: '✓';
+    position: absolute;
+    left: 0.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 10px;
+    font-weight: 900;
+    color: #059669;
+}
+/* Ordered / Numbered lists */
+.partnership-rich ol {
+    list-style: none !important;
+    counter-reset: p-counter;
+    padding-left: 0 !important;
+    margin: 0.5rem 0 0.85rem 0 !important;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+.partnership-rich ol li {
+    counter-increment: p-counter;
+    position: relative;
+    padding: 0.4rem 0.6rem 0.4rem 1.85rem;
+    background-color: #f9fafb;
+    border: 1px solid #f3f4f6;
+    border-radius: 0.5rem;
+    font-size: 0.75rem;
+    color: #374151;
+}
+.reseller-rich ol li::before {
+    content: counter(p-counter);
+    position: absolute;
+    left: 0.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 1rem;
+    height: 1rem;
+    border-radius: 9999px;
+    background-color: #e0e7ff;
+    color: #4338ca;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    font-weight: 800;
+}
+.supplier-rich ol li::before {
+    content: counter(p-counter);
+    position: absolute;
+    left: 0.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 1rem;
+    height: 1rem;
+    border-radius: 9999px;
+    background-color: #d1fae5;
+    color: #047857;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    font-weight: 800;
+}
+.reseller-rich strong { color: #3730a3; font-weight: 700; }
+.supplier-rich strong { color: #065f46; font-weight: 700; }
+.partnership-rich a { color: #2563eb; text-decoration: underline; }
+.partnership-rich a:hover { color: #1d4ed8; }
+.partnership-rich table { width: 100%; border-collapse: collapse; margin-bottom: 0.75rem; font-size: 11px; }
+.partnership-rich table, .partnership-rich th, .partnership-rich td { border: 1px solid #e5e7eb; padding: 0.35rem 0.5rem; }
+.partnership-rich th { background-color: #f9fafb; font-weight: 700; }
 </style>
 @endif
 
@@ -414,7 +563,7 @@
 
 @push('scripts')
 <script>
-  // Hero slider dot indicators (one dot per slide, since it shows 1-at-a-time)
+  // Hero slider dot indicators & auto-rotation
   const heroTrack = document.getElementById('heroTrack');
   const heroDots = document.getElementById('heroDots');
   if (heroTrack && heroDots && heroTrack.children.length > 1) {
@@ -439,6 +588,23 @@
     heroTrack.addEventListener('scroll', () => {
       clearTimeout(window._heroDotTimer);
       window._heroDotTimer = setTimeout(heroSyncDots, 80);
+    });
+
+    // Auto-rotate every 5 seconds, pausing on mouse hover
+    let autoSlideInterval = setInterval(() => {
+      const curPage = Math.round(heroTrack.scrollLeft / heroTrack.clientWidth);
+      const nextPage = (curPage + 1) % slideCount;
+      heroTrack.scrollTo({ left: heroTrack.clientWidth * nextPage, behavior: 'smooth' });
+    }, 5000);
+
+    heroTrack.parentElement.addEventListener('mouseenter', () => clearInterval(autoSlideInterval));
+    heroTrack.parentElement.addEventListener('mouseleave', () => {
+      clearInterval(autoSlideInterval);
+      autoSlideInterval = setInterval(() => {
+        const curPage = Math.round(heroTrack.scrollLeft / heroTrack.clientWidth);
+        const nextPage = (curPage + 1) % slideCount;
+        heroTrack.scrollTo({ left: heroTrack.clientWidth * nextPage, behavior: 'smooth' });
+      }, 5000);
     });
   }
 </script>

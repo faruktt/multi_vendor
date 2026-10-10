@@ -109,7 +109,7 @@
             {{-- 0. Target Audience Selector --}}
             <div>
                 <label class="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1.5">
-                    Target Audience (কার জন্য অফার?) <span class="text-red-500">*</span>
+                    Target Audience <span class="text-red-500">*</span>
                 </label>
                 <div class="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-xl">
                     <label class="cursor-pointer">
@@ -118,7 +118,7 @@
                         <div class="py-2 px-3 rounded-lg text-xs font-bold text-center transition-all flex items-center justify-center gap-1.5"
                              :class="targetAudience === 'customer' ? 'bg-amber-500 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'">
                             <i class="fas fa-users"></i>
-                            <span>Customer (স্টোরফ্রন্ট)</span>
+                            <span>Customer (Storefront)</span>
                         </div>
                     </label>
                     <label class="cursor-pointer">
@@ -127,7 +127,7 @@
                         <div class="py-2 px-3 rounded-lg text-xs font-bold text-center transition-all flex items-center justify-center gap-1.5"
                              :class="targetAudience === 'reseller' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'">
                             <i class="fas fa-handshake"></i>
-                            <span>Reseller (রিসেলার)</span>
+                            <span>Reseller Portal</span>
                         </div>
                     </label>
                 </div>
@@ -138,13 +138,13 @@
                     <template x-if="targetAudience === 'customer'">
                         <div class="flex items-start gap-1.5">
                             <i class="fas fa-circle-check text-amber-600 mt-0.5 flex-shrink-0"></i>
-                            <span>এই ফ্ল্যাশ সেলটি <strong>শুধুমাত্র ওয়েবসাইটের হোম পেজে (Customer Storefront)</strong> শো হবে। রিসেলারের প্রোডাক্ট পেজে <strong>শো হবে না</strong>।</span>
+                            <span>This flash sale will appear <strong>exclusively on the Customer Storefront</strong> and will not be visible on Reseller Portal.</span>
                         </div>
                     </template>
                     <template x-if="targetAudience === 'reseller'">
                         <div class="flex items-start gap-1.5">
                             <i class="fas fa-circle-check text-indigo-600 mt-0.5 flex-shrink-0"></i>
-                            <span>এই ফ্ল্যাশ সেলটি <strong>শুধুমাত্র রিসেলারদের প্রোডাক্ট পেজে (Reseller Portal)</strong> শো হবে। ওয়েবসাইটের হোম পেজে <strong>শো হবে না</strong>।</span>
+                            <span>This flash sale will appear <strong>exclusively on the Reseller Portal</strong> and will not be visible on the public Storefront.</span>
                         </div>
                     </template>
                 </div>
@@ -214,7 +214,7 @@
             {{-- 2. New Flash Sale Price --}}
             <div>
                 <label class="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1.5 flex items-center justify-between">
-                    <span x-text="targetAudience === 'reseller' ? 'New Reseller Flash Price (রিসেলারের নতুন কম দাম)' : 'New Customer Flash Price (কাস্টমারের নতুন দাম)'"></span>
+                    <span x-text="targetAudience === 'reseller' ? 'New Reseller Flash Price' : 'New Customer Flash Price'"></span>
                     <span class="text-red-500">*</span>
                 </label>
                 <div class="relative">

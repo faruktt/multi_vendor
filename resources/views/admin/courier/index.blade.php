@@ -14,7 +14,7 @@
             </div>
             <div>
                 <h1 class="text-xl font-bold text-slate-800">Courier API Settings</h1>
-                <p class="text-xs text-slate-400 mt-0.5">Steadfast, Pathao এবং RedX কুরিয়ার API কনফিগারেশন ও সেলস প্যানেলে একটিভ করার পেজ</p>
+                <p class="text-xs text-slate-400 mt-0.5">Configure and activate Steadfast, Pathao, and RedX courier APIs for direct sales booking</p>
             </div>
         </div>
 
@@ -30,10 +30,10 @@
     <div class="bg-gradient-to-r from-blue-50 via-indigo-50/50 to-blue-50 border border-blue-100/80 rounded-2xl p-4 flex items-start gap-3 text-xs text-slate-600">
         <i class="fas fa-circle-info text-blue-500 text-base mt-0.5 flex-shrink-0"></i>
         <div class="space-y-1">
-            <p class="font-semibold text-slate-800 text-[13px]">নির্দেশনা (Instructions):</p>
-            <p>১. আপনার কুরিয়ার পোর্টালে লগইন করে API Key ও Secret Key সংগ্রহ করুন এবং নিচে সেভ করুন।</p>
-            <p>২. যে কুরিয়ার সার্ভিসটি সেলস পেজে দেখাতে চান, সেটির <strong>Status "Active"</strong> করুন।</p>
-            <p>৩. সেলস ইনডেক্স পেজে <strong>"Send to Courier"</strong> কলামে একটিভ কুরিয়ার বাটন দেখতে পাবেন এবং ১-ক্লিকেই কুরিয়ারে পার্সেল তৈরি করতে পারবেন।</p>
+            <p class="font-semibold text-slate-800 text-[13px]">Instructions:</p>
+            <p>1. Log into your courier merchant portal to obtain API credentials and enter them below.</p>
+            <p>2. Enable <strong>Status "Active"</strong> for courier services you want to activate on the Sales page.</p>
+            <p>3. On the Sales page, click <strong>"Send to Courier"</strong> to dispatch orders and generate tracking parcels instantly.</p>
         </div>
     </div>
 
@@ -99,7 +99,7 @@
                 <div class="mt-3 flex items-center justify-between text-xs">
                     <span class="font-medium" :class="statuses[{{ $courier->id }}] ? 'text-emerald-600' : 'text-slate-400'">
                         <i class="fas fa-circle text-[8px] mr-1" :class="statuses[{{ $courier->id }}] ? 'text-emerald-500' : 'text-slate-300'"></i>
-                        <span x-text="statuses[{{ $courier->id }}] ? 'Active (সেলস পেজে শো হবে)' : 'Inactive'"></span>
+                        <span x-text="statuses[{{ $courier->id }}] ? 'Active (Shows on Sales Page)' : 'Inactive'"></span>
                     </span>
 
                     <button type="button"
@@ -181,7 +181,7 @@
                         <label class="block text-[11px] font-semibold text-slate-500 mb-1 uppercase tracking-wider">Store ID (Pickup Store)</label>
                         <input type="text" name="store_id" value="{{ old('store_id', $courier->store_id) }}" placeholder="Store ID (e.g. 12345)"
                                class="w-full text-xs font-mono rounded-xl border border-slate-200 px-3 py-2 text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <p class="text-[10px] text-slate-400 mt-0.5">ফাঁকা রাখলে স্বয়ংক্রিয়ভাবে প্রথম স্টোর নির্বাচন হবে</p>
+                        <p class="text-[10px] text-slate-400 mt-0.5">Leave blank to automatically use your default primary store</p>
                     </div>
                     <div>
                         <label class="block text-[11px] font-semibold text-slate-500 mb-1 uppercase tracking-wider">Base URL (API Endpoint)</label>
@@ -258,7 +258,7 @@ function courierSettingsPage() {
                     }
                 }
             } catch (err) {
-                alert('Status পরিবর্তন করতে ব্যর্থ হয়েছে।');
+                alert('Failed to update courier status.');
             } finally {
                 this.toggling = null;
             }
@@ -281,7 +281,7 @@ function courierSettingsPage() {
             } catch (err) {
                 this.testResults[id] = {
                     success: false,
-                    message: 'API টেস্টে সংযোগ ব্যর্থ হয়েছে: ' + err.message
+                    message: 'API connection test failed: ' + err.message
                 };
             } finally {
                 this.testing = null;

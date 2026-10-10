@@ -297,7 +297,7 @@ class SupplierManagementController extends Controller
             $paymentDetails = match ($request->payment_method) {
                 'bkash'  => $supplier->bkash_number ? "bKash: {$supplier->bkash_number}" : 'Direct bKash Payout',
                 'bank'   => $supplier->bank_info ?: 'Direct Bank Transfer',
-                'cash'   => 'Cash Payout (ক্যাশ পেমেন্ট)',
+                'cash'   => 'Cash Payout',
                 'nagad'  => 'Nagad Payout',
                 'rocket' => 'Rocket Payout',
                 default  => 'Admin Direct Payout',
@@ -310,13 +310,13 @@ class SupplierManagementController extends Controller
             'payment_method'  => $request->payment_method,
             'payment_details' => $paymentDetails,
             'status'          => 'approved',
-            'note'            => $request->note ?: 'এডমিন কর্তৃক সরাসরি প্রফিট উত্তোলন / পরিশোধ',
+            'note'            => $request->note ?: 'Admin Direct Payout',
             'admin_note'      => $request->admin_note ?: ($request->note ?: 'Admin Direct Payout'),
             'processed_by'    => auth()->id(),
             'processed_at'    => Carbon::now(),
         ]);
 
-        return back()->with('success', 'সাপ্লায়ার "' . $supplier->display_name . '" এর প্রফিট থেকে ৳' . number_format($withdrawal->amount, 2) . ' সফলভাবে উত্তোলন করা হয়েছে এবং ব্যালেন্স থেকে কর্তন করা হয়েছে।');
+        return back()->with('success', 'Supplier "' . $supplier->display_name . '" profit payout of ৳' . number_format($withdrawal->amount, 2) . ' successfully processed.');
     }
 
     /**

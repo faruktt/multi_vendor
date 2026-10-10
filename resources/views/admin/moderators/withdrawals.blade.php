@@ -1,6 +1,6 @@
 @extends('layouts.app')
-@section('title', 'মডারেটর বেতন উত্তোলন রিকোয়েস্ট')
-@section('heading', 'মডারেটর বেতন উত্তোলন রিকোয়েস্ট')
+@section('title', 'Moderator Salary Withdrawals')
+@section('heading', 'Moderator Salary Withdrawals')
 
 @section('content')
 <div class="py-4 space-y-6" x-data="moderatorWithdrawalsData()">
@@ -10,15 +10,15 @@
         <div class="flex items-center gap-2 flex-wrap">
             <a href="{{ route('admin.moderators.index') }}"
                class="px-4 py-2 rounded-xl font-bold text-sm transition-colors {{ request()->routeIs('admin.moderators.index') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-200' : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200' }}">
-                <i class="fas fa-user-shield mr-1.5"></i> Moderators (মডারেটর তালিকা)
+                <i class="fas fa-user-shield mr-1.5"></i> Moderators
             </a>
             <a href="{{ route('admin.moderators.reports') }}"
                class="px-4 py-2 rounded-xl font-bold text-sm transition-colors {{ request()->routeIs('admin.moderators.reports') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-200' : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200' }}">
-                <i class="fas fa-chart-line mr-1.5"></i> Work Shifts & Reports (কাজের রিপোর্ট)
+                <i class="fas fa-chart-line mr-1.5"></i> Work Shifts & Reports
             </a>
             <a href="{{ route('admin.moderators.withdrawals') }}"
                class="px-4 py-2 rounded-xl font-bold text-sm transition-colors {{ request()->routeIs('admin.moderators.withdrawals*') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-200' : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200' }}">
-                <i class="fas fa-wallet mr-1.5"></i> Salary Withdrawals (বেতন উত্তোলন)
+                <i class="fas fa-wallet mr-1.5"></i> Salary Withdrawals
                 @if($stats['pending_count'] > 0)
                     <span class="ml-1.5 px-2 py-0.5 text-xs font-black bg-amber-400 text-amber-950 rounded-full">{{ $stats['pending_count'] }}</span>
                 @endif
@@ -29,7 +29,7 @@
             <button type="button" @click="openDirectWithdrawModal()"
                     class="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-xs shadow-md shadow-emerald-600/20 transition-all flex items-center gap-2 hover:scale-[1.02] active:scale-[0.98]">
                 <i class="fas fa-hand-holding-dollar text-sm"></i>
-                <span>+ বেতন উইথড্র</span>
+                <span>+ Withdraw Salary</span>
             </button>
         </div>
     </div>
@@ -64,9 +64,9 @@
         {{-- Pending Requests --}}
         <div class="bg-amber-50/70 rounded-2xl border border-amber-200 p-5 shadow-sm flex items-center justify-between">
             <div>
-                <span class="text-amber-800 text-xs font-bold uppercase tracking-wider">Pending Approval (অপেক্ষমান)</span>
+                <span class="text-amber-800 text-xs font-bold uppercase tracking-wider">Pending Approval</span>
                 <div class="text-2xl font-black text-amber-950 mt-1">৳{{ number_format($stats['pending_amount'], 2) }}</div>
-                <div class="text-xs text-amber-700 mt-1 font-semibold">{{ $stats['pending_count'] }} টি রিকোয়েস্ট অনুমোদনের অপেক্ষায়</div>
+                <div class="text-xs text-amber-700 mt-1 font-semibold">{{ $stats['pending_count'] }} request(s) awaiting approval</div>
             </div>
             <div class="w-12 h-12 rounded-xl bg-amber-200/70 flex items-center justify-center text-amber-800 shadow-inner">
                 <i class="fas fa-hourglass-half text-xl"></i>
@@ -76,9 +76,9 @@
         {{-- Approved / Paid --}}
         <div class="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm flex items-center justify-between">
             <div>
-                <span class="text-slate-500 text-xs font-bold uppercase tracking-wider">Total Approved & Paid (পরিশোধিত)</span>
+                <span class="text-slate-500 text-xs font-bold uppercase tracking-wider">Total Approved & Paid</span>
                 <div class="text-2xl font-black text-emerald-600 mt-1">৳{{ number_format($stats['approved_amount'], 2) }}</div>
-                <div class="text-xs text-slate-400 mt-1">{{ $stats['approved_count'] }} টি রিকোয়েস্ট অনুমোদিত</div>
+                <div class="text-xs text-slate-400 mt-1">{{ $stats['approved_count'] }} request(s) approved</div>
             </div>
             <div class="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 shadow-inner">
                 <i class="fas fa-check-circle text-xl"></i>
@@ -88,9 +88,9 @@
         {{-- Rejected --}}
         <div class="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm flex items-center justify-between">
             <div>
-                <span class="text-slate-500 text-xs font-bold uppercase tracking-wider">Rejected Requests (বাতিল)</span>
+                <span class="text-slate-500 text-xs font-bold uppercase tracking-wider">Rejected Requests</span>
                 <div class="text-2xl font-black text-rose-600 mt-1">৳{{ number_format($stats['rejected_amount'], 2) }}</div>
-                <div class="text-xs text-slate-400 mt-1">{{ $stats['rejected_count'] }} টি রিকোয়েস্ট বাতিল করা হয়েছে</div>
+                <div class="text-xs text-slate-400 mt-1">{{ $stats['rejected_count'] }} request(s) rejected</div>
             </div>
             <div class="w-12 h-12 rounded-xl bg-rose-50 flex items-center justify-center text-rose-600 shadow-inner">
                 <i class="fas fa-ban text-xl"></i>
@@ -103,16 +103,16 @@
         <form method="GET" action="{{ route('admin.moderators.withdrawals') }}" class="flex flex-wrap items-center gap-3">
             <div>
                 <select name="status" class="h-10 border border-slate-200 rounded-xl px-3 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-slate-50 font-medium">
-                    <option value="">সকল স্ট্যাটাস</option>
-                    <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>Pending (অপেক্ষমান)</option>
-                    <option value="approved" {{ request('status') === 'approved' ? 'selected' : '' }}>Approved (অনুমোদিত)</option>
-                    <option value="rejected" {{ request('status') === 'rejected' ? 'selected' : '' }}>Rejected (বাতিল)</option>
+                    <option value="">All Statuses</option>
+                    <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>Pending</option>
+                    <option value="approved" {{ request('status') === 'approved' ? 'selected' : '' }}>Approved</option>
+                    <option value="rejected" {{ request('status') === 'rejected' ? 'selected' : '' }}>Rejected</option>
                 </select>
             </div>
 
             <div>
                 <select name="moderator_id" class="h-10 border border-slate-200 rounded-xl px-3 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-slate-50 font-medium">
-                    <option value="">সকল মডারেটর</option>
+                    <option value="">All Moderators</option>
                     @foreach($allModerators as $mod)
                         <option value="{{ $mod->id }}" {{ request('moderator_id') == $mod->id ? 'selected' : '' }}>{{ $mod->name }} ({{ $mod->phone ?: $mod->email }})</option>
                     @endforeach
@@ -136,14 +136,14 @@
             <table class="w-full text-left text-xs text-slate-600">
                 <thead class="bg-slate-50/80 border-b border-slate-100 text-[11px] font-bold uppercase text-slate-400 tracking-wider">
                     <tr>
-                        <th class="px-5 py-3.5">মডারেটর</th>
-                        <th class="px-5 py-3.5 text-right">পরিমাণ (৳)</th>
-                        <th class="px-5 py-3.5">পেমেন্ট মেথড</th>
-                        <th class="px-5 py-3.5">অ্যাকাউন্ট নম্বর / বিবরণ</th>
-                        <th class="px-5 py-3.5">তারিখ ও সময়</th>
-                        <th class="px-5 py-3.5 text-center">স্ট্যাটাস</th>
-                        <th class="px-5 py-3.5">এডমিন নোট (Admin Note)</th>
-                        <th class="px-5 py-3.5 text-right">অ্যাকশন</th>
+                        <th class="px-5 py-3.5">Moderator</th>
+                        <th class="px-5 py-3.5 text-right">Amount (৳)</th>
+                        <th class="px-5 py-3.5">Payment Method</th>
+                        <th class="px-5 py-3.5">Account / Details</th>
+                        <th class="px-5 py-3.5">Date & Time</th>
+                        <th class="px-5 py-3.5 text-center">Status</th>
+                        <th class="px-5 py-3.5">Admin Note</th>
+                        <th class="px-5 py-3.5 text-right">Action</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 font-medium">
@@ -183,7 +183,7 @@
                         <td class="px-5 py-4 max-w-xs">
                             <div class="font-mono text-xs text-slate-800 font-semibold">{{ $w->payment_details }}</div>
                             @if($w->note)
-                                <div class="text-[11px] text-slate-400 mt-0.5">নোট: {{ $w->note }}</div>
+                                <div class="text-[11px] text-slate-400 mt-0.5">Note: {{ $w->note }}</div>
                             @endif
                         </td>
 
@@ -198,17 +198,17 @@
                             @if($w->isPending())
                                 <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
                                     <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping"></span>
-                                    Pending (অপেক্ষমান)
+                                    Pending
                                 </span>
                             @elseif($w->isApproved())
                                 <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
                                     <i class="fas fa-check-circle text-[10px]"></i>
-                                    Approved (অনুমোদিত)
+                                    Approved
                                 </span>
                             @else
                                 <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
                                     <i class="fas fa-times-circle text-[10px]"></i>
-                                    Rejected (বাতিল)
+                                    Rejected
                                 </span>
                             @endif
                         </td>
@@ -233,7 +233,7 @@
                                 <div class="flex items-center justify-end gap-1.5">
                                     {{-- Approve Button --}}
                                     <button type="button" @click="openApprove(@js($w))"
-                                            title="অ্যাপ্রুভ করুন"
+                                            title="Approve"
                                             class="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-xs flex items-center gap-1 transition-colors cursor-pointer shadow-xs">
                                         <i class="fas fa-check text-[10px]"></i>
                                         <span>Approve</span>
@@ -241,14 +241,14 @@
 
                                     {{-- Reject Button --}}
                                     <button type="button" @click="openReject(@js($w))"
-                                            title="বাতিল করুন"
+                                            title="Reject"
                                             class="px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg font-bold text-xs flex items-center gap-1 transition-colors cursor-pointer">
                                         <i class="fas fa-times text-[10px]"></i>
                                         <span>Reject</span>
                                     </button>
                                 </div>
                             @else
-                                <span class="text-xs text-slate-400 font-semibold">প্রক্রিয়াজাত</span>
+                                <span class="text-xs text-slate-400 font-semibold">Processed</span>
                             @endif
                         </td>
                     </tr>
@@ -256,7 +256,7 @@
                     <tr>
                         <td colspan="8" class="text-center py-12 text-slate-400">
                             <i class="fas fa-wallet text-3xl text-slate-300 mb-2 block"></i>
-                            <p>কোনো বেতন উত্তোলন রিকোয়েস্ট পাওয়া যায়নি।</p>
+                            <p>No salary withdrawal requests found.</p>
                         </td>
                     </tr>
                     @endforelse
@@ -279,7 +279,7 @@
             <div class="p-5 border-b border-slate-100 bg-emerald-50 flex items-center justify-between">
                 <div class="flex items-center gap-2.5 text-emerald-900 font-black text-sm sm:text-base">
                     <i class="fas fa-check-circle text-emerald-600 text-lg"></i>
-                    <span>উইথড্র অনুমোদন</span>
+                    <span>Approve Withdrawal</span>
                 </div>
                 <button type="button" @click="approveModalOpen = false" class="text-slate-400 hover:text-slate-600">
                     <i class="fas fa-times"></i>
@@ -290,36 +290,36 @@
                 @csrf
                 <div class="p-3 bg-emerald-50 border border-emerald-100 rounded-xl space-y-1.5 text-xs">
                     <div class="flex justify-between">
-                        <span class="text-slate-500">মডারেটর:</span>
+                        <span class="text-slate-500">Moderator:</span>
                         <span class="font-bold text-slate-800" x-text="selectedWithdrawal?.moderator?.name"></span>
                     </div>
                     <div class="flex justify-between">
-                        <span class="text-slate-500">পরিমাণ:</span>
+                        <span class="text-slate-500">Amount:</span>
                         <span class="font-black text-emerald-700 text-sm" x-text="'৳' + Number(selectedWithdrawal?.amount || 0).toFixed(2)"></span>
                     </div>
                     <div class="flex justify-between">
-                        <span class="text-slate-500">মেথড / বিবরণ:</span>
+                        <span class="text-slate-500">Method / Details:</span>
                         <span class="font-medium text-slate-800" x-text="(selectedWithdrawal?.payment_method || '') + ' - ' + (selectedWithdrawal?.payment_details || '')"></span>
                     </div>
                 </div>
 
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">
-                        Trx ID / রেফারেন্স
+                        Trx ID / Reference
                     </label>
                     <input type="text" name="admin_note" x-model="adminNote"
-                           placeholder="Trx ID বা রেফারেন্স..."
+                           placeholder="Trx ID or reference..."
                            class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition">
                 </div>
 
                 <div class="pt-2 border-t border-slate-100 flex items-center justify-end gap-2">
                     <button type="button" @click="approveModalOpen = false"
-                            class="px-3.5 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition">
-                        বাতিল
+                            class="px-3.5 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer">
+                        Cancel
                     </button>
                     <button type="submit"
                             class="px-4 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow transition flex items-center gap-1.5 cursor-pointer">
-                        <i class="fas fa-check"></i> অনুমোদন করুন
+                        <i class="fas fa-check"></i> Approve
                     </button>
                 </div>
             </form>
@@ -334,7 +334,7 @@
             <div class="p-5 border-b border-slate-100 bg-rose-50 flex items-center justify-between">
                 <div class="flex items-center gap-2.5 text-rose-900 font-black text-sm sm:text-base">
                     <i class="fas fa-times-circle text-rose-600 text-lg"></i>
-                    <span>উইথড্র বাতিল</span>
+                    <span>Reject Withdrawal</span>
                 </div>
                 <button type="button" @click="rejectModalOpen = false" class="text-slate-400 hover:text-slate-600">
                     <i class="fas fa-times"></i>
@@ -345,32 +345,32 @@
                 @csrf
                 <div class="p-3 bg-rose-50 border border-rose-100 rounded-xl space-y-1.5 text-xs">
                     <div class="flex justify-between">
-                        <span class="text-slate-500">মডারেটর:</span>
+                        <span class="text-slate-500">Moderator:</span>
                         <span class="font-bold text-slate-800" x-text="selectedWithdrawal?.moderator?.name"></span>
                     </div>
                     <div class="flex justify-between">
-                        <span class="text-slate-500">পরিমাণ:</span>
+                        <span class="text-slate-500">Amount:</span>
                         <span class="font-bold text-rose-700" x-text="'৳' + Number(selectedWithdrawal?.amount || 0).toFixed(2)"></span>
                     </div>
                 </div>
 
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">
-                        বাতিলের কারণ <span class="text-rose-500">*</span>
+                        Rejection Reason <span class="text-rose-500">*</span>
                     </label>
                     <input type="text" name="admin_note" required x-model="adminNote"
-                           placeholder="কারণ লিখুন..."
+                           placeholder="Enter reason..."
                            class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition">
                 </div>
 
                 <div class="pt-2 border-t border-slate-100 flex items-center justify-end gap-2">
                     <button type="button" @click="rejectModalOpen = false"
-                            class="px-3.5 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition">
-                        বন্ধ
+                            class="px-3.5 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer">
+                        Close
                     </button>
                     <button type="submit"
                             class="px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-xl shadow transition flex items-center gap-1.5 cursor-pointer">
-                        <i class="fas fa-ban"></i> বাতিল করুন
+                        <i class="fas fa-ban"></i> Reject
                     </button>
                 </div>
             </form>
@@ -409,9 +409,9 @@
                             <div class="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center text-white text-base">
                                 <i class="fas fa-hand-holding-dollar"></i>
                             </div>
-                            <h3 class="font-bold text-base">মডারেটর বেতন উইথড্র</h3>
+                            <h3 class="font-bold text-base">Moderator Salary Withdrawal</h3>
                         </div>
-                        <button type="button" @click="directModalOpen = false" class="text-white/70 hover:text-white text-base">
+                        <button type="button" @click="directModalOpen = false" class="text-white/70 hover:text-white text-base cursor-pointer">
                             <i class="fas fa-times"></i>
                         </button>
                     </div>
@@ -420,7 +420,7 @@
                         {{-- Searchable Moderator Input --}}
                         <div class="relative" @click.outside="dropdownOpen = false">
                             <label class="block text-xs font-bold text-slate-700 mb-1">
-                                মডারেটর <span class="text-rose-500">*</span>
+                                Moderator <span class="text-rose-500">*</span>
                             </label>
 
                             <input type="hidden" name="moderator_id" :value="selectedModeratorId" required>
@@ -433,7 +433,7 @@
                                        x-model="moderatorSearch"
                                        @focus="dropdownOpen = true"
                                        @input="dropdownOpen = true"
-                                       placeholder="নাম বা মোবাইল নম্বর লিখে খুঁজুন..."
+                                       placeholder="Search by name or phone..."
                                        autocomplete="off"
                                        class="w-full pl-8 pr-8 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white transition">
                                 <template x-if="moderatorSearch || selectedModeratorId">
@@ -449,7 +449,7 @@
                                  x-cloak
                                  class="absolute left-0 right-0 mt-1 max-h-52 overflow-y-auto bg-white rounded-xl shadow-xl border border-slate-200 z-50 divide-y divide-slate-100">
                                 <template x-if="getFilteredModerators().length === 0">
-                                    <div class="p-3 text-xs text-slate-500 text-center">কোনো মডারেটর পাওয়া যায়নি</div>
+                                    <div class="p-3 text-xs text-slate-500 text-center">No moderators found</div>
                                 </template>
                                 <template x-for="m in getFilteredModerators()" :key="m.id">
                                     <div @click="selectModerator(m)"
@@ -460,7 +460,7 @@
                                             <div class="text-[11px] text-slate-400" x-text="m.phone || m.email || ''"></div>
                                         </div>
                                         <div class="text-right">
-                                            <span class="text-[10px] text-slate-400">ব্যালেন্স:</span>
+                                            <span class="text-[10px] text-slate-400">Balance:</span>
                                             <span class="font-extrabold text-emerald-600 ml-1">৳<span x-text="Number(m.available_balance || 0).toFixed(2)"></span></span>
                                         </div>
                                     </div>
@@ -476,7 +476,7 @@
                                     <div class="text-[11px] text-slate-500" x-text="selectedModeratorObj.phone || selectedModeratorObj.email"></div>
                                 </div>
                                 <div class="text-right">
-                                    <div class="text-[10px] font-bold text-slate-400 uppercase">ব্যালেন্স</div>
+                                    <div class="text-[10px] font-bold text-slate-400 uppercase">Balance</div>
                                     <div class="text-base font-black text-emerald-600">৳<span x-text="Number(selectedModeratorObj.available_balance || 0).toFixed(2)"></span></div>
                                 </div>
                             </div>
@@ -485,7 +485,7 @@
                         <template x-if="selectedModeratorObj && Number(selectedModeratorObj.available_balance || 0) <= 0">
                             <div class="p-2 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-[11px] font-medium flex items-center gap-1.5">
                                 <i class="fas fa-exclamation-triangle text-amber-500"></i>
-                                <span>উত্তোলনযোগ্য ব্যালেন্স নেই</span>
+                                <span>No withdrawable balance available</span>
                             </div>
                         </template>
 
@@ -493,12 +493,12 @@
                         <div>
                             <div class="flex items-center justify-between mb-1">
                                 <label class="text-xs font-bold text-slate-700">
-                                    পরিমাণ (৳) <span class="text-rose-500">*</span>
+                                    Amount (৳) <span class="text-rose-500">*</span>
                                 </label>
                                 <template x-if="selectedModeratorObj && Number(selectedModeratorObj.available_balance || 0) > 0">
                                     <button type="button" @click="setFullDirectBalance()"
                                             class="text-[11px] font-bold text-emerald-600 hover:text-emerald-800 cursor-pointer">
-                                        সব টাকা (৳<span x-text="Number(selectedModeratorObj.available_balance).toFixed(2)"></span>)
+                                        Full Amount (৳<span x-text="Number(selectedModeratorObj.available_balance).toFixed(2)"></span>)
                                     </button>
                                 </template>
                             </div>
@@ -515,7 +515,7 @@
                         {{-- Payment Method Selection --}}
                         <div>
                             <label class="block text-xs font-bold text-slate-700 mb-1">
-                                পেমেন্ট মেথড <span class="text-rose-500">*</span>
+                                Payment Method <span class="text-rose-500">*</span>
                             </label>
                             <input type="hidden" name="payment_method" :value="directPaymentMethod">
                             <div class="grid grid-cols-5 gap-1.5">
@@ -550,20 +550,20 @@
                         {{-- Payment Details / Account / Trx ID --}}
                         <div>
                             <label class="block text-xs font-bold text-slate-700 mb-1">
-                                অ্যাকাউন্ট / Trx ID
+                                Account / Trx ID
                             </label>
                             <input type="text" name="payment_details" x-model="directPaymentDetails"
-                                   placeholder="নম্বর বা Trx ID"
+                                   placeholder="Number or Trx ID"
                                    class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition">
                         </div>
 
                         {{-- Note --}}
                         <div>
                             <label class="block text-xs font-bold text-slate-700 mb-1">
-                                নোট (ঐচ্ছিক)
+                                Note (Optional)
                             </label>
                             <input type="text" name="note" x-model="directNote"
-                                   placeholder="নোট লিখুন..."
+                                   placeholder="Enter note..."
                                    class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition">
                         </div>
                     </div>
@@ -571,12 +571,12 @@
                     <div class="px-5 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-2">
                         <button type="button" @click="directModalOpen = false"
                                 class="px-3.5 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 text-xs font-bold transition cursor-pointer">
-                            বাতিল
+                            Cancel
                         </button>
                         <button type="submit"
                                 :disabled="!selectedModeratorId || !directAmount || Number(directAmount) <= 0 || (selectedModeratorObj && Number(directAmount) > Number(selectedModeratorObj.available_balance || 0))"
                                 class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-bold shadow transition flex items-center gap-1.5 cursor-pointer">
-                            <i class="fas fa-check"></i> উইথড্র করুন
+                            <i class="fas fa-check"></i> Withdraw Salary
                         </button>
                     </div>
                 </form>

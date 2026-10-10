@@ -193,7 +193,7 @@
 
                 @if($vendor->is_online_store)
                 <div>
-                    <label class="block text-xs font-semibold text-slate-600 mb-1.5">Delivery Charge — Inside Dhaka (ঢাকা সিটি)</label>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1.5">Delivery Charge — Inside Dhaka</label>
                     <div class="relative">
                         <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm">{{ $appSettings['currency'] ?? '৳' }}</span>
                         <input type="number" step="0.01" min="0" name="delivery_charge_inside_dhaka" value="{{ old('delivery_charge_inside_dhaka', $vendor->delivery_charge_inside_dhaka) }}"
@@ -201,7 +201,7 @@
                     </div>
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold text-slate-600 mb-1.5">Delivery Charge — Sub Dhaka (ঢাকা উপজেলা)</label>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1.5">Delivery Charge — Sub Dhaka</label>
                     <div class="relative">
                         <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm">{{ $appSettings['currency'] ?? '৳' }}</span>
                         <input type="number" step="0.01" min="0" name="delivery_charge_sub_dhaka" value="{{ old('delivery_charge_sub_dhaka', $vendor->delivery_charge_sub_dhaka ?? 100) }}"
@@ -209,7 +209,7 @@
                     </div>
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold text-slate-600 mb-1.5">Delivery Charge — Outside Dhaka (ঢাকার বাইরে)</label>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1.5">Delivery Charge — Outside Dhaka</label>
                     <div class="relative">
                         <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm">{{ $appSettings['currency'] ?? '৳' }}</span>
                         <input type="number" step="0.01" min="0" name="delivery_charge_outside_dhaka" value="{{ old('delivery_charge_outside_dhaka', $vendor->delivery_charge_outside_dhaka) }}"

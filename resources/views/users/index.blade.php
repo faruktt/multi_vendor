@@ -45,7 +45,7 @@
                 <th class="px-4 py-2.5 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wide w-8">#</th>
                 <th class="px-3 py-2.5 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Staff</th>
                 <th class="px-3 py-2.5 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wide hidden md:table-cell">Contact</th>
-                <th class="px-3 py-2.5 text-center text-[11px] font-semibold text-slate-500 uppercase tracking-wide">NID ডকুমেন্টস</th>
+                <th class="px-3 py-2.5 text-center text-[11px] font-semibold text-slate-500 uppercase tracking-wide">NID Documents</th>
                 <th class="px-3 py-2.5 text-center text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Role</th>
                 <th class="px-3 py-2.5 text-center text-[11px] font-semibold text-slate-500 uppercase tracking-wide hidden lg:table-cell">Joined</th>
                 <th class="px-3 py-2.5 text-center text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Actions</th>
@@ -100,7 +100,7 @@
                                 </button>
                             @endif
                             @if(!$u->nid_front_url && !$u->nid_back_url)
-                                <span class="text-slate-300">নেই</span>
+                                <span class="text-slate-300">None</span>
                             @endif
                         </div>
                         {{-- Guardian NID --}}
@@ -119,7 +119,7 @@
                                 </button>
                             @endif
                             @if(!$u->guardian_nid_front_url && !$u->guardian_nid_back_url)
-                                <span class="text-slate-300">নেই</span>
+                                <span class="text-slate-300">None</span>
                             @endif
                         </div>
                     </div>
@@ -401,10 +401,10 @@
         <div class="p-3 bg-slate-50 border-t border-slate-100 flex justify-between items-center text-xs">
             <a :href="previewSrc" target="_blank" class="text-blue-600 hover:underline font-bold flex items-center gap-1">
                 <i class="fas fa-external-link-alt text-[10px]"></i>
-                <span>আসল সাইজে দেখুন</span>
+                <span>View Original Size</span>
             </a>
             <button type="button" @click="previewModalOpen = false" class="px-4 py-1.5 rounded-xl bg-slate-200 text-slate-700 font-bold hover:bg-slate-300">
-                বন্ধ করুন
+                Close
             </button>
         </div>
     </div>

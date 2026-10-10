@@ -39,7 +39,7 @@
                     {{-- Cascading District & Thana --}}
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1.5">District (জেলা) *</label>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1.5">District *</label>
                             <div class="relative">
                                 <select name="district" x-model="selectedDistrict" @change="onDistrictChange()" required
                                         class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white">
@@ -51,7 +51,7 @@
                             </div>
                         </div>
                         <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1.5">Thana / Upazila (থানা) *</label>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1.5">Thana / Upazila *</label>
                             <div class="relative">
                                 <select name="thana" x-model="selectedThana" @change="syncZone()" required
                                         class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white">
@@ -67,7 +67,7 @@
                     {{-- Delivery Area Selection Cards --}}
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 mb-1.5 flex items-center justify-between">
-                            <span>Delivery Area (ডেলিভারি এরিয়া) *</span>
+                            <span>Delivery Area *</span>
                             <span class="text-[11px] text-indigo-600 font-medium" x-text="selectedThana ? '(Auto selected for ' + selectedThana + ', ' + selectedDistrict + ')' : '(Auto selected for ' + selectedDistrict + ')'"></span>
                         </label>
                         <div class="grid grid-cols-3 gap-3">
@@ -113,7 +113,7 @@
                     </div>
 
                     <div>
-                        <label class="block text-xs font-semibold text-slate-600 mb-1.5">Full Delivery Address (বিস্তারিত ঠিকানা) *</label>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1.5">Full Delivery Address *</label>
                         <textarea name="address" rows="2" required placeholder="House no, Road no, Area details..."
                                   class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-slate-50 resize-none">{{ old('address') }}</textarea>
                     </div>

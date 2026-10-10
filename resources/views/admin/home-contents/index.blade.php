@@ -165,7 +165,7 @@
                             <span class="block text-xs font-bold text-slate-800 flex items-center gap-1.5">
                                 <i class="fas fa-handshake text-indigo-600"></i> Reseller
                             </span>
-                            <span class="block text-[10.5px] text-slate-400">রিসেলার কার্ডের জন্য</span>
+                            <span class="block text-[10.5px] text-slate-400">For Reseller Card</span>
                         </div>
                     </label>
                     <label class="relative flex items-center gap-2.5 p-3 rounded-xl border border-slate-200 cursor-pointer hover:bg-slate-50 transition has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-50/50 has-[:checked]:ring-2 has-[:checked]:ring-emerald-500/20">
@@ -174,7 +174,7 @@
                             <span class="block text-xs font-bold text-slate-800 flex items-center gap-1.5">
                                 <i class="fas fa-store text-emerald-600"></i> Supplier
                             </span>
-                            <span class="block text-[10.5px] text-slate-400">সাপ্লায়ার কার্ডের জন্য</span>
+                            <span class="block text-[10.5px] text-slate-400">For Supplier Card</span>
                         </div>
                     </label>
                 </div>
@@ -185,7 +185,7 @@
                 <label class="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1.5">
                     Section Title / Heading <span class="text-slate-400 text-[10px] font-normal">(Optional)</span>
                 </label>
-                <input type="text" name="title" value="{{ old('title') }}" placeholder="e.g. আমাদের সাথে রিসেলার হিসেবে ব্যবসা শুরু করুন..."
+                <input type="text" name="title" value="{{ old('title') }}" placeholder="e.g. Start your business with zero investment as a reseller..."
                        class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white text-slate-800 font-medium">
             </div>
 
@@ -406,7 +406,7 @@
                                 <span class="block text-xs font-bold text-slate-800 flex items-center gap-1.5">
                                     <i class="fas fa-handshake text-indigo-600"></i> Reseller
                                 </span>
-                                <span class="block text-[10.5px] text-slate-400">রিসেলার কার্ড</span>
+                                <span class="block text-[10.5px] text-slate-400">Reseller Card</span>
                             </div>
                         </label>
                         <label class="relative flex items-center gap-2.5 p-3 rounded-xl border border-slate-200 cursor-pointer hover:bg-slate-50 transition" :class="editType === 'supplier' ? 'border-emerald-500 bg-emerald-50/50 ring-2 ring-emerald-500/20' : ''">
@@ -415,7 +415,7 @@
                                 <span class="block text-xs font-bold text-slate-800 flex items-center gap-1.5">
                                     <i class="fas fa-store text-emerald-600"></i> Supplier
                                 </span>
-                                <span class="block text-[10.5px] text-slate-400">সাপ্লায়ার কার্ড</span>
+                                <span class="block text-[10.5px] text-slate-400">Supplier Card</span>
                             </div>
                         </label>
                     </div>

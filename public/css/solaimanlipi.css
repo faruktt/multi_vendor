@@ -1,0 +1,52 @@
+/* Global Fallback CDN - must come first in CSS */
+@import url('https://fonts.maateen.me/solaiman-lipi/font.css');
+
+/* ══ SolaimanLipi Font Definition (Local Offline First) ══ */
+@font-face {
+  font-family: 'SolaimanLipi';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/solaimanlipi/solaimanlipi-normal-v1.0.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'SolaimanLipi';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/solaimanlipi/solaimanlipi-bold-v1.0.woff2') format('woff2');
+}
+
+/* Universal Font Application across entire site */
+html,
+body,
+input,
+button,
+select,
+textarea,
+optgroup,
+option,
+h1, h2, h3, h4, h5, h6,
+p, span, a, label, table, th, td, div {
+  font-family: 'SolaimanLipi', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+body {
+  font-family: 'SolaimanLipi', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+}
+
+/* Preserve FontAwesome & Icon Fonts */
+.fa, .fas, .far, .fal, .fad, .fab, [class*="fa-"], [class^="fa-"] {
+  font-family: "Font Awesome 6 Free", "Font Awesome 5 Free", "FontAwesome", sans-serif !important;
+}
+
+.material-icons, .material-symbols-outlined, [class*="ri-"], [class*="bi-"], [class*="ti-"] {
+  font-family: inherit;
+}
+
+/* Preserve Monospace elements */
+.font-mono, code, pre, kbd, samp {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;
+}
+

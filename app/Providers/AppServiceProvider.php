@@ -57,7 +57,7 @@ class AppServiceProvider extends ServiceProvider
             }
         });
 
-        // Public storefront: always share the cart contents and category list for the header/drawer
+        // Public storefront: always share the cart contents, category list and footer pages
         view()->composer('shop.*', function ($view) {
             $branch = $view->getData()['branch'] ?? request()->route('branch');
             if ($branch instanceof Vendor) {
@@ -74,6 +74,13 @@ class AppServiceProvider extends ServiceProvider
                         ->orderBy('name')
                         ->get());
                 }
+            }
+
+            if (!isset($view->getData()['footerPages'])) {
+                $view->with('footerPages', \App\Models\Page::where('is_active', true)
+                    ->orderBy('sort_order')
+                    ->orderBy('title')
+                    ->get());
             }
         });
 

@@ -9,6 +9,7 @@ use App\Models\Vendor;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rules\Password;
 
 class CustomerAccountController extends Controller
@@ -94,10 +95,12 @@ class CustomerAccountController extends Controller
         $branch   = Vendor::onlineStore();
 
         $validated = $request->validate([
-            'name'    => 'required|string|max:255',
-            'phone'   => 'required|string|max:30',
-            'email'   => 'nullable|email|max:255',
-            'address' => 'nullable|string|max:500',
+            'name'         => 'required|string|max:255',
+            'phone'        => 'required|string|max:30',
+            'email'        => 'nullable|email|max:255',
+            'address'      => 'nullable|string|max:500',
+            'image'        => 'nullable|image|mimes:jpeg,png,jpg,webp,gif|max:5120',
+            'remove_image' => 'nullable|boolean',
         ]);
 
         $phone = trim($request->phone);
@@ -126,11 +129,30 @@ class CustomerAccountController extends Controller
             }
         }
 
+        $imagePath = $customer->image;
+
+        // Handle image removal if requested
+        if ($request->boolean('remove_image')) {
+            if ($customer->image && Storage::disk('uploads')->exists($customer->image)) {
+                Storage::disk('uploads')->delete($customer->image);
+            }
+            $imagePath = null;
+        }
+
+        // Handle new image upload
+        if ($request->hasFile('image')) {
+            if ($customer->image && Storage::disk('uploads')->exists($customer->image)) {
+                Storage::disk('uploads')->delete($customer->image);
+            }
+            $imagePath = $request->file('image')->store('customers', 'uploads');
+        }
+
         $customer->update([
             'name'    => $validated['name'],
             'phone'   => $phone,
             'email'   => $email,
-            'address' => $validated['address'],
+            'address' => $validated['address'] ?? null,
+            'image'   => $imagePath,
         ]);
 
         return back()->with('success', 'Profile updated successfully.');

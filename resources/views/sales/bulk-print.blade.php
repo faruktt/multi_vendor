@@ -8,9 +8,7 @@
     {{-- Tailwind & Fonts --}}
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/solaimanlipi.css">
     
     {{-- Alpine.js --}}
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
@@ -18,10 +16,13 @@
     <style>
         * {
             box-sizing: border-box;
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-family: 'SolaimanLipi', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+        body {
+            font-family: 'SolaimanLipi', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
         }
         .font-mono {
-            font-family: 'JetBrains Mono', monospace;
+            font-family: 'JetBrains Mono', monospace !important;
         }
 
         /* ── Screen Styles ── */
@@ -264,7 +265,7 @@
     <div class="no-print max-w-[210mm] mx-auto mt-20 mb-2 px-4 flex items-center justify-between text-xs text-slate-500 bg-white/70 backdrop-blur rounded-xl border border-slate-200 py-2.5 shadow-xs">
         <div class="flex items-center gap-2">
             <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span>প্রিন্টারের সেটিংস এ <strong>Paper: A4</strong> এবং <strong>Margins: Default / Minimum</strong> রাখুন।</span>
+            <span>In printer settings, keep <strong>Paper: A4</strong> and <strong>Margins: Default / Minimum</strong>.</span>
         </div>
         <div class="font-mono text-slate-500">
             Total Pages: <span class="font-bold text-slate-800" x-text="Math.ceil({{ count($sales) }} / layout)"></span>
@@ -354,7 +355,7 @@
                         
                         {{-- Customer details --}}
                         <div class="border-r border-slate-200 pr-2">
-                            <div class="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Customer / গ্রাহক</div>
+                            <div class="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Customer</div>
                             <p class="font-bold text-slate-900 text-[11px] truncate">
                                 {{ $sale->customer->name ?? 'Walk-in Customer' }}
                             </p>
@@ -530,7 +531,7 @@
             <template x-if="layout === 2 && ({{ $index }} % 2 === 0) && ({{ $index }} < {{ $totalSales - 1 }})">
                 <div class="cut-line">
                     <span class="cut-line-badge">
-                        <i class="fas fa-scissors mr-1"></i> এখান থেকে কাটুন / Cut Here
+                        <i class="fas fa-scissors mr-1"></i> Cut Here
                     </span>
                 </div>
             </template>

@@ -8,17 +8,18 @@
     {{-- Tailwind CSS & FontAwesome --}}
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+Bengali:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/solaimanlipi.css">
 
     <style>
         * {
             box-sizing: border-box;
-            font-family: 'Plus Jakarta Sans', 'Noto Sans Bengali', sans-serif;
+            font-family: 'SolaimanLipi', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+        body {
+            font-family: 'SolaimanLipi', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
         }
         .font-mono {
-            font-family: 'JetBrains Mono', monospace;
+            font-family: 'JetBrains Mono', monospace !important;
         }
 
         body {

@@ -8,8 +8,10 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/solaimanlipi.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
+        body { font-family: 'SolaimanLipi', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important; }
         [x-cloak] { display: none !important; }
         .rsidebar { background: linear-gradient(180deg, #1e1b4b 0%, #312e81 100%); }
         .rnav-link { display:flex; align-items:center; gap:10px; padding:8px 12px; border-radius:8px; color:#a5b4fc; font-size:13.5px; font-weight:500; text-decoration:none; transition:all .15s; }
@@ -335,25 +337,25 @@
                         <a href="{{ route('reseller.account') }}"
                            class="flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-indigo-600 transition-colors">
                             <div class="w-6 text-center text-indigo-500"><i class="fas fa-user-circle"></i></div>
-                            <span>My Account (হিসাব-নিকাশ)</span>
+                            <span>My Account</span>
                         </a>
 
                         <a href="{{ route('reseller.profile') }}"
                            class="flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-indigo-600 transition-colors">
                             <div class="w-6 text-center text-purple-500"><i class="fas fa-user-gear"></i></div>
-                            <span>Profile Settings (প্রোফাইল এডিট)</span>
+                            <span>Profile Settings</span>
                         </a>
 
                         <a href="{{ route('reseller.orders.index') }}"
                            class="flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-indigo-600 transition-colors">
                             <div class="w-6 text-center text-emerald-500"><i class="fas fa-receipt"></i></div>
-                            <span>My Orders (আমার অর্ডার)</span>
+                            <span>My Orders</span>
                         </a>
 
                         <a href="{{ route('reseller.withdrawals.index') }}"
                            class="flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-indigo-600 transition-colors">
                             <div class="w-6 text-center text-amber-500"><i class="fas fa-wallet"></i></div>
-                            <span>Withdrawals (টাকা উত্তোলন)</span>
+                            <span>Withdrawals</span>
                         </a>
                     </div>
 
@@ -363,9 +365,9 @@
                     <form method="POST" action="{{ route('reseller.logout') }}">
                         @csrf
                         <button type="submit"
-                                class="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 transition-colors text-left">
+                                class="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 transition-colors text-left cursor-pointer">
                             <div class="w-6 text-center text-red-500"><i class="fas fa-sign-out-alt"></i></div>
-                            <span>Logout (লগআউট)</span>
+                            <span>Logout</span>
                         </button>
                     </form>
                 </div>

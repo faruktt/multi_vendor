@@ -4,10 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Barcode Print — {{ isset($product) ? $product->name : 'Bulk Print' }}</title>
+    <link rel="stylesheet" href="/css/solaimanlipi.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         /* ── Screen styles ── */
-        body { background: #f1f5f9; font-family: 'Segoe UI', sans-serif; }
+        body { background: #f1f5f9; font-family: 'SolaimanLipi', 'Segoe UI', sans-serif !important; }
 
         .label-card {
             width: 200px;

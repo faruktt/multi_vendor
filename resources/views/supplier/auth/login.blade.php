@@ -1,16 +1,14 @@
 <!DOCTYPE html>
-<html lang="bn" class="h-full">
+<html lang="en" class="h-full">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Supplier Login — {{ config('app.name', 'Marketplace') }}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/solaimanlipi.css">
     <style>
-        body { font-family: 'Plus Jakarta Sans', 'Hind Siliguri', sans-serif; }
+        body { font-family: 'SolaimanLipi', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important; }
     </style>
 </head>
 <body class="min-h-full bg-gradient-to-br from-slate-950 via-[#042017] to-slate-900 flex items-center justify-center p-4 selection:bg-emerald-500 selection:text-white relative overflow-x-hidden">
@@ -21,7 +19,7 @@
 
     <div class="w-full max-w-[430px] relative z-10 py-6">
 
-        <!-- ── Main Card (কার্ড স্টাইল) ── -->
+        <!-- ── Main Card ── -->
         <div class="bg-white/10 backdrop-blur-2xl border border-white/20 rounded-3xl p-7 sm:p-9 shadow-2xl shadow-black/70 relative">
 
             <!-- Card Header (Inside Card) -->
@@ -29,8 +27,8 @@
                 <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center mx-auto mb-3.5 shadow-xl shadow-emerald-500/30">
                     <i class="fas fa-boxes-stacked text-white text-2xl"></i>
                 </div>
-                <h1 class="text-2xl font-black text-white tracking-tight">সাপ্লায়ার লগইন</h1>
-                <p class="text-emerald-200/80 text-xs mt-1 font-medium">Supplier Portal</p>
+                <h1 class="text-2xl font-black text-white tracking-tight">Supplier Sign In</h1>
+                <p class="text-emerald-200/80 text-xs mt-1 font-medium">Access your Supplier Portal</p>
             </div>
 
             <!-- Alerts -->
@@ -58,7 +56,7 @@
 
                 <!-- Email -->
                 <div>
-                    <label class="block text-emerald-100 text-xs font-bold mb-1.5 uppercase tracking-wider">ইমেইল *</label>
+                    <label class="block text-emerald-100 text-xs font-bold mb-1.5 uppercase tracking-wider">Email Address *</label>
                     <div class="relative">
                         <span class="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-200/60 text-sm">
                             <i class="fas fa-envelope"></i>
@@ -71,7 +69,7 @@
 
                 <!-- Password -->
                 <div>
-                    <label class="block text-emerald-100 text-xs font-bold mb-1.5 uppercase tracking-wider">পাসওয়ার্ড *</label>
+                    <label class="block text-emerald-100 text-xs font-bold mb-1.5 uppercase tracking-wider">Password *</label>
                     <div class="relative">
                         <span class="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-200/60 text-sm">
                             <i class="fas fa-lock"></i>
@@ -90,14 +88,14 @@
                 <div class="flex items-center justify-between text-xs pt-0.5">
                     <label class="flex items-center gap-2 cursor-pointer select-none text-emerald-100/80 hover:text-white">
                         <input type="checkbox" name="remember" class="w-4 h-4 rounded border-white/30 bg-white/10 text-emerald-500 focus:ring-emerald-400 focus:ring-offset-0">
-                        <span>মনে রাখুন</span>
+                        <span>Remember me</span>
                     </label>
                 </div>
 
                 <!-- Submit Button -->
                 <button type="submit"
                         class="w-full py-3 px-4 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-bold text-sm shadow-xl shadow-emerald-500/30 transition-all transform active:scale-[0.99] flex items-center justify-center gap-2 mt-2">
-                    <span>প্রবেশ করুন</span>
+                    <span>Sign In</span>
                     <i class="fas fa-arrow-right text-xs"></i>
                 </button>
             </form>
@@ -105,9 +103,9 @@
             <!-- Card Footer -->
             <div class="mt-6 pt-5 border-t border-white/15 text-center">
                 <p class="text-xs text-emerald-100/80">
-                    একাউন্ট নেই?
+                    Don't have an account?
                     <a href="{{ route('supplier.register') }}" class="text-white font-bold ml-1 hover:underline underline-offset-2">
-                        রেজিস্ট্রেশন করুন
+                        Register here
                     </a>
                 </p>
             </div>
@@ -117,7 +115,7 @@
         <!-- Back to Website -->
         <div class="text-center mt-5">
             <a href="{{ url('/') }}" class="text-xs text-emerald-200/60 hover:text-white inline-flex items-center gap-1.5 transition-colors">
-                <i class="fas fa-arrow-left text-[10px]"></i> ওয়েবসাইটে ফিরে যান
+                <i class="fas fa-arrow-left text-[10px]"></i> Back to Storefront
             </a>
         </div>
 

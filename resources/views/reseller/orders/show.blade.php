@@ -158,7 +158,7 @@
             @if(in_array($order->order_status, ['return', 'returned']))
             <div class="flex justify-between items-center mt-3 text-rose-700 bg-rose-50 px-3 py-2.5 rounded-xl border border-rose-100">
                 <div>
-                    <span class="font-bold text-xs block">Order Returned (ডেলিভারি চার্জ কর্তন)</span>
+                    <span class="font-bold text-xs block">Order Returned</span>
                     <span class="text-[10px] text-rose-500">Shipping fee charged against profit</span>
                 </div>
                 <span class="font-black text-sm text-rose-600">-৳{{ number_format($order->delivery_charge, 2) }}</span>

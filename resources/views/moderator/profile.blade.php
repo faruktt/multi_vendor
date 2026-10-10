@@ -1,5 +1,5 @@
 @extends('moderator.layouts.app')
-@section('title', 'আমার প্রোফাইল ও সেটিংস - মডারেটর প্যানেল')
+@section('title', 'My Profile & Settings - Moderator Portal')
 
 @section('content')
 <div class="max-w-5xl mx-auto space-y-6" x-data="profileManager()">
@@ -28,7 +28,7 @@
                 </div>
                 {{-- Duty indicator dot --}}
                 <span class="absolute bottom-1 right-1 w-5 h-5 rounded-full border-2 border-slate-900 {{ $moderator->isWorkingNow() ? 'bg-emerald-500 ring-2 ring-emerald-400/50' : 'bg-slate-400' }}"
-                      title="{{ $moderator->isWorkingNow() ? 'অন-ডিউটি' : 'অফ-ডিউটি' }}"></span>
+                      title="{{ $moderator->isWorkingNow() ? 'On Duty' : 'Off Duty' }}"></span>
             </div>
 
             {{-- Moderator Identity & Quick Stats --}}
@@ -38,11 +38,11 @@
                     @if($moderator->isWorkingNow())
                         <span class="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 flex items-center gap-1.5">
                             <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                            অন-ডিউটি (শিফট চালু)
+                            On Duty (Shift In Progress)
                         </span>
                     @else
                         <span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-white/10 text-slate-300 border border-white/10">
-                            অফ-ডিউটি
+                            Off Duty
                         </span>
                     @endif
                 </div>
@@ -60,11 +60,11 @@
                 {{-- Stats Row --}}
                 <div class="pt-2 flex flex-wrap items-center justify-center sm:justify-start gap-3 text-xs">
                     <div class="bg-white/10 border border-white/10 px-3 py-1.5 rounded-xl backdrop-blur-xs">
-                        <span class="text-slate-300 text-[11px] block">মোট সম্পন্ন শিফট</span>
-                        <span class="font-extrabold text-white text-sm font-mono">{{ $totalSessions }} টি</span>
+                        <span class="text-slate-300 text-[11px] block">Completed Shifts</span>
+                        <span class="font-extrabold text-white text-sm font-mono">{{ $totalSessions }} shifts</span>
                     </div>
                     <div class="bg-white/10 border border-white/10 px-3 py-1.5 rounded-xl backdrop-blur-xs">
-                        <span class="text-slate-300 text-[11px] block">সর্বমোট কাজের সময়</span>
+                        <span class="text-slate-300 text-[11px] block">Total Work Duration</span>
                         <span class="font-extrabold text-white text-sm font-mono">{{ $moderator->formattedTotalWorkTime() }}</span>
                     </div>
                     @php
@@ -72,7 +72,7 @@
                         $tM = floor(($todaySeconds % 3600) / 60);
                     @endphp
                     <div class="bg-white/10 border border-white/10 px-3 py-1.5 rounded-xl backdrop-blur-xs">
-                        <span class="text-slate-300 text-[11px] block">আজকের কাজ</span>
+                        <span class="text-slate-300 text-[11px] block">Today's Work</span>
                         <span class="font-extrabold text-emerald-400 text-sm font-mono">{{ $tH > 0 ? "{$tH}h {$tM}m" : "{$tM}m" }}</span>
                     </div>
                 </div>
@@ -83,7 +83,7 @@
                 <a href="{{ route('moderator.dashboard') }}"
                    class="inline-flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold transition-all border border-white/10">
                     <i class="fas fa-arrow-left text-[11px]"></i>
-                    <span>ড্যাশবোর্ডে ফিরুন</span>
+                    <span>Back to Dashboard</span>
                 </a>
             </div>
         </div>
@@ -101,8 +101,8 @@
                         <i class="fas fa-user-edit"></i>
                     </div>
                     <div>
-                        <h2 class="text-base font-black text-slate-900">ব্যক্তিগত তথ্য ও প্রোফাইল ছবি</h2>
-                        <p class="text-xs text-slate-400 mt-0.5">আপনার নাম, যোগাযোগের তথ্য ও প্রোফাইল ছবি আপডেট করুন</p>
+                        <h2 class="text-base font-black text-slate-900">Personal Information & Profile Picture</h2>
+                        <p class="text-xs text-slate-400 mt-0.5">Update your personal information, contact details, and display photo</p>
                     </div>
                 </div>
 
@@ -112,7 +112,7 @@
                     {{-- Profile Image Upload Section --}}
                     <div>
                         <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-                            প্রোফাইল ছবি (Profile Image)
+                            Profile Picture
                         </label>
 
                         <div class="flex flex-col sm:flex-row items-center gap-5 p-4 rounded-2xl bg-slate-50 border border-dashed border-slate-300/90">
@@ -134,7 +134,7 @@
                                     {{-- File Input Button --}}
                                     <label class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer">
                                         <i class="fas fa-camera text-[11px]"></i>
-                                        <span>নতুন ছবি আপলোড করুন</span>
+                                        <span>Upload New Photo</span>
                                         <input type="file" name="image" accept="image/jpeg,image/png,image/webp,image/gif"
                                                class="hidden" @change="handleFileSelect($event)">
                                     </label>
@@ -143,7 +143,7 @@
                                     <button type="button" x-show="previewUrl" @click="clearPreview()"
                                             class="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-xs font-bold transition-colors cursor-pointer">
                                         <i class="fas fa-undo text-[10px]"></i>
-                                        <span>প্রিভিউ বাতিল</span>
+                                        <span>Cancel Preview</span>
                                     </button>
 
                                     {{-- Remove existing photo --}}
@@ -151,14 +151,14 @@
                                     <button type="button" x-show="!removeImage && !previewUrl" @click="markRemoveImage()"
                                             class="inline-flex items-center gap-1.5 px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl text-xs font-bold transition-colors cursor-pointer">
                                         <i class="fas fa-trash-alt text-[10px]"></i>
-                                        <span>বর্তমান ছবি মুছুন</span>
+                                        <span>Remove Current Photo</span>
                                     </button>
                                     @endif
 
                                     <template x-if="removeImage">
                                         <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-rose-100 text-rose-700 rounded-xl text-xs font-bold">
-                                            <span>ছবি মুছে ফেলা হবে</span>
-                                            <button type="button" @click="unmarkRemoveImage()" class="text-rose-900 underline text-[11px]">বাতিল</button>
+                                            <span>Photo will be removed</span>
+                                            <button type="button" @click="unmarkRemoveImage()" class="text-rose-900 underline text-[11px]">Cancel</button>
                                         </div>
                                     </template>
                                 </div>
@@ -166,7 +166,7 @@
                                 <input type="hidden" name="remove_image" :value="removeImage ? '1' : '0'">
 
                                 <p class="text-[11px] text-slate-400">
-                                    JPG, PNG, WEBP বা GIF ফাইল নির্বাচন করুন (সর্বোচ্চ ২ মেগাবাইট)। ছবিটি স্কয়ার (১:১) অনুপাতে হলে সবচেয়ে সুন্দর দেখাবে।
+                                    Supported formats: JPG, PNG, WEBP, or GIF (max 2MB). A square (1:1) photo works best.
                                 </p>
                                 @error('image')
                                     <p class="text-xs text-rose-600 font-bold mt-1">{{ $message }}</p>
@@ -178,7 +178,7 @@
                     {{-- Full Name --}}
                     <div>
                         <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                            আপনার পূর্ণ নাম (Full Name) <span class="text-rose-500">*</span>
+                            Full Name <span class="text-rose-500">*</span>
                         </label>
                         <input type="text" name="name" value="{{ old('name', $moderator->name) }}" required
                                class="w-full text-xs sm:text-sm rounded-xl border border-slate-200 px-4 py-2.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all">
@@ -191,16 +191,16 @@
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                                ইমেইল ঠিকানা (Login Email)
+                                Login Email
                             </label>
                             <input type="email" value="{{ $moderator->email }}" disabled
                                    class="w-full text-xs sm:text-sm rounded-xl border border-slate-200 bg-slate-100/80 px-4 py-2.5 text-slate-500 cursor-not-allowed font-mono">
-                            <span class="text-[10.5px] text-slate-400 mt-1 block">ইমেইল পরিবর্তন করতে অ্যাডমিনের সাথে যোগাযোগ করুন।</span>
+                            <span class="text-[10.5px] text-slate-400 mt-1 block">Contact your administrator to change your email address.</span>
                         </div>
 
                         <div>
                             <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                                ফোন নম্বর (Phone Number)
+                                Phone Number
                             </label>
                             <input type="text" name="phone" value="{{ old('phone', $moderator->phone) }}"
                                    placeholder="01XXXXXXXXX"
@@ -214,10 +214,10 @@
                     {{-- Address --}}
                     <div>
                         <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                            ঠিকানা (Address)
+                            Address
                         </label>
                         <textarea name="address" rows="3"
-                                  placeholder="আপনার বর্তমান ঠিকানা বা লোকেশন..."
+                                  placeholder="Your current address or location..."
                                   class="w-full text-xs sm:text-sm rounded-xl border border-slate-200 px-4 py-2.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all">{{ old('address', $moderator->address) }}</textarea>
                         @error('address')
                             <p class="text-xs text-rose-600 font-bold mt-1">{{ $message }}</p>
@@ -229,7 +229,7 @@
                         <button type="submit"
                                 class="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white rounded-xl text-xs sm:text-sm font-bold shadow-md shadow-indigo-200 transition-all cursor-pointer">
                             <i class="fas fa-save"></i>
-                            <span>তথ্য ও ছবি সংরক্ষণ করুন</span>
+                            <span>Save Profile & Photo</span>
                         </button>
                     </div>
                 </form>
@@ -247,8 +247,8 @@
                         <i class="fas fa-lock"></i>
                     </div>
                     <div>
-                        <h2 class="text-sm sm:text-base font-black text-slate-900">পাসওয়ার্ড পরিবর্তন</h2>
-                        <p class="text-[11px] text-slate-400">নিরাপত্তার জন্য নিয়মিত পাসওয়ার্ড পরিবর্তন করুন</p>
+                        <h2 class="text-sm sm:text-base font-black text-slate-900">Change Password</h2>
+                        <p class="text-[11px] text-slate-400">Update your password regularly to keep your account secure</p>
                     </div>
                 </div>
 
@@ -257,7 +257,7 @@
 
                     <div>
                         <label class="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
-                            বর্তমান পাসওয়ার্ড <span class="text-rose-500">*</span>
+                            Current Password <span class="text-rose-500">*</span>
                         </label>
                         <input type="password" name="current_password" required
                                placeholder="••••••••"
@@ -269,10 +269,10 @@
 
                     <div>
                         <label class="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
-                            নতুন পাসওয়ার্ড <span class="text-rose-500">*</span>
+                            New Password <span class="text-rose-500">*</span>
                         </label>
                         <input type="password" name="password" required minlength="6"
-                               placeholder="কমপক্ষে ৬ অক্ষর"
+                               placeholder="Minimum 6 characters"
                                class="w-full text-xs sm:text-sm rounded-xl border border-slate-200 px-3.5 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                         @error('password')
                             <p class="text-xs text-rose-600 font-bold mt-1">{{ $message }}</p>
@@ -281,10 +281,10 @@
 
                     <div>
                         <label class="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
-                            নতুন পাসওয়ার্ড নিশ্চিত করুন <span class="text-rose-500">*</span>
+                            Confirm New Password <span class="text-rose-500">*</span>
                         </label>
                         <input type="password" name="password_confirmation" required minlength="6"
-                               placeholder="একই পাসওয়ার্ড পুনরায় লিখুন"
+                               placeholder="Re-enter new password"
                                class="w-full text-xs sm:text-sm rounded-xl border border-slate-200 px-3.5 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                     </div>
 
@@ -292,7 +292,7 @@
                         <button type="submit"
                                 class="w-full inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold shadow-xs transition-colors cursor-pointer">
                             <i class="fas fa-shield-alt"></i>
-                            <span>পাসওয়ার্ড আপডেট করুন</span>
+                            <span>Update Password</span>
                         </button>
                     </div>
                 </form>
@@ -302,12 +302,12 @@
             <div class="bg-gradient-to-br from-indigo-50/80 to-slate-50 rounded-3xl border border-indigo-100 p-5 space-y-3">
                 <div class="flex items-center gap-2 text-indigo-900 font-bold text-xs">
                     <i class="fas fa-info-circle text-indigo-500"></i>
-                    <span>অ্যাকাউন্ট তথ্য ও নিয়মাবলী</span>
+                    <span>Account Guidelines & Instructions</span>
                 </div>
                 <ul class="text-xs text-slate-600 space-y-2 list-disc list-inside">
-                    <li>প্রোফাইলে সুন্দর স্পষ্ট ছবি দিলে অ্যাডমিন আপনার কাজের রিপোর্ট সহজে চিহ্নিত করতে পারে।</li>
-                    <li>প্রতিটি কাজের শিফট শুরু ও শেষ করার সময় টাইমার স্বয়ংক্রিয়ভাবে রেকর্ড হয়।</li>
-                    <li>কাজের শেষে সারা দিনের কাজের বিবরণ দিয়ে রিপোর্ট সাবমিট করুন।</li>
+                    <li>A clear profile picture helps administrators quickly identify your shift reports.</li>
+                    <li>Timers are automatically recorded when starting and stopping each work session.</li>
+                    <li>Always submit a brief work report and summary upon concluding your shift.</li>
                 </ul>
             </div>
 

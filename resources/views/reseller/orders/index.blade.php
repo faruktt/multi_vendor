@@ -72,7 +72,7 @@
                                 </span>
                                 @if(in_array($order->order_status, ['return', 'returned']))
                                     <div class="text-[11px] text-rose-600 font-bold mt-1">
-                                        -৳{{ number_format($order->delivery_charge, 0) }} চার্জ কর্তন
+                                        -৳{{ number_format($order->delivery_charge, 0) }} Fee Deducted
                                     </div>
                                 @endif
                             </td>

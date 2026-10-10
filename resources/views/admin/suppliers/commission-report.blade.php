@@ -302,7 +302,7 @@
                             <div class="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center text-white text-base">
                                 <i class="fas fa-hand-holding-dollar"></i>
                             </div>
-                            <h3 class="font-bold text-base">প্রফিট উইথড্র</h3>
+                            <h3 class="font-bold text-base">Withdraw Profit</h3>
                         </div>
                         <button type="button" @click="directModalOpen = false" class="text-white/70 hover:text-white text-base">
                             <i class="fas fa-times"></i>
@@ -314,10 +314,10 @@
                         <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
                             <div>
                                 <div class="text-xs font-bold text-slate-800">{{ $supplier->display_name }}</div>
-                                <div class="text-[11px] text-slate-500">{{ $supplier->phone ?: 'ফোন নেই' }}</div>
+                                <div class="text-[11px] text-slate-500">{{ $supplier->phone ?: 'No phone' }}</div>
                             </div>
                             <div class="text-right">
-                                <div class="text-[10px] font-bold text-slate-400 uppercase">ব্যালেন্স</div>
+                                <div class="text-[10px] font-bold text-slate-400 uppercase">Balance</div>
                                 <div class="text-base font-black text-emerald-600">৳{{ number_format($supplier->availableBalance(), 2) }}</div>
                             </div>
                         </div>
@@ -325,7 +325,7 @@
                         @if($supplier->availableBalance() <= 0)
                             <div class="p-2 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-[11px] font-medium flex items-center gap-1.5">
                                 <i class="fas fa-exclamation-triangle text-amber-500"></i>
-                                <span>ব্যালেন্স নেই</span>
+                                <span>No available balance</span>
                             </div>
                         @endif
 
@@ -333,12 +333,12 @@
                         <div>
                             <div class="flex items-center justify-between mb-1">
                                 <label class="text-xs font-bold text-slate-700">
-                                    পরিমাণ (৳) <span class="text-rose-500">*</span>
+                                    Amount (৳) <span class="text-rose-500">*</span>
                                 </label>
                                 @if($supplier->availableBalance() > 0)
                                     <button type="button" @click="setFullDirectBalance()"
                                             class="text-[11px] font-bold text-emerald-600 hover:text-emerald-800">
-                                        সব টাকা (৳{{ number_format($supplier->availableBalance(), 2) }})
+                                        Max (৳{{ number_format($supplier->availableBalance(), 2) }})
                                     </button>
                                 @endif
                             </div>
@@ -355,7 +355,7 @@
                         {{-- Payment Method Selection --}}
                         <div>
                             <label class="block text-xs font-bold text-slate-700 mb-1">
-                                পেমেন্ট মেথড <span class="text-rose-500">*</span>
+                                Payment Method <span class="text-rose-500">*</span>
                             </label>
                             <input type="hidden" name="payment_method" :value="directPaymentMethod">
                             <div class="grid grid-cols-5 gap-1.5">
@@ -390,20 +390,20 @@
                         {{-- Payment Details / Account / Trx ID --}}
                         <div>
                             <label class="block text-xs font-bold text-slate-700 mb-1">
-                                অ্যাকাউন্ট / Trx ID
+                                Account / Trx ID
                             </label>
                             <input type="text" name="payment_details" x-model="directPaymentDetails"
-                                   placeholder="নম্বর বা Trx ID"
+                                   placeholder="Number or Trx ID"
                                    class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition">
                         </div>
 
                         {{-- Note --}}
                         <div>
                             <label class="block text-xs font-bold text-slate-700 mb-1">
-                                নোট (ঐচ্ছিক)
+                                Note (Optional)
                             </label>
                             <input type="text" name="note" x-model="directNote"
-                                   placeholder="নোট লিখুন..."
+                                   placeholder="Enter note..."
                                    class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition">
                         </div>
                     </div>
@@ -411,12 +411,12 @@
                     <div class="px-5 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-2">
                         <button type="button" @click="directModalOpen = false"
                                 class="px-3.5 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 text-xs font-bold transition">
-                            বাতিল
+                            Cancel
                         </button>
                         <button type="submit"
                                 :disabled="!directAmount || Number(directAmount) <= 0 || Number(directAmount) > {{ (float) $supplier->availableBalance() }}"
                                 class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-bold shadow transition flex items-center gap-1.5">
-                            <i class="fas fa-check"></i> উইথড্র করুন
+                            <i class="fas fa-check"></i> Withdraw
                         </button>
                     </div>
                 </form>
@@ -442,7 +442,7 @@ function supplierCommissionReportData() {
             } else if (method === 'bank' && '{{ addslashes($supplier->bank_info ?? '') }}') {
                 this.directPaymentDetails = '{{ addslashes($supplier->bank_info ?? '') }}';
             } else if (method === 'cash') {
-                this.directPaymentDetails = 'Cash Payout (ক্যাশ পেমেন্ট)';
+                this.directPaymentDetails = 'Cash Payout';
             } else {
                 this.directPaymentDetails = '';
             }

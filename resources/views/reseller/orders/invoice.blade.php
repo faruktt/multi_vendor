@@ -8,9 +8,7 @@
     {{-- Tailwind CSS & FontAwesome --}}
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+Bengali:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/solaimanlipi.css">
     
     {{-- Alpine.js --}}
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
@@ -18,10 +16,13 @@
     <style>
         * {
             box-sizing: border-box;
-            font-family: 'Plus Jakarta Sans', 'Noto Sans Bengali', sans-serif;
+            font-family: 'SolaimanLipi', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+        body {
+            font-family: 'SolaimanLipi', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
         }
         .font-mono {
-            font-family: 'JetBrains Mono', monospace;
+            font-family: 'JetBrains Mono', monospace !important;
         }
 
         /* Screen Styles */
@@ -98,7 +99,6 @@
                     class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer">
                 <i class="fas fa-user-check text-[11px]"></i>
                 <span>Customer Slip</span>
-                <span class="text-[10px] opacity-75 hidden md:inline">(গ্রাহক কপি)</span>
             </button>
             <button type="button"
                     @click="copyType = 'reseller'"
@@ -106,7 +106,6 @@
                     class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer">
                 <i class="fas fa-receipt text-[11px]"></i>
                 <span>Reseller Copy</span>
-                <span class="text-[10px] opacity-75 hidden md:inline">(প্রফিট সহ)</span>
             </button>
         </div>
 
@@ -185,18 +184,18 @@
                     </div>
 
                     <div class="text-xs text-slate-500 font-medium">
-                        তারিখ: <strong class="text-slate-800">{{ $order->created_at->format('d M Y, h:i A') }}</strong>
+                        Date: <strong class="text-slate-800">{{ $order->created_at->format('d M Y, h:i A') }}</strong>
                     </div>
 
                     <div class="flex items-center gap-1.5 justify-end text-xs">
-                        <span class="text-slate-500">পেমেন্ট মেথড:</span>
+                        <span class="text-slate-500">Payment Method:</span>
                         <span class="px-2 py-0.5 rounded font-bold text-[11px] bg-indigo-50 text-indigo-700 border border-indigo-200 uppercase">
                             {{ $order->payment_method ?? 'Cash on Delivery (COD)' }}
                         </span>
                     </div>
 
                     <div class="flex items-center gap-1.5 justify-end text-xs">
-                        <span class="text-slate-500">অর্ডার স্ট্যাটাস:</span>
+                        <span class="text-slate-500">Order Status:</span>
                         <span class="font-bold text-slate-800 uppercase text-[11px]">
                             {{ ucfirst(str_replace('_', ' ', $order->order_status)) }}
                         </span>
@@ -220,7 +219,7 @@
                 {{-- Bill To --}}
                 <div class="space-y-1">
                     <span class="text-[10px] font-black uppercase tracking-wider text-slate-400 block border-b border-slate-200 pb-1 mb-1.5">
-                        <i class="fas fa-user mr-1 text-slate-400"></i> গ্রাহকের বিবরণ (Customer Details)
+                        <i class="fas fa-user mr-1 text-slate-400"></i> Customer Details
                     </span>
                     <div class="font-bold text-slate-900 text-sm">
                         {{ $order->customer?->name ?? 'Walk-in Customer' }}
@@ -232,19 +231,19 @@
                         </div>
                     @endif
                     <div class="text-slate-600 pt-0.5">
-                        <span class="font-semibold text-slate-700">ঠিকানা:</span>
-                        {{ $order->customer?->address ?? ($order->note ?? 'ঠিকানা প্রদান করা হয়নি') }}
+                        <span class="font-semibold text-slate-700">Address:</span>
+                        {{ $order->customer?->address ?? ($order->note ?? 'No address provided') }}
                     </div>
                 </div>
 
                 {{-- Ship To / Courier Shipping --}}
                 <div class="space-y-1 border-l border-slate-200 pl-4">
                     <span class="text-[10px] font-black uppercase tracking-wider text-slate-400 block border-b border-slate-200 pb-1 mb-1.5">
-                        <i class="fas fa-truck-fast mr-1 text-slate-400"></i> ডেলিভারি ও কুরিয়ার তথ্য (Shipping Info)
+                        <i class="fas fa-truck-fast mr-1 text-slate-400"></i> Shipping & Courier Info
                     </span>
                     
                     <div class="flex items-center gap-2">
-                        <span class="text-slate-500">ডেলিভারি এরিয়া:</span>
+                        <span class="text-slate-500">Delivery Area:</span>
                         @if($order->delivery_zone)
                             <span class="inline-block px-2 py-0.5 text-[10px] font-bold rounded {{ $order->delivery_zone === 'inside' ? 'bg-emerald-100 text-emerald-800' : ($order->delivery_zone === 'sub_dhaka' ? 'bg-blue-100 text-blue-800' : 'bg-amber-100 text-amber-800') }}">
                                 {{ $order->delivery_zone === 'inside' ? 'Inside Dhaka' : ($order->delivery_zone === 'sub_dhaka' ? 'Sub Dhaka' : 'Outside Dhaka') }}
@@ -256,14 +255,14 @@
 
                     @if($order->district || $order->customer?->district)
                         <div class="text-slate-700 font-medium">
-                            <span class="text-slate-500">জেলা/থানা:</span>
+                            <span class="text-slate-500">District / Thana:</span>
                             {{ implode(', ', array_filter([$order->thana ?? $order->customer?->thana, $order->district ?? $order->customer?->district])) }}
                         </div>
                     @endif
 
                     @if($order->courier_tracking_id || $order->courier_name)
                         <div class="text-slate-700 pt-0.5">
-                            <span class="text-slate-500">কুরিয়ার:</span>
+                            <span class="text-slate-500">Courier:</span>
                             <strong>{{ ucfirst($order->courier_name ?? 'Courier') }}</strong>
                             @if($order->courier_tracking_id)
                                 (Tracking: <span class="font-mono font-bold">{{ $order->courier_tracking_id }}</span>)
@@ -286,10 +285,10 @@
                     <thead class="bg-slate-900 text-white uppercase text-[10px] tracking-wider">
                         <tr>
                             <th class="py-2.5 px-3 w-10 text-center">#</th>
-                            <th class="py-2.5 px-3">পণ্যের বিবরণ (Product Description)</th>
-                            <th class="py-2.5 px-3 text-center w-16">পরিমাণ</th>
-                            <th class="py-2.5 px-3 text-right w-24">দর (Price)</th>
-                            <th class="py-2.5 px-3 text-right w-28">মোট (Total)</th>
+                            <th class="py-2.5 px-3">Product Description</th>
+                            <th class="py-2.5 px-3 text-center w-16">Qty</th>
+                            <th class="py-2.5 px-3 text-right w-24">Price</th>
+                            <th class="py-2.5 px-3 text-right w-28">Total</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-200">
@@ -304,7 +303,7 @@
                                     </div>
                                     @if($item->variant_name)
                                         <div class="text-[10px] text-slate-500 mt-0.5">
-                                            ভ্যারিয়েন্ট: <span class="font-semibold text-slate-700">{{ $item->variant_name }}</span>
+                                            Variant: <span class="font-semibold text-slate-700">{{ $item->variant_name }}</span>
                                         </div>
                                     @endif
                                 </td>
@@ -332,12 +331,12 @@
                     {{-- Instructions & Policies --}}
                     <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 text-[11px] text-slate-600 space-y-1">
                         <div class="font-bold text-slate-800 flex items-center gap-1 text-xs">
-                            <i class="fas fa-circle-info text-indigo-600 text-[10px]"></i> ডেলিভারি ও রিসিভ সংক্রান্ত নির্দেশনা:
+                            <i class="fas fa-circle-info text-indigo-600 text-[10px]"></i> Delivery & Return Guidelines:
                         </div>
                         <ul class="list-disc list-inside text-[10.5px] space-y-0.5 text-slate-500">
-                            <li>প্যাকেট খোলার সময় পণ্য ডেলিভারি প্রতিনিধির সামনে চেক করুন।</li>
-                            <li>কোনো ত্রুটি থাকলে তাৎক্ষণিক ডেলিভারি প্রতিনিধিকে জানান।</li>
-                            <li>আমাদের সাথে কেনাকাটা করার জন্য ধন্যবাদ!</li>
+                            <li>Please inspect the package in the presence of the courier representative.</li>
+                            <li>Report any discrepancies or issues immediately to the courier.</li>
+                            <li>Thank you for shopping with us!</li>
                         </ul>
                     </div>
 
@@ -345,19 +344,19 @@
                     <div x-show="copyType === 'reseller'" x-cloak
                          class="p-3.5 rounded-xl bg-indigo-50 border border-indigo-200 text-xs space-y-1.5 transition-all">
                         <div class="font-bold text-indigo-900 text-xs flex items-center justify-between border-b border-indigo-200 pb-1">
-                            <span><i class="fas fa-lock text-[10px] mr-1"></i> রিসেলার অ্যাকাউন্ট সামারি (গোপনীয়)</span>
+                            <span><i class="fas fa-lock text-[10px] mr-1"></i> Reseller Account Summary (Confidential)</span>
                             <span class="text-[10px] bg-indigo-200 text-indigo-800 px-1.5 py-0.2 rounded font-bold">Reseller Only</span>
                         </div>
                         <div class="flex justify-between text-slate-600 pt-0.5">
-                            <span>রিসেলার পাইকারি খরচ:</span>
+                            <span>Reseller Wholesale Cost:</span>
                             <span class="font-bold text-slate-800">৳{{ number_format(max(0, $order->subtotal - $order->reseller_profit), 2) }}</span>
                         </div>
                         <div class="flex justify-between text-emerald-700 bg-emerald-100/70 px-2 py-1 rounded font-bold">
-                            <span>এই অর্ডারে আপনার লাভ (Profit):</span>
+                            <span>Your Profit:</span>
                             <span>৳{{ number_format($order->reseller_profit, 2) }}</span>
                         </div>
                         <div class="text-[10px] text-slate-400">
-                            * কাস্টমার কপি প্রিন্ট করলে এই অংশটি গ্রাহক দেখতে পাবে না।
+                            * This breakdown is hidden when printing Customer Slip.
                         </div>
                     </div>
                 </div>
@@ -365,32 +364,32 @@
                 {{-- Right: Total Bill Amounts --}}
                 <div class="border border-slate-200 rounded-xl p-3.5 bg-slate-50 space-y-2 text-xs">
                     <div class="flex justify-between text-slate-600">
-                        <span>পণ্যের উপমোট (Subtotal):</span>
+                        <span>Subtotal:</span>
                         <span class="font-bold text-slate-800">৳{{ number_format($order->subtotal, 2) }}</span>
                     </div>
 
                     @if($order->discount > 0)
                         <div class="flex justify-between text-emerald-600 font-semibold">
-                            <span>ডিসকাউন্ট (Discount):</span>
+                            <span>Discount:</span>
                             <span>- ৳{{ number_format($order->discount, 2) }}</span>
                         </div>
                     @endif
 
                     @if($order->delivery_charge > 0)
                         <div class="flex justify-between text-slate-600">
-                            <span>ডেলিভারি চার্জ (Delivery Charge):</span>
+                            <span>Delivery Charge:</span>
                             <span class="font-bold text-slate-800">+ ৳{{ number_format($order->delivery_charge, 2) }}</span>
                         </div>
                     @endif
 
                     <div class="border-t-2 border-slate-900 pt-2 mt-2 flex justify-between items-baseline">
                         <div>
-                            <span class="font-black text-slate-900 text-sm uppercase block">সর্বমোট প্রদেয় (Net Total):</span>
+                            <span class="font-black text-slate-900 text-sm uppercase block">Net Total:</span>
                             <span class="text-[10px] text-slate-500 font-semibold">
                                 @if($order->payment_status === 'paid')
-                                    <i class="fas fa-circle-check text-emerald-500"></i> পেইড (Full Paid)
+                                    <i class="fas fa-circle-check text-emerald-500"></i> Full Paid
                                 @else
-                                    <i class="fas fa-hand-holding-dollar text-indigo-600"></i> ক্যাশ অন ডেলিভারি (COD)
+                                    <i class="fas fa-hand-holding-dollar text-indigo-600"></i> Cash on Delivery (COD)
                                 @endif
                             </span>
                         </div>
@@ -401,11 +400,11 @@
 
                     @if($order->paid_amount > 0 && $order->paid_amount < $order->total)
                         <div class="flex justify-between text-xs pt-1 border-t border-slate-200 text-emerald-700">
-                            <span>অগ্রিম পরিশোধিত:</span>
+                            <span>Advance Paid:</span>
                             <span class="font-bold">৳{{ number_format($order->paid_amount, 2) }}</span>
                         </div>
                         <div class="flex justify-between text-xs text-rose-700 font-bold">
-                            <span>বাকি ক্যাশ অন ডেলিভারি:</span>
+                            <span>Remaining COD Due:</span>
                             <span>৳{{ number_format($order->due_amount, 2) }}</span>
                         </div>
                     @endif
@@ -420,12 +419,12 @@
             <div class="grid grid-cols-2 gap-8 text-center text-xs">
                 <div>
                     <div class="border-t border-dashed border-slate-400 w-48 mx-auto pt-1 font-bold text-slate-700">
-                        গ্রাহকের স্বাক্ষর (Customer Signature)
+                        Customer Signature
                     </div>
                 </div>
                 <div>
                     <div class="border-t border-dashed border-slate-400 w-48 mx-auto pt-1 font-bold text-slate-700">
-                        অনুমোদিত স্বাক্ষর (Authorized Signature)
+                        Authorized Signature
                     </div>
                 </div>
             </div>

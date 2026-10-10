@@ -62,14 +62,14 @@
             </div>
             <div class="relative z-10">
                 <span class="{{ $availableBalance < 0 ? 'text-rose-200' : 'text-indigo-200' }} text-xs font-semibold uppercase tracking-wider">
-                    {{ $availableBalance < 0 ? 'Available Balance (ঋণাত্মক)' : 'Withdrawable Balance' }}
+                    {{ $availableBalance < 0 ? 'Negative Balance' : 'Withdrawable Balance' }}
                 </span>
                 <div class="text-3xl font-black mt-1">
                     {{ $availableBalance < 0 ? '-৳' . number_format(abs($availableBalance), 2) : '৳' . number_format($withdrawableBalance, 2) }}
                 </div>
                 @if($availableBalance < 0)
                     <div class="text-xs text-rose-200 mt-1">
-                        রিটার্ন ডেলিভারি চার্জ বাবদ ঋণাত্মক (পরবর্তী লাভে সমন্বয় হবে)
+                        Negative due to return shipping charges (will adjust from future profits)
                     </div>
                 @elseif($pendingWithdrawals > 0)
                     <div class="text-xs text-amber-200 mt-1">
@@ -88,7 +88,7 @@
                 @elseif($availableBalance < 0)
                     <button type="button" disabled
                             class="inline-flex items-center gap-2 px-4 py-2 bg-white/20 text-rose-100 font-semibold text-xs rounded-xl cursor-not-allowed">
-                        <i class="fas fa-lock"></i> ব্যালেন্স ঋণাত্মক
+                        <i class="fas fa-lock"></i> Negative Balance
                     </button>
                 @else
                     <button type="button" disabled

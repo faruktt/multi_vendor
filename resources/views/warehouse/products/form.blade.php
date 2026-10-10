@@ -84,8 +84,8 @@
 
                 {{-- Description --}}
                 <div>
-                    <label class="block text-xs font-semibold text-slate-600 mb-1.5">Short Description <span class="text-slate-400 font-normal">(image-এর নিচে দেখাবে)</span></label>
-                    <textarea name="short_description" rows="2" maxlength="500" placeholder="সংক্ষিপ্ত বিবরণ — product page-এ image-এর নিচে দেখাবে..."
+                    <label class="block text-xs font-semibold text-slate-600 mb-1.5">Short Description <span class="text-slate-400 font-normal">(Displays below product image)</span></label>
+                    <textarea name="short_description" rows="2" maxlength="500" placeholder="Short description displayed below the product image..."
                               class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50 focus:bg-white transition-colors resize-none">{{ old('short_description', $product->short_description ?? '') }}</textarea>
                 </div>
 
@@ -103,14 +103,14 @@
                             <i class="fab fa-facebook text-blue-600 text-sm"></i>
                             <span>Facebook Reel / Video URL</span>
                         </span>
-                        <span class="text-[11px] text-slate-400 font-normal">Product details-এ description-এর ডানপাশে দেখাবে</span>
+                        <span class="text-[11px] text-slate-400 font-normal">Displays alongside product description on details page</span>
                     </label>
                     <div class="relative">
                         <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs">
                             <i class="fab fa-facebook text-blue-500"></i>
                         </span>
                         <input type="url" name="facebook_video_url" value="{{ old('facebook_video_url', $product->facebook_video_url ?? '') }}"
-                               placeholder="https://www.facebook.com/reel/... অথবা https://www.facebook.com/watch/?v=..."
+                               placeholder="https://www.facebook.com/reel/... or https://www.facebook.com/watch/?v=..."
                                class="w-full border border-slate-200 rounded-xl pl-9 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50 focus:bg-white transition-colors">
                     </div>
                 </div>
@@ -139,13 +139,13 @@
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 mb-1.5 flex items-center justify-between">
                         <span>Old Price (৳)</span>
-                        <span class="text-[10px] text-amber-600 font-medium">কাটা দেখাবে</span>
+                        <span class="text-[10px] text-amber-600 font-medium">Strikethrough</span>
                     </label>
                     <div class="relative">
                         <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-medium">৳</span>
                         <input type="number" name="old_price" step="0.01" min="0"
                                value="{{ old('old_price', $product->old_price ?? '') }}"
-                               placeholder="পূর্বের মূল্য (ঐচ্ছিক)"
+                               placeholder="Regular / Original Price (Optional)"
                                class="w-full pl-8 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50 focus:bg-white transition-colors">
                     </div>
                 </div>
@@ -203,7 +203,7 @@
                     </div>
                     <div>
                         <h3 class="font-bold text-slate-700 text-sm">Product Variants</h3>
-                        <p class="text-[11px] text-slate-400 mt-0.5">Color + Size combination-এ আলাদা price ও stock</p>
+                        <p class="text-[11px] text-slate-400 mt-0.5">Custom price and stock per Color + Size combination</p>
                     </div>
                 </div>
                 <div class="flex items-center gap-2">

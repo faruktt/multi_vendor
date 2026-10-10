@@ -115,11 +115,11 @@
                 @if($moderatorStats['on_duty_count'] > 0)
                     <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10.5px] font-black bg-emerald-100 text-emerald-800 border border-emerald-200 shadow-2xs">
                         <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                        {{ $moderatorStats['on_duty_count'] }} জন কর্মরত
+                        {{ $moderatorStats['on_duty_count'] }} On Duty
                     </span>
                 @else
                     <span class="text-[10px] font-semibold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">
-                        ডিউটিতে নেই
+                        Off Duty
                     </span>
                 @endif
             </div>
@@ -127,13 +127,13 @@
             <div class="flex items-baseline gap-2">
                 <p class="text-2xl font-black text-slate-800 font-mono">{{ $moderatorStats['total'] }}</p>
                 <span class="text-[11px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md">
-                    {{ $moderatorStats['active'] }} সক্রিয়
+                    {{ $moderatorStats['active'] }} Active
                 </span>
             </div>
-            <p class="text-[11.5px] font-bold text-slate-700 mt-0.5">মডারেটর টিম ও ডিউটি</p>
+            <p class="text-[11.5px] font-bold text-slate-700 mt-0.5">Moderator Team &amp; Duty</p>
 
             <div class="mt-2.5 pt-2.5 border-t border-slate-100 flex items-center justify-between text-[11px]">
-                <span class="text-slate-400">আজকের মোট কাজ:</span>
+                <span class="text-slate-400">Today's Work Time:</span>
                 @php
                     $tMins = round($moderatorStats['today_work_seconds'] / 60);
                     $mH = floor($tMins / 60);
@@ -147,11 +147,11 @@
 
         <div class="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs">
             <a href="{{ route('admin.moderators.index') }}" class="text-indigo-600 hover:text-indigo-800 font-bold text-[11px] flex items-center gap-1 hover:underline">
-                <span>টিম লিস্ট</span>
+                <span>Team List</span>
                 <i class="fas fa-chevron-right text-[9px]"></i>
             </a>
             <a href="{{ route('admin.moderators.reports') }}" class="text-slate-500 hover:text-slate-800 font-semibold text-[11px] flex items-center gap-1 hover:underline">
-                <span>রিপোর্ট দেখুন</span>
+                <span>View Reports</span>
                 <i class="fas fa-file-alt text-[10px]"></i>
             </a>
         </div>
@@ -167,11 +167,11 @@
                 </div>
                 @if($resellerStats['pending'] > 0)
                     <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
-                        {{ $resellerStats['pending'] }} পেন্ডিং
+                        {{ $resellerStats['pending'] }} Pending
                     </span>
                 @else
                     <span class="text-[10px] font-semibold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">
-                        সব অনুমোদিত
+                        All Approved
                     </span>
                 @endif
             </div>
@@ -179,13 +179,13 @@
             <div class="flex items-baseline gap-2">
                 <p class="text-2xl font-black text-slate-800 font-mono">{{ $resellerStats['total'] }}</p>
                 <span class="text-[11px] font-bold text-violet-600 bg-violet-50 px-2 py-0.5 rounded-md">
-                    {{ $resellerStats['active'] }} সক্রিয় রিসেলার
+                    {{ $resellerStats['active'] }} Active Resellers
                 </span>
             </div>
-            <p class="text-[11.5px] font-bold text-slate-700 mt-0.5">রিসেলার নেটওয়ার্ক</p>
+            <p class="text-[11.5px] font-bold text-slate-700 mt-0.5">Reseller Network</p>
 
             <div class="mt-2.5 pt-2.5 border-t border-slate-100 flex items-center justify-between text-[11px]">
-                <span class="text-slate-400">মোট রিসেলার সেল:</span>
+                <span class="text-slate-400">Total Reseller Sales:</span>
                 <span class="font-bold text-slate-800 font-mono">
                     {{ $currency }}{{ number_format($resellerStats['total_revenue'], 0) }} ({{ $resellerStats['total_orders'] }})
                 </span>
@@ -194,11 +194,11 @@
 
         <div class="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs">
             <a href="{{ route('admin.resellers.index') }}" class="text-violet-600 hover:text-violet-800 font-bold text-[11px] flex items-center gap-1 hover:underline">
-                <span>রিসেলার তালিকা</span>
+                <span>Reseller List</span>
                 <i class="fas fa-chevron-right text-[9px]"></i>
             </a>
             <a href="{{ route('admin.resellers.orders') }}" class="text-slate-500 hover:text-slate-800 font-semibold text-[11px] flex items-center gap-1 hover:underline">
-                <span>অর্ডার সমূহ</span>
+                <span>Orders</span>
                 <i class="fas fa-shopping-bag text-[10px]"></i>
             </a>
         </div>
@@ -213,33 +213,33 @@
                     <i class="fas fa-truck-fast"></i>
                 </div>
                 <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-sky-50 text-sky-700 border border-sky-200">
-                    {{ $courierStats['active_count'] }} কুরিয়ার কানেক্টেড
+                    {{ $courierStats['active_count'] }} Connected
                 </span>
             </div>
 
             <div class="flex items-baseline gap-2">
                 <p class="text-2xl font-black text-slate-800 font-mono">{{ $courierStats['total_parcels'] }}</p>
                 <span class="text-[11px] font-bold text-sky-600 bg-sky-50 px-2 py-0.5 rounded-md">
-                    মোট পার্সেল
+                    Total Parcels
                 </span>
             </div>
-            <p class="text-[11.5px] font-bold text-slate-700 mt-0.5">কুরিয়ার ডেলিভারি ও পার্সেল</p>
+            <p class="text-[11.5px] font-bold text-slate-700 mt-0.5">Courier Delivery &amp; Parcels</p>
 
             <div class="mt-2.5 pt-2.5 border-t border-slate-100 flex items-center justify-between text-[11px]">
-                <span class="text-slate-400">আজ পাঠানো হয়েছে:</span>
+                <span class="text-slate-400">Dispatched Today:</span>
                 <span class="font-bold text-emerald-600 font-mono">
-                    {{ $courierStats['today_parcels'] }} টি পার্সেল
+                    {{ $courierStats['today_parcels'] }} parcels
                 </span>
             </div>
         </div>
 
         <div class="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs">
             <a href="{{ route('admin.couriers.index') }}" class="text-sky-600 hover:text-sky-800 font-bold text-[11px] flex items-center gap-1 hover:underline">
-                <span>API সেটিংস</span>
+                <span>API Settings</span>
                 <i class="fas fa-cog text-[9px]"></i>
             </a>
             <a href="{{ route('admin.all-sales') }}" class="text-slate-500 hover:text-slate-800 font-semibold text-[11px] flex items-center gap-1 hover:underline">
-                <span>সেলস ও কুরিয়ার</span>
+                <span>Sales &amp; Courier</span>
                 <i class="fas fa-paper-plane text-[10px]"></i>
             </a>
         </div>
@@ -255,15 +255,15 @@
                 </div>
                 @if($inventoryStats['out_of_stock'] > 0)
                     <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-700 border border-red-200">
-                        {{ $inventoryStats['out_of_stock'] }} স্টক আউট
+                        {{ $inventoryStats['out_of_stock'] }} Out of Stock
                     </span>
                 @elseif($inventoryStats['low_stock'] > 0)
                     <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
-                        {{ $inventoryStats['low_stock'] }} লো স্টক
+                        {{ $inventoryStats['low_stock'] }} Low Stock
                     </span>
                 @else
                     <span class="text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
-                        স্টক স্বাস্থ্য ভালো
+                        Stock Healthy
                     </span>
                 @endif
             </div>
@@ -271,13 +271,13 @@
             <div class="flex items-baseline gap-2">
                 <p class="text-2xl font-black text-slate-800 font-mono">{{ number_format($inventoryStats['total_products']) }}</p>
                 <span class="text-[11px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md">
-                    প্রোডাক্ট আইটেম
+                    Products
                 </span>
             </div>
-            <p class="text-[11.5px] font-bold text-slate-700 mt-0.5">ইনভেন্টরি ও স্টক অ্যালার্ট</p>
+            <p class="text-[11.5px] font-bold text-slate-700 mt-0.5">Inventory &amp; Stock Alerts</p>
 
             <div class="mt-2.5 pt-2.5 border-t border-slate-100 flex items-center justify-between text-[11px]">
-                <span class="text-slate-400">মোট স্টক ভ্যালু:</span>
+                <span class="text-slate-400">Total Stock Value:</span>
                 <span class="font-bold text-slate-800 font-mono">
                     {{ $currency }}{{ number_format($inventoryStats['stock_value'], 0) }}
                 </span>
@@ -286,17 +286,17 @@
 
         <div class="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs">
             <span class="text-[11px] text-slate-400">
-                <i class="fas fa-users text-[10px] mr-0.5"></i> {{ $inventoryStats['total_customers'] }} কাস্টমার
+                <i class="fas fa-users text-[10px] mr-0.5"></i> {{ $inventoryStats['total_customers'] }} Customers
             </span>
             <span class="text-[11px] text-emerald-600 font-bold">
-                <i class="fas fa-cart-shopping text-[10px] mr-0.5"></i> আজ {{ $inventoryStats['today_orders'] }} অর্ডার
+                <i class="fas fa-cart-shopping text-[10px] mr-0.5"></i> {{ $inventoryStats['today_orders'] }} Orders Today
             </span>
         </div>
     </div>
 
 </div>
 
-{{-- ══ ROW 1.6: LIVE DUTY COMMAND CENTER (কারেন্টলি ডিউটিরত মডারেটরদের লাইভ স্ট্যাটাস) ══ --}}
+{{-- ══ ROW 1.6: LIVE DUTY COMMAND CENTER ══ --}}
 @if($moderatorStats['on_duty_count'] > 0 || $recentWorkLogs->isNotEmpty())
 <div class="bg-gradient-to-r from-slate-900 to-indigo-950 text-white rounded-3xl p-5 mb-4 shadow-md border border-slate-800">
     <div class="flex items-center justify-between flex-wrap gap-2 mb-4 pb-3 border-b border-white/10">
@@ -306,16 +306,16 @@
             </div>
             <div>
                 <h3 class="font-black text-white text-sm sm:text-base flex items-center gap-2">
-                    <span>লাইভ ডিউটি ও মডারেটর মনিটরিং</span>
+                    <span>Live Duty &amp; Moderator Monitoring</span>
                     <span class="text-[10.5px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                        {{ $moderatorStats['on_duty_count'] }} জন এখন কাজ করছেন
+                        {{ $moderatorStats['on_duty_count'] }} currently working
                     </span>
                 </h3>
-                <p class="text-xs text-slate-300">কোন মডারেটর কখন কাজ শুরু করেছেন এবং এই মুহূর্তে কী কাজ করছেন তার রিয়েল-টাইম তথ্য</p>
+                <p class="text-xs text-slate-300">Real-time visibility into active moderator shifts and task activities</p>
             </div>
         </div>
         <a href="{{ route('admin.moderators.reports') }}" class="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-all flex items-center gap-1.5 border border-white/10">
-            <span>সকল শিফট ও সম্পূর্ণ রিপোর্ট</span>
+            <span>View All Shifts &amp; Reports</span>
             <i class="fas fa-arrow-right text-[10px]"></i>
         </a>
     </div>
@@ -341,12 +341,12 @@
                 </div>
                 <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                    অন-ডিউটি
+                    On Duty
                 </span>
             </div>
 
             <div class="flex items-center justify-between text-[11px] bg-black/20 rounded-xl px-3 py-1.5 border border-white/5">
-                <span class="text-slate-400">শুরু হয়েছে:</span>
+                <span class="text-slate-400">Started at:</span>
                 <span class="font-mono text-emerald-400 font-semibold">{{ $duty->started_at->timezone('Asia/Dhaka')->format('h:i A') }} ({{ $duty->started_at->diffForHumans(null, true) }})</span>
             </div>
 
@@ -354,14 +354,14 @@
                 $latestLog = $duty->logs->first();
             @endphp
             <div class="text-[11px] bg-white/5 rounded-xl p-2.5 border border-white/5">
-                <span class="text-[10px] text-indigo-300 font-bold uppercase tracking-wider block mb-1">সর্বশেষ আপডেট:</span>
+                <span class="text-[10px] text-indigo-300 font-bold uppercase tracking-wider block mb-1">Latest Activity:</span>
                 @if($latestLog)
                     <p class="text-slate-200 font-medium line-clamp-2">
                         <span class="font-mono text-indigo-300 font-bold mr-1">[{{ $latestLog->log_time->timezone('Asia/Dhaka')->format('h:i A') }}]</span>
                         {{ $latestLog->activity }}
                     </p>
                 @else
-                    <p class="text-slate-400 italic text-[10.5px]">কাজ শুরু করেছেন, এখনও কোনো আপডেট যোগ করেননি।</p>
+                    <p class="text-slate-400 italic text-[10.5px]">Shift started, no activities logged yet.</p>
                 @endif
             </div>
         </div>
@@ -372,7 +372,7 @@
     {{-- Recent task activities timeline feed --}}
     @if($recentWorkLogs->isNotEmpty())
     <div class="mt-4 pt-3 border-t border-white/10">
-        <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-2">আজকের সর্বশেষ কাজের আপডেট ফিড (Recent Activity Feed)</span>
+        <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-2">Recent Activity Feed</span>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
             @foreach($recentWorkLogs->take(6) as $log)
             <div class="bg-white/5 rounded-xl px-3 py-2 border border-white/5 text-xs flex items-center justify-between gap-2">

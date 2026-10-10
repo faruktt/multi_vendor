@@ -9,12 +9,16 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/solaimanlipi.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
     <script>
         tailwind.config = {
             theme: {
                 extend: {
+                    fontFamily: {
+                        sans: ['SolaimanLipi', 'sans-serif'],
+                    },
                     colors: {
                         supplier: {
                             50: '#ecfdf5',
@@ -32,6 +36,7 @@
     </script>
 
     <style>
+        body { font-family: 'SolaimanLipi', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important; }
         [x-cloak] { display: none !important; }
         .sup-sidebar { background: linear-gradient(180deg, #064e3b 0%, #022c22 100%); }
         .sup-nav-link { display:flex; align-items:center; gap:11px; padding:9px 14px; border-radius:10px; color:#a7f3d0; font-size:13.5px; font-weight:500; text-decoration:none; transition:all .18s; }

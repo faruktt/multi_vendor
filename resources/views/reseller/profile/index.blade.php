@@ -1,6 +1,6 @@
 @extends('reseller.layouts.app')
-@section('title', 'Profile Settings — প্রোফাইল সেটিংস')
-@section('heading', 'Profile Settings / প্রোফাইল সেটিংস')
+@section('title', 'Profile Settings')
+@section('heading', 'Profile Settings')
 
 @section('content')
 <div class="py-4 max-w-5xl mx-auto space-y-6">
@@ -9,7 +9,7 @@
     @if(isset($errors) && $errors->any())
         <div class="bg-rose-50 border border-rose-200 text-rose-800 rounded-2xl p-4 text-sm">
             <div class="flex items-center gap-2 font-bold mb-1">
-                <i class="fas fa-exclamation-circle text-rose-500"></i> তথ্যে কিছু ত্রুটি রয়েছে:
+                <i class="fas fa-exclamation-circle text-rose-500"></i> Please fix the following errors:
             </div>
             <ul class="list-disc list-inside text-xs space-y-0.5 text-rose-700">
                 @foreach($errors->all() as $error)
@@ -55,23 +55,23 @@
 
                     <div class="border-t border-slate-100 mt-5 pt-4 text-left space-y-2 text-xs text-slate-600">
                         <div class="flex items-center justify-between">
-                            <span class="text-slate-400">রিসেলার আইডি:</span>
+                            <span class="text-slate-400">Reseller ID:</span>
                             <span class="font-mono font-bold text-slate-700">#RES-{{ str_pad($reseller->id, 4, '0', STR_PAD_LEFT) }}</span>
                         </div>
                         <div class="flex items-center justify-between">
-                            <span class="text-slate-400">একাউন্ট স্ট্যাটাস:</span>
+                            <span class="text-slate-400">Account Status:</span>
                             @if($reseller->isActive())
                                 <span class="font-bold text-emerald-600 flex items-center gap-1">
-                                    <i class="fas fa-circle-check"></i> একটিভ
+                                    <i class="fas fa-circle-check"></i> Active
                                 </span>
                             @else
                                 <span class="font-bold text-amber-600 flex items-center gap-1">
-                                    <i class="fas fa-clock"></i> পেন্ডিং
+                                    <i class="fas fa-clock"></i> Pending
                                 </span>
                             @endif
                         </div>
                         <div class="flex items-center justify-between">
-                            <span class="text-slate-400">যোগদানের তারিখ:</span>
+                            <span class="text-slate-400">Member Since:</span>
                             <span class="font-semibold text-slate-700">{{ $reseller->created_at->format('d M, Y') }}</span>
                         </div>
                     </div>
@@ -79,7 +79,7 @@
                     <div class="mt-5">
                         <a href="{{ route('reseller.account') }}"
                            class="w-full py-2.5 px-4 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition">
-                            <i class="fas fa-wallet"></i> My Account (বিস্তারিত হিসাব দেখুন)
+                            <i class="fas fa-wallet"></i> My Account (Financial Summary)
                         </a>
                     </div>
                 </div>
@@ -87,14 +87,14 @@
 
             {{-- Quick Payout Stats Card --}}
             <div class="bg-gradient-to-br from-slate-900 to-indigo-950 rounded-3xl p-5 text-white shadow-sm space-y-3">
-                <div class="text-xs font-bold text-indigo-300 uppercase tracking-wider">উপলব্ধ ব্যালেন্স</div>
+                <div class="text-xs font-bold text-indigo-300 uppercase tracking-wider">Available Balance</div>
                 <div class="text-2xl font-black">৳{{ number_format($reseller->available_balance, 2) }}</div>
                 <div class="text-[11px] text-slate-300">
-                    মোট অর্জিত লাভ: <strong class="text-white">৳{{ number_format($reseller->total_profit, 2) }}</strong>
+                    Total Profit Earned: <strong class="text-white">৳{{ number_format($reseller->total_profit, 2) }}</strong>
                 </div>
                 <a href="{{ route('reseller.withdrawals.index') }}"
                    class="inline-block mt-2 w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-center font-bold text-xs rounded-xl shadow-xs transition">
-                    টাকা উত্তোলনের রিকোয়েস্ট দিন
+                    Request Payout
                 </a>
             </div>
 
@@ -127,8 +127,8 @@
                  }">
                 <div class="flex items-center justify-between border-b border-slate-100 pb-4 mb-5">
                     <div>
-                        <h3 class="font-extrabold text-slate-800 text-base">প্রোফাইল তথ্য ও ছবি পরিবর্তন</h3>
-                        <p class="text-xs text-slate-400 mt-0.5">আপনার নাম, ফোন, ব্যবসার নাম, ঠিকানা এবং প্রোফাইল ছবি আপডেট করুন</p>
+                        <h3 class="font-extrabold text-slate-800 text-base">Edit Profile Information</h3>
+                        <p class="text-xs text-slate-400 mt-0.5">Update your personal details, business info, address, and profile photo</p>
                     </div>
                     <div class="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
                         <i class="fas fa-user-pen"></i>
@@ -140,7 +140,7 @@
 
                     {{-- Image Upload Section --}}
                     <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-3">
-                        <label class="block text-xs font-bold text-slate-700">প্রোফাইল ছবি (Avatar Photo)</label>
+                        <label class="block text-xs font-bold text-slate-700">Profile Photo</label>
 
                         <div class="flex flex-col sm:flex-row items-center gap-4">
                             {{-- Photo preview box --}}
@@ -173,16 +173,16 @@
                                     {{-- File Input Trigger Button --}}
                                     <button type="button"
                                             @click="$refs.fileInput.click()"
-                                            class="px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-2xs">
-                                        <i class="fas fa-upload"></i> নতুন ছবি পছন্দ করুন
+                                            class="px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-2xs cursor-pointer">
+                                        <i class="fas fa-upload"></i> Choose New Photo
                                     </button>
 
                                     {{-- Remove button --}}
                                     @if($reseller->image)
                                         <button type="button"
                                                 @click="clearPhoto()"
-                                                class="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-bold transition flex items-center gap-1 border border-rose-200">
-                                            <i class="fas fa-trash-can"></i> ছবি মুছে ফেলুন
+                                                class="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-bold transition flex items-center gap-1 border border-rose-200 cursor-pointer">
+                                            <i class="fas fa-trash-can"></i> Remove Photo
                                         </button>
                                     @endif
                                 </div>
@@ -197,7 +197,7 @@
                                 <input type="hidden" name="remove_image" :value="removeImage ? 1 : 0">
 
                                 <p class="text-[11px] text-slate-400">
-                                    সমর্থিত ফরম্যাট: JPG, PNG, WEBP। সর্বোচ্চ সাইজ: 2MB। পরিষ্কার স্কয়ার সাইজের ছবি সবচেয়ে ভালো দেখায়।
+                                    Supported formats: JPG, PNG, WEBP. Maximum size: 2MB. Square images recommended.
                                 </p>
                             </div>
                         </div>
@@ -208,7 +208,7 @@
                         
                         {{-- Name --}}
                         <div>
-                            <label class="block text-xs font-bold text-slate-700 mb-1">আপনার নাম <span class="text-rose-500">*</span></label>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Full Name <span class="text-rose-500">*</span></label>
                             <input type="text"
                                    name="name"
                                    value="{{ old('name', $reseller->name) }}"
@@ -218,7 +218,7 @@
 
                         {{-- Phone --}}
                         <div>
-                            <label class="block text-xs font-bold text-slate-700 mb-1">ফোন নম্বর</label>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Phone Number</label>
                             <input type="text"
                                    name="phone"
                                    value="{{ old('phone', $reseller->phone) }}"
@@ -228,39 +228,39 @@
 
                         {{-- Business Name --}}
                         <div>
-                            <label class="block text-xs font-bold text-slate-700 mb-1">ব্যবসার নাম / পেইজের নাম</label>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Business / Store Name</label>
                             <input type="text"
                                    name="business_name"
                                    value="{{ old('business_name', $reseller->business_name) }}"
-                                   placeholder="যেমন: Fayaz Fashion House"
+                                   placeholder="e.g. Fayaz Fashion House"
                                    class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white">
                         </div>
 
                         {{-- Email (Readonly) --}}
                         <div>
-                            <label class="block text-xs font-bold text-slate-700 mb-1">ইমেইল এড্রেস</label>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Email Address</label>
                             <input type="email"
                                    value="{{ $reseller->email }}"
                                    disabled
                                    class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm bg-slate-100 text-slate-500 cursor-not-allowed">
-                            <span class="text-[10px] text-slate-400 mt-1 block">লগইন ইমেইল পরিবর্তনযোগ্য নয়</span>
+                            <span class="text-[10px] text-slate-400 mt-1 block">Login email cannot be changed</span>
                         </div>
 
                     </div>
 
                     {{-- Address --}}
                     <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">আপনার ঠিকানা / শপ লোকেশন</label>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Address / Shop Location</label>
                         <textarea name="address"
                                   rows="2"
-                                  placeholder="আপনার বিস্তারিত ঠিকানা লিখুন..."
+                                  placeholder="Enter your detailed address..."
                                   class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white">{{ old('address', $reseller->address) }}</textarea>
                     </div>
 
                     <div class="pt-2 flex justify-end">
                         <button type="submit"
-                                class="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs flex items-center gap-2 shadow-sm transition">
-                            <i class="fas fa-check"></i> প্রোফাইল সংরক্ষণ করুন
+                                class="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs flex items-center gap-2 shadow-sm transition cursor-pointer">
+                            <i class="fas fa-check"></i> Save Profile
                         </button>
                     </div>
                 </form>
@@ -270,8 +270,8 @@
             <div class="bg-white rounded-3xl border border-slate-100 shadow-sm p-6">
                 <div class="flex items-center justify-between border-b border-slate-100 pb-4 mb-5">
                     <div>
-                        <h3 class="font-extrabold text-slate-800 text-base">পাসওয়ার্ড পরিবর্তন</h3>
-                        <p class="text-xs text-slate-400 mt-0.5">নিরাপত্তার জন্য নিয়মিত নতুন এবং শক্তিশালী পাসওয়ার্ড ব্যবহার করুন</p>
+                        <h3 class="font-extrabold text-slate-800 text-base">Change Password</h3>
+                        <p class="text-xs text-slate-400 mt-0.5">Keep your account secure by using a strong password</p>
                     </div>
                     <div class="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
                         <i class="fas fa-lock"></i>
@@ -282,7 +282,7 @@
                     @csrf
 
                     <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">বর্তমান পাসওয়ার্ড <span class="text-rose-500">*</span></label>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Current Password <span class="text-rose-500">*</span></label>
                         <input type="password"
                                name="current_password"
                                required
@@ -292,28 +292,28 @@
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-xs font-bold text-slate-700 mb-1">নতুন পাসওয়ার্ড <span class="text-rose-500">*</span></label>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">New Password <span class="text-rose-500">*</span></label>
                             <input type="password"
                                    name="password"
                                    required
-                                   placeholder="কমপক্ষে ৬ অক্ষর"
+                                   placeholder="At least 6 characters"
                                    class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white">
                         </div>
 
                         <div>
-                            <label class="block text-xs font-bold text-slate-700 mb-1">নতুন পাসওয়ার্ড নিশ্চিত করুন <span class="text-rose-500">*</span></label>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Confirm New Password <span class="text-rose-500">*</span></label>
                             <input type="password"
                                    name="password_confirmation"
                                    required
-                                   placeholder="পুনরায় পাসওয়ার্ড লিখুন"
+                                   placeholder="Re-type new password"
                                    class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white">
                         </div>
                     </div>
 
                     <div class="pt-2 flex justify-end">
                         <button type="submit"
-                                class="px-6 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs flex items-center gap-2 shadow-sm transition">
-                            <i class="fas fa-key"></i> পাসওয়ার্ড আপডেট করুন
+                                class="px-6 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs flex items-center gap-2 shadow-sm transition cursor-pointer">
+                            <i class="fas fa-key"></i> Update Password
                         </button>
                     </div>
                 </form>

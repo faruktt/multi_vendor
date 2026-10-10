@@ -40,11 +40,11 @@
                     {{-- Logo --}}
                     <div>
                         <label class="block text-[12.5px] font-medium text-slate-600 mb-2">Company Logo</label>
-                        <div class="flex items-center gap-4">
-                            <div class="w-16 h-16 rounded-xl border-2 border-dashed border-slate-200 flex items-center justify-center overflow-hidden bg-slate-50"
+                        <div class="flex items-start sm:items-center gap-4 flex-col sm:flex-row">
+                            <div class="w-48 h-16 rounded-xl border-2 border-dashed border-slate-200 flex items-center justify-center overflow-hidden bg-slate-50 p-2 flex-shrink-0"
                                  id="logo-preview-wrap">
                                 @if(!empty($settings['logo']))
-                                    <img src="{{ $settings['logo'] }}" id="logo-preview" class="w-full h-full object-cover" alt="logo">
+                                    <img src="{{ $settings['logo'] }}" id="logo-preview" class="max-h-full max-w-full object-contain" alt="logo">
                                 @else
                                     <i class="fas fa-image text-slate-300 text-2xl" id="logo-placeholder"></i>
                                 @endif
@@ -54,8 +54,18 @@
                                     <i class="fas fa-upload text-[11px]"></i> Upload Logo
                                     <input type="file" name="logo" accept="image/*" class="hidden" id="logo-input"
                                            onchange="previewLogo(this)">
-                                </label>
-                                <p class="text-[11px] text-slate-400 mt-1.5">PNG, JPG up to 2MB. Recommended: 200×200px</p>
+                                 </label>
+                                <div class="mt-2.5 p-2.5 bg-blue-50/70 border border-blue-100 rounded-xl space-y-1">
+                                    <p class="text-[11.5px] font-bold text-blue-900 flex items-center gap-1.5">
+                                        <i class="fas fa-circle-info text-blue-600"></i>
+                                        Recommended Dimensions:
+                                    </p>
+                                    <ul class="text-[11px] text-slate-600 space-y-0.5 ml-1">
+                                        <li>&bull; <strong class="text-slate-800">Horizontal / Landscape (Best for header &amp; footer):</strong> <span class="text-blue-700 font-bold">250 × 60 px</span> or <span class="text-blue-700 font-bold">300 × 75 px</span> (Ratio ~4:1)</li>
+                                        <li>&bull; <strong class="text-slate-800">Square / Icon Logo:</strong> <span class="text-blue-700 font-bold">120 × 120 px</span> or <span class="text-blue-700 font-bold">150 × 150 px</span></li>
+                                        <li>&bull; <strong class="text-slate-800">Format:</strong> Transparent <span class="font-bold text-slate-700">PNG</span> or <span class="font-bold text-slate-700">SVG</span> recommended for the cleanest look.</li>
+                                    </ul>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -224,6 +234,70 @@
                         </div>
                     </div>
 
+            {{-- Social Media Links --}}
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-6">
+                <div class="px-6 py-4 border-b border-slate-100 flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-lg bg-pink-50 flex items-center justify-center">
+                        <i class="fas fa-icons text-pink-600 text-sm"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-[14px] font-semibold text-slate-800">Social Media Links</h2>
+                        <p class="text-[11.5px] text-slate-400">Displayed in the website footer under &quot;Get in Touch&quot;</p>
+                    </div>
+                </div>
+                <div class="p-6 space-y-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {{-- Facebook --}}
+                        <div>
+                            <label class="block text-[12.5px] font-medium text-slate-600 mb-1.5 flex items-center gap-1.5">
+                                <i class="fab fa-facebook text-[#1877F2]"></i> Facebook URL
+                            </label>
+                            <input type="url" name="facebook" value="{{ old('facebook', $settings['facebook'] ?? '') }}"
+                                   placeholder="https://facebook.com/yourpage"
+                                   class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+                        </div>
+
+                        {{-- YouTube --}}
+                        <div>
+                            <label class="block text-[12.5px] font-medium text-slate-600 mb-1.5 flex items-center gap-1.5">
+                                <i class="fab fa-youtube text-[#FF0000]"></i> YouTube URL
+                            </label>
+                            <input type="url" name="youtube" value="{{ old('youtube', $settings['youtube'] ?? '') }}"
+                                   placeholder="https://youtube.com/@yourchannel"
+                                   class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+                        </div>
+
+                        {{-- X (Twitter) --}}
+                        <div>
+                            <label class="block text-[12.5px] font-medium text-slate-600 mb-1.5 flex items-center gap-1.5">
+                                <i class="fab fa-x-twitter text-slate-800"></i> X (Twitter) URL
+                            </label>
+                            <input type="url" name="twitter" value="{{ old('twitter', $settings['twitter'] ?? '') }}"
+                                   placeholder="https://x.com/yourhandle"
+                                   class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+                        </div>
+
+                        {{-- Instagram --}}
+                        <div>
+                            <label class="block text-[12.5px] font-medium text-slate-600 mb-1.5 flex items-center gap-1.5">
+                                <i class="fab fa-instagram text-[#E4405F]"></i> Instagram URL
+                            </label>
+                            <input type="url" name="instagram" value="{{ old('instagram', $settings['instagram'] ?? '') }}"
+                                   placeholder="https://instagram.com/yourprofile"
+                                   class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+                        </div>
+
+                        {{-- TikTok --}}
+                        <div class="sm:col-span-2">
+                            <label class="block text-[12.5px] font-medium text-slate-600 mb-1.5 flex items-center gap-1.5">
+                                <i class="fab fa-tiktok text-slate-900"></i> TikTok URL
+                            </label>
+                            <input type="url" name="tiktok" value="{{ old('tiktok', $settings['tiktok'] ?? '') }}"
+                                   placeholder="https://tiktok.com/@yourusername"
+                                   class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+                        </div>
+                    </div>
+                    <p class="text-[11px] text-slate-400">Leave blank any platform you do not wish to display in the footer.</p>
                 </div>
             </div>
 
@@ -263,7 +337,7 @@
                 </div>
             </div>
             <div class="p-6">
-                <form method="POST" action="{{ route('admin.settings.profile') }}" enctype="multipart/form-data" class="space-y-4" x-data="{ preview: @js($user->image_url ?? null) }">
+                <form method="POST" action="{{ route('admin.settings.profile') }}" enctype="multipart/form-data" class="space-y-4" x-data="{ preview: @js($user->image_url ?? $settings['favicon'] ?? null) }">
                     @csrf
                     <div class="flex items-center gap-4 mb-2 p-4 bg-slate-50 rounded-xl border border-slate-100">
                         <div class="relative w-14 h-14 rounded-2xl flex-shrink-0 cursor-pointer group" @click="$refs.avatarInput.click()">
@@ -368,7 +442,7 @@ function previewLogo(input) {
         const reader = new FileReader();
         reader.onload = function(e) {
             const wrap = document.getElementById('logo-preview-wrap');
-            wrap.innerHTML = `<img src="${e.target.result}" class="w-full h-full object-cover" alt="logo">`;
+            wrap.innerHTML = `<img src="${e.target.result}" class="max-h-full max-w-full object-contain" alt="logo">`;
         };
         reader.readAsDataURL(input.files[0]);
     }

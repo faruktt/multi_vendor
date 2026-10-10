@@ -170,7 +170,7 @@
                                 <p class="text-base text-gray-400 font-semibold line-through">{{ $currency }}{{ number_format($product->old_price, 0) }}</p>
                                 @if($product->old_price_discount_percentage > 0)
                                 <span class="bg-rose-50 text-rose-600 border border-rose-200 text-xs font-bold px-2.5 py-0.5 rounded-full">
-                                    {{ $product->old_price_discount_percentage }}% ছাড়
+                                    {{ $product->old_price_discount_percentage }}% OFF
                                 </span>
                                 @endif
                             </div>
@@ -180,9 +180,7 @@
                         </div>
                         <span class="inline-block text-[11px] font-bold text-gray-500 border border-gray-200 rounded-full px-2.5 py-1 bg-gray-50">/ {{ $product->unit }}</span>
                         {{-- Stock badge --}}
-                        <span class="ml-auto text-xs font-bold px-3 py-1.5 rounded-full"
-                              :class="stock > 0 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-600 border border-red-200'"
-                              x-text="stock > 0 ? 'In Stock (' + stock + ')' : 'Out of Stock'"></span>
+                         
                     </div>
 
                     {{-- Color Selector --}}
@@ -305,51 +303,7 @@
                     </div>
 
                     {{-- Supplier / Vendor Info Box --}}
-                    @if($product->supplier)
-                    <div class="mt-5 p-4 rounded-2xl bg-gradient-to-r from-emerald-50/80 to-teal-50/80 border border-emerald-200/90 flex items-center justify-between gap-4 shadow-sm">
-                        <div class="flex items-center gap-3 min-w-0">
-                            <div class="w-12 h-12 rounded-xl bg-white border border-emerald-200 overflow-hidden flex-shrink-0 flex items-center justify-center shadow-sm">
-                                @if($product->supplier->logo_url)
-                                    <img src="{{ $product->supplier->logo_url }}" alt="{{ $product->supplier->display_name }}" class="w-full h-full object-cover">
-                                @else
-                                    <div class="w-full h-full bg-emerald-600 flex items-center justify-center text-white font-black text-base">
-                                        {{ strtoupper(substr($product->supplier->display_name, 0, 1)) }}
-                                    </div>
-                                @endif
-                            </div>
-                            <div class="min-w-0">
-                                <div class="text-[10px] font-bold uppercase tracking-wider text-emerald-700 flex items-center gap-1">
-                                    <i class="fas fa-store"></i> Sold by Vendor
-                                </div>
-                                <div class="font-extrabold text-slate-900 text-sm truncate flex items-center gap-1.5 mt-0.5">
-                                    <span>{{ $product->supplier->display_name }}</span>
-                                    <span class="inline-flex items-center text-[11px] text-emerald-600" title="Verified Marketplace Supplier">
-                                        <i class="fas fa-circle-check"></i>
-                                    </span>
-                                </div>
-                                @if($product->supplier->address)
-                                <div class="text-[11px] text-slate-500 truncate mt-0.5">
-                                    <i class="fas fa-location-dot text-[10px] text-slate-400"></i> {{ $product->supplier->address }}
-                                </div>
-                                @endif
-                            </div>
-                        </div>
-                        <a href="{{ route('shop.supplier.show', $product->supplier->id) }}"
-                           class="inline-flex items-center gap-1 px-3 py-2 rounded-xl bg-white hover:bg-emerald-600 hover:text-white text-emerald-800 text-xs font-bold transition border border-emerald-300 shadow-sm flex-shrink-0">
-                            <span>Visit Store</span>
-                            <i class="fas fa-chevron-right text-[9px]"></i>
-                        </a>
-                    </div>
-                    @else
-                    <div class="mt-5 p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center gap-2.5 text-xs text-slate-600">
-                        <span class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs flex-shrink-0">
-                            <i class="fas fa-shield-check"></i>
-                        </span>
-                        <div>
-                            <span class="font-bold text-slate-800">Sold by Official Store</span> &bull; 100% Genuine product directly from warehouse
-                        </div>
-                    </div>
-                    @endif
+
 
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-5 pt-4 border-t border-gray-100">
                         <div class="flex items-center gap-2.5 text-gray-500">

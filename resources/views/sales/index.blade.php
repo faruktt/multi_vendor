@@ -497,7 +497,7 @@
                 <div class="w-12 h-12 mx-auto mb-3 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center">
                     <i class="fas fa-spinner fa-spin text-xl"></i>
                 </div>
-                <p class="text-sm font-medium text-slate-700">BD Courier থেকে তথ্য লোড হচ্ছে...</p>
+                <p class="text-sm font-medium text-slate-700">Loading BD Courier data...</p>
                 <p class="text-xs text-slate-400 mt-1 font-mono" x-text="bdPhone"></p>
             </div>
 
@@ -509,11 +509,11 @@
                             <i class="fas fa-triangle-exclamation text-sm"></i>
                         </div>
                         <div class="flex-1">
-                            <h4 class="font-bold text-red-800 text-sm">তথ্য লোড করা যায়নি</h4>
+                            <h4 class="font-bold text-red-800 text-sm">Failed to Load Data</h4>
                             <p class="text-red-700 text-xs mt-1 leading-relaxed" x-text="bdError"></p>
                             <button type="button" @click="checkBdCourier()"
                                     class="mt-3 text-xs bg-red-600 hover:bg-red-700 text-white font-semibold px-3 py-1.5 rounded-lg inline-flex items-center gap-1.5 transition-colors">
-                                <i class="fas fa-rotate-right text-[10px]"></i> আবার চেষ্টা করুন
+                                <i class="fas fa-rotate-right text-[10px]"></i> Try Again
                             </button>
                         </div>
                     </div>
@@ -559,8 +559,7 @@
                                 <i class="fas fa-boxes-stacked text-xs"></i>
                             </div>
                             <p class="text-2xl font-black text-blue-700 leading-none" x-text="bdRiskInfo.total"></p>
-                            <p class="text-[11px] font-bold text-blue-600/90 mt-1.5">মোট অর্ডার</p>
-                            <p class="text-[9px] text-slate-400">Total Parcels</p>
+                            <p class="text-[11px] font-bold text-blue-600/90 mt-1.5">Total Parcels</p>
                         </div>
 
                         {{-- Delivered --}}
@@ -569,8 +568,7 @@
                                 <i class="fas fa-circle-check text-xs"></i>
                             </div>
                             <p class="text-2xl font-black text-emerald-700 leading-none" x-text="bdRiskInfo.delivered"></p>
-                            <p class="text-[11px] font-bold text-emerald-600/90 mt-1.5">ডেলিভার্ড</p>
-                            <p class="text-[9px] text-slate-400">Delivered</p>
+                            <p class="text-[11px] font-bold text-emerald-600/90 mt-1.5">Delivered</p>
                         </div>
 
                         {{-- Cancelled --}}
@@ -579,15 +577,14 @@
                                 <i class="fas fa-circle-xmark text-xs"></i>
                             </div>
                             <p class="text-2xl font-black text-rose-700 leading-none" x-text="bdRiskInfo.cancelled"></p>
-                            <p class="text-[11px] font-bold text-rose-600/90 mt-1.5">বাতিল</p>
-                            <p class="text-[9px] text-slate-400">Cancelled</p>
+                            <p class="text-[11px] font-bold text-rose-600/90 mt-1.5">Cancelled</p>
                         </div>
                     </div>
 
                     {{-- Courier-wise Breakdown --}}
                     <div x-show="bdCourierRows.length > 0" class="border border-slate-100 rounded-2xl p-4 bg-white">
                         <div class="flex items-center justify-between mb-3">
-                            <p class="text-xs font-bold text-slate-700 uppercase tracking-wide">কুরিয়ার ভিত্তিক রিপোর্ট</p>
+                            <p class="text-xs font-bold text-slate-700 uppercase tracking-wide">Courier Breakdown</p>
                             <span class="text-[11px] text-slate-400" x-text="bdCourierRows.length + ' couriers'"></span>
                         </div>
                         <div class="overflow-x-auto">
@@ -627,7 +624,7 @@
                     <div x-show="bdResult && bdResult.reports && bdResult.reports.length > 0" class="bg-amber-50 border border-amber-200 rounded-2xl p-3.5">
                         <div class="flex items-center gap-2 mb-2 text-amber-800 font-bold text-xs">
                             <i class="fas fa-triangle-exclamation text-amber-500"></i>
-                            <span>রিপোর্ট ও অভিযোগ</span>
+                            <span>Reports & Complaints</span>
                         </div>
                         <ul class="space-y-1 text-xs text-amber-900 list-disc list-inside">
                             <template x-for="(rep, i) in (bdResult?.reports || [])" :key="i">
@@ -670,7 +667,7 @@
             {{-- Loading --}}
             <div x-show="notesLoading" class="py-12 text-center text-slate-400">
                 <i class="fas fa-spinner fa-spin text-2xl text-amber-500 mb-2"></i>
-                <p class="text-xs">নোট লোড হচ্ছে...</p>
+                <p class="text-xs">Loading notes...</p>
             </div>
 
             {{-- Empty State --}}
@@ -679,8 +676,8 @@
                     <div class="w-12 h-12 rounded-full bg-amber-50 text-amber-500 flex items-center justify-center mx-auto mb-2.5">
                         <i class="fas fa-note-sticky text-xl"></i>
                     </div>
-                    <p class="text-sm font-semibold text-slate-600">কোনো নোট যোগ করা হয়নি</p>
-                    <p class="text-xs text-slate-400 mt-1">অর্ডার সংক্রান্ত যেকোনো নির্দেশনা বা তথ্য নিচে লিখে যোগ করুন।</p>
+                    <p class="text-sm font-semibold text-slate-600">No notes added yet</p>
+                    <p class="text-xs text-slate-400 mt-1">Write any order instructions or updates below.</p>
                 </div>
             </template>
 
@@ -711,38 +708,38 @@
         <div class="p-4 border-t border-slate-100 bg-white">
             {{-- Quick Chips --}}
             <div class="flex items-center gap-1.5 overflow-x-auto pb-2.5 mb-2 scrollbar-none text-[11px]">
-                <span class="text-slate-400 text-[10px] font-semibold whitespace-nowrap mr-0.5">কুইক নোট:</span>
-                <button type="button" @click="insertQuickNote('কাস্টমার প্রোডাক্ট নিবে না')"
+                <span class="text-slate-400 text-[10px] font-semibold whitespace-nowrap mr-0.5">Quick Notes:</span>
+                <button type="button" @click="insertQuickNote('Customer refused delivery')"
                         class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 hover:bg-amber-100 hover:text-amber-800 transition-colors whitespace-nowrap">
-                    ❌ প্রোডাক্ট নিবে না
+                    ❌ Refused delivery
                 </button>
-                <button type="button" @click="insertQuickNote('পরে কল দিতে বলেছে')"
+                <button type="button" @click="insertQuickNote('Customer asked to call later')"
                         class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 hover:bg-amber-100 hover:text-amber-800 transition-colors whitespace-nowrap">
-                    📞 পরে কল দিবে
+                    📞 Call later
                 </button>
-                <button type="button" @click="insertQuickNote('ঠিকানা পরিবর্তন করতে বলেছে')"
+                <button type="button" @click="insertQuickNote('Customer requested address update')"
                         class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 hover:bg-amber-100 hover:text-amber-800 transition-colors whitespace-nowrap">
-                    📍 ঠিকানা পরিবর্তন
+                    📍 Address update
                 </button>
-                <button type="button" @click="insertQuickNote('ডেলিভারি কনফার্ম করেছে')"
+                <button type="button" @click="insertQuickNote('Confirmed delivery')"
                         class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 hover:bg-amber-100 hover:text-amber-800 transition-colors whitespace-nowrap">
-                    ✅ ডেলিভারি কনফার্ম
+                    ✅ Confirmed delivery
                 </button>
             </div>
 
             <form @submit.prevent="submitNote" class="space-y-2.5">
-                <textarea x-model="newNoteText" rows="2" required placeholder="এই অর্ডারের জন্য নোট লিখুন (যেমন: কাস্টমার প্রোডাক্ট নিবে না, ইত্যাদি)..."
+                <textarea x-model="newNoteText" rows="2" required placeholder="Add notes for this order (e.g. Call later, refused delivery)..."
                           class="w-full text-xs rounded-xl border border-slate-200 p-2.5 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent resize-none leading-relaxed"></textarea>
                 
                 <div class="flex items-center justify-between">
                     <span class="text-[11px] text-slate-400">
-                        <i class="fas fa-user-pen mr-1"></i>নোট আপনার নামে সেভ হবে
+                        <i class="fas fa-user-pen mr-1"></i>Note will be saved under your name
                     </span>
                     <button type="submit" :disabled="submittingNote || !newNoteText.trim()"
                             class="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white text-xs font-bold px-4 py-2 rounded-xl transition-colors shadow-sm shadow-amber-200">
                         <i class="fas fa-paper-plane text-[10px]" x-show="!submittingNote"></i>
                         <i class="fas fa-spinner fa-spin text-[10px]" x-show="submittingNote"></i>
-                        <span x-text="submittingNote ? 'সংরক্ষণ হচ্ছে...' : 'নোট যোগ করুন'"></span>
+                        <span x-text="submittingNote ? 'Saving...' : 'Add Note'"></span>
                     </button>
                 </div>
             </form>
@@ -766,7 +763,7 @@
                         <h3 class="font-bold text-slate-800 text-[15px]">Send Order to Courier</h3>
                         <span class="font-mono text-xs bg-white text-blue-700 font-semibold px-2 py-0.5 rounded-md border border-blue-200" x-text="'#' + courierForm.invoice"></span>
                     </div>
-                    <p class="text-xs text-slate-500 mt-0.5">কুরিয়ারে পার্সেল তৈরি ও বুকিং কনফার্ম করুন</p>
+                    <p class="text-xs text-slate-500 mt-0.5">Create parcel and confirm courier booking</p>
                 </div>
             </div>
             <button @click="courierModal = false" class="text-slate-400 hover:text-slate-600 w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/80 transition-colors">
@@ -820,7 +817,7 @@
                         <input type="number" step="any" min="0" x-model="courierForm.codAmount" required
                                class="w-full text-xs rounded-xl border border-slate-200 pl-7 pr-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 font-bold">
                     </div>
-                    <p class="text-[10px] text-slate-400 mt-0.5">কাস্টমারের কাছ থেকে প্রদেয় ক্যাশ অন ডেলিভারি টাকা</p>
+                    <p class="text-[10px] text-slate-400 mt-0.5">Cash on delivery collection amount</p>
                 </div>
                 <div>
                     <label class="block text-[11px] font-semibold text-slate-500 mb-1 uppercase tracking-wider">Delivery Area / City</label>
@@ -834,7 +831,7 @@
                 <label class="block text-[11px] font-semibold text-slate-500 mb-1 uppercase tracking-wider">Instruction / Note (Optional)</label>
                 <input type="text" x-model="courierForm.note"
                        class="w-full text-xs rounded-xl border border-slate-200 px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                       placeholder="e.g. Handle with care / ডেলিভারির পূর্বে কল করবেন">
+                       placeholder="e.g. Handle with care / Call before delivery">
             </div>
 
             <div x-show="courierError" x-cloak class="p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-start gap-2">
@@ -1030,10 +1027,10 @@ function salesPage() {
                         `;
                     }
                 } else {
-                    this.courierError = data.message || 'Courier এ অর্ডার পাঠাতে সমস্যা হয়েছে।';
+                    this.courierError = data.message || 'Failed to dispatch order to courier.';
                 }
             } catch (err) {
-                this.courierError = 'সার্ভার এরর: সংযোগ স্থাপন করা যায়নি।';
+                this.courierError = 'Server error: Connection failed.';
             } finally {
                 this.courierSending = false;
             }
@@ -1059,7 +1056,7 @@ function salesPage() {
             if (this.bdPhone) {
                 this.checkBdCourier();
             } else {
-                this.bdError = 'গ্রাহকের কোনো ফোন নম্বর পাওয়া যায়নি।';
+                this.bdError = 'Customer phone number not found.';
             }
         },
 
@@ -1095,11 +1092,11 @@ function salesPage() {
             }
 
             const config = {
-                excellent: { label: 'নিরাপদ গ্রাহক (Safe)',           message: 'ডেলিভারি সফলতার হার অত্যন্ত চমৎকার।',        ring: '#22c55e', text: 'text-emerald-600', badgeBg: 'bg-emerald-100 text-emerald-700 border border-emerald-200' },
-                good:      { label: 'সন্তোষজনক (Good)',               message: 'মোটামুটি নির্ভরযোগ্য ডেলিভারি ইতিহাস।',        ring: '#0ea5e9', text: 'text-sky-600',     badgeBg: 'bg-sky-100 text-sky-700 border border-sky-200' },
-                average:   { label: 'মাঝারি ঝুঁকি (Average)',        message: 'পার্সেল পাঠানোর পূর্বে অর্ডারটি নিশ্চিত করুন।',   ring: '#f59e0b', text: 'text-amber-600',   badgeBg: 'bg-amber-100 text-amber-700 border border-amber-200' },
-                risky:     { label: 'উচ্চ ঝুঁকিপূর্ণ (High Risk)',     message: 'বাতিল বা রিটার্ন হওয়ার সম্ভাবনা বেশি।',       ring: '#ef4444', text: 'text-red-600',     badgeBg: 'bg-red-100 text-red-700 border border-red-200' },
-                none:      { label: 'নতুন গ্রাহক (No Data)',          message: 'পূর্বে কোনো কুরিয়ার ডেলিভারি ইতিহাস নেই।',      ring: '#94a3b8', text: 'text-slate-500',   badgeBg: 'bg-slate-100 text-slate-600 border border-slate-200' },
+                excellent: { label: 'Safe Customer',     message: 'Outstanding delivery success rate.',            ring: '#22c55e', text: 'text-emerald-600', badgeBg: 'bg-emerald-100 text-emerald-700 border border-emerald-200' },
+                good:      { label: 'Good',              message: 'Reliable delivery track record.',               ring: '#0ea5e9', text: 'text-sky-600',     badgeBg: 'bg-sky-100 text-sky-700 border border-sky-200' },
+                average:   { label: 'Average Risk',      message: 'Please confirm order details before dispatch.', ring: '#f59e0b', text: 'text-amber-600',   badgeBg: 'bg-amber-100 text-amber-700 border border-amber-200' },
+                risky:     { label: 'High Risk',         message: 'Higher likelihood of return or cancellation.',  ring: '#ef4444', text: 'text-red-600',     badgeBg: 'bg-red-100 text-red-700 border border-red-200' },
+                none:      { label: 'No Prior Data',     message: 'No previous courier delivery history found.',   ring: '#94a3b8', text: 'text-slate-500',   badgeBg: 'bg-slate-100 text-slate-600 border border-slate-200' },
             };
 
             return { ...config[key], total, delivered, cancelled, deliverPct };
@@ -1130,10 +1127,10 @@ function salesPage() {
                 if (res.ok && data.success) {
                     this.bdResult = data;
                 } else {
-                    this.bdError = data.error || 'BD Courier তথ্য লোড করা যায়নি।';
+                    this.bdError = data.error || 'Failed to load BD Courier data.';
                 }
             } catch (e) {
-                this.bdError = 'সার্ভারের সাথে সংযোগ বিচ্ছিন্ন হয়েছে।';
+                this.bdError = 'Connection to server lost.';
             }
 
             this.bdLoading = false;
@@ -1193,7 +1190,7 @@ function salesPage() {
                 if (res.ok && data.success) {
                     this.notesList.unshift(data.note);
                     this.newNoteText = '';
-                    showToast(data.message || 'নোট সংরক্ষিত হয়েছে', 'success');
+                    showToast(data.message || 'Note saved successfully', 'success');
 
                     // Update badge on row
                     const badge = document.getElementById('note-badge-' + this.activeSaleId);
@@ -1202,10 +1199,10 @@ function salesPage() {
                         badge.classList.remove('hidden');
                     }
                 } else {
-                    showToast(data.message || data.error || 'নোট সংরক্ষণ করা যায়নি।', 'error');
+                    showToast(data.message || data.error || 'Failed to save note.', 'error');
                 }
             } catch (e) {
-                showToast('সার্ভার এরর!', 'error');
+                showToast('Server error!', 'error');
             }
 
             this.submittingNote = false;

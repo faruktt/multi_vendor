@@ -10,15 +10,15 @@
         <div class="flex items-center gap-2 flex-wrap">
             <a href="{{ route('admin.moderators.index') }}"
                class="px-4 py-2 rounded-xl font-bold text-sm transition-colors {{ request()->routeIs('admin.moderators.index') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-200' : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200' }}">
-                <i class="fas fa-user-shield mr-1.5"></i> Moderators (মডারেটর তালিকা)
+                <i class="fas fa-user-shield mr-1.5"></i> Moderators
             </a>
             <a href="{{ route('admin.moderators.reports') }}"
                class="px-4 py-2 rounded-xl font-bold text-sm transition-colors {{ request()->routeIs('admin.moderators.reports') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-200' : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200' }}">
-                <i class="fas fa-chart-line mr-1.5"></i> Work Shifts & Reports (কাজের রিপোর্ট)
+                <i class="fas fa-chart-line mr-1.5"></i> Work Shifts & Reports
             </a>
             <a href="{{ route('admin.moderators.withdrawals') }}"
                class="px-4 py-2 rounded-xl font-bold text-sm transition-colors {{ request()->routeIs('admin.moderators.withdrawals*') ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-200' : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200' }}">
-                <i class="fas fa-wallet mr-1.5"></i> Salary Withdrawals (বেতন উত্তোলন)
+                <i class="fas fa-wallet mr-1.5"></i> Salary Withdrawals
                 @if(\App\Models\ModeratorWithdrawal::where('status', 'pending')->count() > 0)
                     <span class="ml-1.5 px-2 py-0.5 text-xs font-black bg-amber-400 text-amber-950 rounded-full">{{ \App\Models\ModeratorWithdrawal::where('status', 'pending')->count() }}</span>
                 @endif
@@ -30,7 +30,7 @@
     <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-5 space-y-4">
         {{-- Preset Buttons --}}
         <div class="flex flex-wrap items-center gap-2">
-            @foreach(['today' => 'Today (আজকে)', 'this_week' => 'This Week (চলতি সপ্তাহ)', 'this_month' => 'This Month (চলতি মাস)', 'last_month' => 'Last Month (বিগত মাস)', 'this_year' => 'This Year (চলতি বছর)'] as $pKey => $pLabel)
+            @foreach(['today' => 'Today', 'this_week' => 'This Week', 'this_month' => 'This Month', 'last_month' => 'Last Month', 'this_year' => 'This Year'] as $pKey => $pLabel)
                 <a href="{{ route('admin.moderators.reports', array_merge(request()->except(['from', 'to', 'page']), ['preset' => $pKey])) }}"
                    class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all {{ ($preset === $pKey && !request()->filled('from')) ? 'bg-indigo-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' }}">
                     {{ $pLabel }}
@@ -44,7 +44,7 @@
             <div class="min-w-[180px]">
                 <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Select Moderator</label>
                 <select name="moderator_id" class="w-full h-10 border border-slate-200 rounded-xl px-3 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-slate-50 font-medium">
-                    <option value="">All Moderators (সকল মডারেটর)</option>
+                    <option value="">All Moderators</option>
                     @foreach($allModerators as $mod)
                         <option value="{{ $mod->id }}" {{ request('moderator_id') == $mod->id ? 'selected' : '' }}>
                             {{ $mod->name }} ({{ $mod->email }})
@@ -57,9 +57,9 @@
             <div>
                 <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Session Status</label>
                 <select name="status" class="h-10 border border-slate-200 rounded-xl px-3 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-slate-50 font-medium">
-                    <option value="">All (সব)</option>
-                    <option value="completed" {{ request('status') === 'completed' ? 'selected' : '' }}>Completed (সম্পন্ন)</option>
-                    <option value="in_progress" {{ request('status') === 'in_progress' ? 'selected' : '' }}>In Progress (চলমান)</option>
+                    <option value="">All Status</option>
+                    <option value="completed" {{ request('status') === 'completed' ? 'selected' : '' }}>Completed</option>
+                    <option value="in_progress" {{ request('status') === 'in_progress' ? 'selected' : '' }}>In Progress</option>
                 </select>
             </div>
 
@@ -101,7 +101,7 @@
                 </div>
             </div>
             <div class="text-2xl font-black text-slate-800 font-mono">{{ $formattedTotalTime }}</div>
-            <div class="text-xs text-slate-400 mt-1">ফিল্টারকৃত সময়ের মোট কাজের হিসাব</div>
+            <div class="text-xs text-slate-400 mt-1">Total work duration for selected filter</div>
         </div>
 
         {{-- Completed Sessions --}}
@@ -113,7 +113,7 @@
                 </div>
             </div>
             <div class="text-2xl font-black text-slate-800">{{ number_format($completedSessions) }}</div>
-            <div class="text-xs text-slate-400 mt-1">মোট সম্পন্ন শিফট সংখ্যা</div>
+            <div class="text-xs text-slate-400 mt-1">Total completed shift count</div>
         </div>
 
         {{-- Reports Submitted --}}
@@ -125,7 +125,7 @@
                 </div>
             </div>
             <div class="text-2xl font-black text-slate-800">{{ number_format($reportsSubmitted) }}</div>
-            <div class="text-xs text-slate-400 mt-1">কাজের রিপোর্ট জমা পড়েছে</div>
+            <div class="text-xs text-slate-400 mt-1">Reports submitted by moderators</div>
         </div>
 
         {{-- Active Right Now --}}
@@ -145,7 +145,7 @@
                     </span>
                 @endif
             </div>
-            <div class="text-xs text-slate-400 mt-1">এখন সরাসরি ডিউটিতে আছেন</div>
+            <div class="text-xs text-slate-400 mt-1">Currently on duty in live shift</div>
         </div>
     </div>
 
@@ -157,9 +157,9 @@
                     <tr>
                         <th class="px-5 py-3.5">Moderator</th>
                         <th class="px-5 py-3.5">Date</th>
-                        <th class="px-5 py-3.5">Shift Window (শুরু - শেষ)</th>
-                        <th class="px-5 py-3.5">Duration (কাজের সময়)</th>
-                        <th class="px-5 py-3.5">Tasks Summary (সংক্ষিপ্ত বিবরণ)</th>
+                        <th class="px-5 py-3.5">Shift Window</th>
+                        <th class="px-5 py-3.5">Duration</th>
+                        <th class="px-5 py-3.5">Tasks Summary</th>
                         <th class="px-5 py-3.5 text-center">Status</th>
                         <th class="px-5 py-3.5 text-right">Work Report</th>
                     </tr>
@@ -194,7 +194,7 @@
                         <td class="px-5 py-4 font-mono text-slate-600">
                             <span class="text-slate-800 font-semibold">{{ $s->started_at->timezone('Asia/Dhaka')->format('h:i:s A') }}</span>
                             <span class="text-slate-400 mx-1">→</span>
-                            <span class="text-slate-800 font-semibold">{{ $s->ended_at ? $s->ended_at->timezone('Asia/Dhaka')->format('h:i:s A') : 'চলমান...' }}</span>
+                            <span class="text-slate-800 font-semibold">{{ $s->ended_at ? $s->ended_at->timezone('Asia/Dhaka')->format('h:i:s A') : 'In Progress...' }}</span>
                         </td>
 
                         {{-- Duration --}}
@@ -202,7 +202,7 @@
                             @if($s->isInProgress())
                                 <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
                                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                                    {{ $s->started_at->diffForHumans(null, true) }} (চলমান)
+                                    {{ $s->started_at->diffForHumans(null, true) }} (In Progress)
                                 </span>
                             @else
                                 <span class="font-bold text-slate-800 bg-slate-100 px-2.5 py-1 rounded-lg font-mono">
@@ -213,7 +213,7 @@
 
                         {{-- Tasks Summary --}}
                         <td class="px-5 py-4 max-w-xs truncate" title="{{ $s->tasks_summary }}">
-                            {{ $s->tasks_summary ?: ($s->isInProgress() ? 'শিফট চলমান রয়েছে' : '—') }}
+                            {{ $s->tasks_summary ?: ($s->isInProgress() ? 'Shift in progress' : '—') }}
                         </td>
 
                         {{-- Status --}}
@@ -235,7 +235,7 @@
                                 <button type="button" @click="selectedSession = @js($s); showReportModal = true;"
                                         class="text-indigo-600 hover:text-indigo-800 font-bold text-xs inline-flex items-center gap-1 hover:underline cursor-pointer">
                                     <i class="fas fa-file-alt text-[11px]"></i>
-                                    <span>{{ $s->isInProgress() ? 'লাইভ রিপোর্ট দেখুন' : 'রিপোর্ট পড়ুন' }}</span>
+                                    <span>{{ $s->isInProgress() ? 'View Live Activity' : 'View Report' }}</span>
                                 </button>
                             @else
                                 <span class="text-slate-300">—</span>
@@ -246,7 +246,7 @@
                     <tr>
                         <td colspan="7" class="text-center py-12 text-slate-400">
                             <i class="far fa-clipboard text-3xl text-slate-300 mb-2 block"></i>
-                            <p>নির্বাচিত সময়সীমার মধ্যে কোনো কাজের শিফট রেকর্ড পাওয়া যায়নি।</p>
+                            <p>No work shift records found for the selected timeframe.</p>
                         </td>
                     </tr>
                     @endforelse
@@ -278,7 +278,7 @@
                         </div>
                     </template>
                     <div>
-                        <h3 class="font-extrabold text-slate-900 text-sm sm:text-base" x-text="selectedSession?.moderator?.name || 'মডারেটর কাজের রিপোর্ট'"></h3>
+                        <h3 class="font-extrabold text-slate-900 text-sm sm:text-base" x-text="selectedSession?.moderator?.name ? selectedSession.moderator.name + ' - Work Report' : 'Moderator Work Report'"></h3>
                         <p class="text-xs text-slate-500 mt-0.5" x-text="(selectedSession?.moderator?.email || '') + (selectedSession?.started_at ? ' • ' + new Date(selectedSession.started_at).toLocaleDateString() : '')"></p>
                     </div>
                 </div>
@@ -291,33 +291,33 @@
                 {{-- Duration info --}}
                 <div class="p-3.5 rounded-2xl bg-indigo-50/70 border border-indigo-100 flex items-center justify-between">
                     <div>
-                        <span class="text-[10px] font-bold text-indigo-500 uppercase tracking-wider block">কাজের সময়কাল</span>
+                        <span class="text-[10px] font-bold text-indigo-500 uppercase tracking-wider block">Work Duration</span>
                         <span class="text-lg font-black text-indigo-900 font-mono" x-text="selectedSession ? formatSec(selectedSession.duration_seconds) : ''"></span>
                     </div>
                     <div class="text-right text-xs text-slate-600">
-                        <span class="block text-[10px] text-slate-400 uppercase font-bold">রিপোর্ট সাবমিশন সময়</span>
+                        <span class="block text-[10px] text-slate-400 uppercase font-bold">Report Submission Time</span>
                         <span class="font-bold text-slate-700" x-text="selectedSession?.report_submitted_at ? new Date(selectedSession.report_submitted_at).toLocaleTimeString() : 'N/A'"></span>
                     </div>
                 </div>
 
                 {{-- Summary --}}
                 <div>
-                    <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">কাজের সারসংক্ষেপ (Summary)</span>
-                    <p class="text-sm font-bold text-slate-800 mt-0.5" x-text="selectedSession?.tasks_summary || 'দেওয়া হয়নি'"></p>
+                    <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Summary</span>
+                    <p class="text-sm font-bold text-slate-800 mt-0.5" x-text="selectedSession?.tasks_summary || 'Not provided'"></p>
                 </div>
 
                 {{-- Full Work Report --}}
                 <div>
-                    <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">কাজের বিস্তারিত বিবরণ (Full Work Report)</span>
+                    <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Detailed Work Report</span>
                     <div class="mt-1.5 p-4 rounded-xl bg-slate-50 border border-slate-200/80 text-xs sm:text-sm text-slate-700 whitespace-pre-line leading-relaxed"
-                         x-text="selectedSession?.work_report || 'কোনো বিস্তারিত বিবরণ জমা দেওয়া হয়নি।'">
+                         x-text="selectedSession?.work_report || 'No detailed report submitted.'">
                     </div>
                 </div>
             </div>
 
             <div class="p-4 border-t border-slate-100 flex justify-end">
                 <button type="button" @click="showReportModal = false" class="px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-bold text-slate-700 cursor-pointer">
-                    বন্ধ করুন
+                    Close
                 </button>
             </div>
         </div>

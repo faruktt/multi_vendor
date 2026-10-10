@@ -58,7 +58,7 @@
                         </span>
                     </div>
                     <p class="text-[11px] text-slate-300 mt-0.5">
-                        সরাসরি পিসি থেকে কথা বলুন · AI ভেরিফিকেশন কল
+                        Direct PC calling · Automated AI Order Verification Call
                     </p>
                 </div>
             </div>
@@ -86,7 +86,7 @@
                         <div class="flex items-center gap-2 mt-0.5">
                             <span class="font-mono font-bold text-[14px] text-slate-800" x-text="customerPhone"></span>
                             <button type="button" @click="copyPhone()"
-                                    class="text-slate-400 hover:text-slate-600 transition-colors p-1 rounded hover:bg-slate-100"
+                                    class="text-slate-400 hover:text-slate-600 transition-colors p-1 rounded hover:bg-slate-100 cursor-pointer"
                                     title="Copy Phone Number">
                                 <i class="fas fa-copy text-xs"></i>
                             </button>
@@ -96,7 +96,7 @@
 
                 {{-- Order Total --}}
                 <div class="flex items-center sm:flex-col sm:items-end justify-between border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-100">
-                    <span class="text-[10.5px] text-slate-400 uppercase tracking-wider font-semibold">অর্ডার মোট মূল্য</span>
+                    <span class="text-[10.5px] text-slate-400 uppercase tracking-wider font-semibold">Total Order Amount</span>
                     <span class="font-black text-slate-900 text-base sm:text-lg flex items-center gap-0.5">
                         <span class="text-xs text-slate-500 font-medium">৳</span>
                         <span x-text="orderAmount"></span>
@@ -117,13 +117,13 @@
                         </span>
                         <div>
                             <h4 class="font-bold text-slate-900 text-[13.5px] flex items-center gap-2">
-                                <span>১. ব্রাউজার থেকেই কল করুন (Browser Calling)</span>
+                                <span>1. Browser Calling</span>
                                 <span class="text-[9.5px] font-bold px-2 py-0.2 rounded-full"
                                       :class="webrtcConnected ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600'"
-                                      x-text="webrtcConnected ? 'WebRTC অনলাইন' : 'সরাসরি ডায়াল'"></span>
+                                      x-text="webrtcConnected ? 'WebRTC Online' : 'Direct Dial'"></span>
                             </h4>
                             <p class="text-[11px] text-slate-500 mt-0.5">
-                                ePBX অফিসিয়াল ওয়েব ডায়ালারে ১-ক্লিকে কল করুন অথবা ইন-ব্রাউজার WebRTC ব্যবহার করুন।
+                                Dial directly using official ePBX Web Dialer or in-browser WebRTC softphone.
                             </p>
                         </div>
                     </div>
@@ -140,27 +140,27 @@
                     <button type="button" @click="openPcWebDialer()"
                             class="w-full bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white font-bold text-xs py-2.5 px-4 rounded-xl shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer">
                         <i class="fas fa-headset text-xs"></i>
-                        <span>ePBX Web Dialer ওপেন করুন (অফিসিয়াল ডায়ালার) ↗</span>
+                        <span>Open ePBX Web Dialer (Official Dialer) ↗</span>
                     </button>
 
                     <button type="button" @click="callViaWebRtc()"
                             :disabled="webrtcCalling"
                             class="w-full bg-white hover:bg-slate-50 text-indigo-700 border border-indigo-200 font-bold text-xs py-2 px-3 rounded-xl transition-all shadow-2xs flex items-center justify-center gap-2 cursor-pointer">
                         <i class="fas fa-phone-volume text-xs" :class="{ 'fa-spin fa-spinner': webrtcCalling }"></i>
-                        <span x-text="webrtcCalling ? 'ডায়াল হচ্ছে...' : 'ইন-ব্রাউজার WebRTC কল (SIP.js)'"></span>
+                        <span x-text="webrtcCalling ? 'Dialing...' : 'In-Browser WebRTC Call (SIP.js)'"></span>
                     </button>
                 </div>
 
                 {{-- Helpful info about Dialer and Rejections --}}
                 <div class="mt-2.5 text-[10.5px] text-slate-500 bg-white/80 p-2 rounded-xl border border-indigo-100 flex items-start gap-1.5 shadow-2xs">
                     <i class="fas fa-circle-info text-indigo-500 mt-0.5 flex-shrink-0"></i>
-                    <span>Web Dialer-এ <strong>Microphone Allow</strong> দিন ও স্ট্যাটাস <strong>Online</strong> রাখুন। কল Reject দেখালে ePBX ড্যাশবোর্ডে <strong>Outbound Routes / 096XX ট্রাঙ্ক ব্যালেন্স</strong> চেক করুন।</span>
+                    <span>Allow <strong>Microphone Access</strong> in Web Dialer and ensure status is <strong>Online</strong>. If rejected, check Outbound Routes and balance on ePBX dashboard.</span>
                 </div>
 
                 {{-- Settings Panel (Extension & Password) --}}
                 <div x-show="showWebrtcSettings" x-cloak class="mt-3 p-3 bg-white rounded-xl border border-indigo-100 text-xs space-y-2">
                     <p class="font-bold text-slate-700 text-[11.5px] flex items-center justify-between">
-                        <span>WebRTC এক্সটেনশন তথ্য (Save Once):</span>
+                        <span>WebRTC Extension Credentials (Save Once):</span>
                         <span class="text-[10px] text-slate-400 font-normal">Asterisk Extension</span>
                     </p>
                     <div class="grid grid-cols-2 gap-2">
@@ -178,17 +178,17 @@
                     <div class="flex justify-end gap-2 pt-1">
                         <button type="button" @click="saveWebrtcCredentials()"
                                 class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[11px] px-3 py-1.5 rounded-lg cursor-pointer transition-colors">
-                            সংরক্ষণ ও কানেক্ট
+                            Save & Connect
                         </button>
                     </div>
                 </div>
 
                 {{-- In-Call status banner --}}
                 <div x-show="webrtcStatus" x-cloak class="mt-2.5 text-[11px] p-2 rounded-lg bg-indigo-100/80 text-indigo-900 flex items-center justify-between">
-                    <span x-text="'স্ট্যাটাস: ' + webrtcStatus"></span>
+                    <span x-text="'Status: ' + webrtcStatus"></span>
                     <button type="button" x-show="webrtcInCall" @click="hangupWebRtc()"
                             class="bg-rose-600 hover:bg-rose-700 text-white font-bold px-2 py-0.5 rounded text-[10.5px] cursor-pointer">
-                        Hang Up (কল কাটুন)
+                        Hang Up
                     </button>
                 </div>
             </div>
@@ -201,9 +201,9 @@
                             <i class="fas fa-desktop"></i>
                         </span>
                         <div>
-                            <h4 class="font-bold text-slate-900 text-[13.5px]">২. পিসির MicroSIP / Zoiper সফটওয়্যারে কল</h4>
+                            <h4 class="font-bold text-slate-900 text-[13.5px]">2. Call via Desktop Softphone (MicroSIP / Zoiper)</h4>
                             <p class="text-[11px] text-slate-500 mt-0.5">
-                                আপনি ক্লিক করলে তবেই MicroSIP / Zoiper-এ ডায়াল যাবে।
+                                Click to trigger instant dialing in MicroSIP / Zoiper.
                             </p>
                         </div>
                     </div>
@@ -226,7 +226,7 @@
                 {{-- Clear Notice about Chrome Popup --}}
                 <div class="mt-2 text-[10.5px] text-slate-500 bg-white/70 p-2 rounded-lg border border-slate-100 flex items-start gap-1.5">
                     <i class="fas fa-info-circle text-blue-500 mt-0.5 flex-shrink-0"></i>
-                    <span>পিসিতে MicroSIP চালু থাকলে ক্লিক করলেই ডায়াল হবে। ব্রাউজার প্রম্পট আসলে <strong>"Always allow"</strong> এ টিক দিয়ে দিলে পরবর্তীতে আর প্রম্পট আসবে না।</span>
+                    <span>MicroSIP dials instantly when running on your PC. In the browser popup, check <strong>"Always allow"</strong> to dial automatically in the future.</span>
                 </div>
             </div>
 
@@ -238,9 +238,9 @@
                             <i class="fas fa-robot"></i>
                         </span>
                         <div>
-                            <h4 class="font-bold text-slate-900 text-[13.5px]">৩. রোবট দিয়ে AI অর্ডার ভেরিফাই কল (Automated AI Voice)</h4>
+                            <h4 class="font-bold text-slate-900 text-[13.5px]">3. Automated AI Voice Order Verification (AI Voice)</h4>
                             <p class="text-[11px] text-slate-500 mt-0.5">
-                                AI স্বয়ংক্রিয়ভাবে গ্রাহককে কল করে মোট <strong class="text-slate-700 font-semibold" x-text="'৳' + orderAmount"></strong> টাকার অর্ডার নিশ্চিত করতে বলবে।
+                                AI automatically dials the customer and verifies the order totaling <strong class="text-slate-700 font-semibold" x-text="'৳' + orderAmount"></strong>.
                             </p>
                         </div>
                     </div>
@@ -250,7 +250,7 @@
                         :disabled="isCalling"
                         class="w-full bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 disabled:opacity-60 text-white font-bold text-xs py-2.5 px-4 rounded-xl shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer">
                     <i class="fas fa-phone-arrow-up-right text-xs" :class="{ 'fa-spin fa-spinner': isCalling }"></i>
-                    <span x-text="isCalling ? 'কল পাঠানো হচ্ছে...' : 'AI ভেরিফিকেশন কল পাঠান (ElevenLabs TTS)'"></span>
+                    <span x-text="isCalling ? 'Dispatching Call...' : 'Send AI Verification Call (ElevenLabs TTS)'"></span>
                 </button>
 
                 {{-- Live Call Status Feedback --}}
@@ -259,8 +259,8 @@
                         <div class="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-start gap-2 shadow-2xs">
                             <i class="fas fa-circle-check text-emerald-500 text-sm mt-0.5 flex-shrink-0"></i>
                             <div class="flex-1">
-                                <p class="font-bold" x-text="callMessage || 'কল সফলভাবে প্রেরণ করা হয়েছে!'"></p>
-                                <p class="text-[10.5px] text-emerald-700 mt-0.5">গ্রাহকের ফোনে স্বয়ংক্রিয় ভয়েস কল যাচ্ছে।</p>
+                                <p class="font-bold" x-text="callMessage || 'Call dispatched successfully!'"></p>
+                                <p class="text-[10.5px] text-emerald-700 mt-0.5">Automated AI voice call is ringing on customer's phone.</p>
                             </div>
                         </div>
                     </template>
@@ -270,12 +270,12 @@
                             <div class="flex items-start gap-2">
                                 <i class="fas fa-triangle-exclamation text-amber-500 text-sm mt-0.5 flex-shrink-0"></i>
                                 <div class="flex-1">
-                                    <p class="font-bold text-[11.5px] text-amber-900">ePBX ওয়ালেটে ব্যালেন্স অপর্যাপ্ত!</p>
+                                    <p class="font-bold text-[11.5px] text-amber-900">Insufficient ePBX Wallet Balance!</p>
                                     <p class="text-[10.5px] text-amber-800 mt-0.5" x-text="callMessage"></p>
                                     <div class="mt-1.5">
                                         <a href="https://{{ $epbxHost }}" target="_blank" rel="noopener"
                                            class="inline-flex items-center gap-1 bg-amber-600 hover:bg-amber-700 text-white font-bold text-[10px] px-2 py-1 rounded transition-colors">
-                                            <span>ePBX ওয়ালেট রিচার্জ করুন ↗</span>
+                                            <span>Recharge ePBX Wallet ↗</span>
                                         </a>
                                     </div>
                                 </div>
@@ -288,22 +288,22 @@
                             <div class="flex items-start gap-2">
                                 <i class="fas fa-robot text-amber-600 text-base mt-0.5 flex-shrink-0"></i>
                                 <div class="flex-1">
-                                    <p class="font-bold text-[12px] text-amber-900">ePBX ElevenLabs AI Voice (TTS) সাময়িক সমস্যা</p>
+                                    <p class="font-bold text-[12px] text-amber-900">Temporary Issue with ePBX AI Voice (TTS)</p>
                                     <p class="text-[11px] text-amber-800 mt-1 leading-relaxed">
-                                        ePBX সার্ভারের ElevenLabs AI ভয়েস সার্ভিস বর্তমানে সারা দিচ্ছে না। <strong class="text-emerald-700 font-bold underline">কাটা ফি আপনার ePBX ওয়ালেটে রিফান্ড করা হয়েছে।</strong>
+                                        ePBX ElevenLabs AI Voice service is currently unresponsive. <strong class="text-emerald-700 font-bold underline">Deducted fee has been refunded to your wallet.</strong>
                                     </p>
                                     <p class="text-[10.5px] text-slate-600 mt-1.5">
-                                        💡 বিকল্প দ্রুত উপায়: গ্রাহকের সাথে অবিলম্বে কথা বলতে উপরের <strong>"ePBX Web Dialer"</strong> অথবা <strong>"MicroSIP"</strong> ব্যবহার করুন।
+                                        💡 Quick alternative: Use <strong>"ePBX Web Dialer"</strong> or <strong>"MicroSIP"</strong> above to call the customer directly.
                                     </p>
                                     <div class="mt-2 flex items-center gap-2">
                                         <button type="button" @click="openPcWebDialer()"
                                                 class="inline-flex items-center gap-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[10.5px] px-2.5 py-1 rounded-lg transition-colors cursor-pointer">
                                             <i class="fas fa-headset text-[9px]"></i>
-                                            <span>Web Dialer থেকে কল করুন ↗</span>
+                                            <span>Call via Web Dialer ↗</span>
                                         </button>
                                         <a href="https://{{ $epbxHost }}" target="_blank" rel="noopener"
                                            class="inline-flex items-center gap-1 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 font-bold text-[10.5px] px-2 py-1 rounded-lg transition-colors">
-                                            <span>ePBX পোর্টাল ↗</span>
+                                            <span>ePBX Portal ↗</span>
                                         </a>
                                     </div>
                                 </div>
@@ -315,7 +315,7 @@
                         <div class="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-start gap-2 shadow-2xs">
                             <i class="fas fa-circle-xmark text-rose-500 text-sm mt-0.5 flex-shrink-0"></i>
                             <div class="flex-1">
-                                <p class="font-bold">কল পাঠানো সম্ভব হয়নি</p>
+                                <p class="font-bold">Could not dispatch call</p>
                                 <p class="text-[10.5px] text-rose-700 mt-0.5" x-text="callMessage"></p>
                             </div>
                         </div>
@@ -328,44 +328,44 @@
                 <div class="flex items-center justify-between mb-2">
                     <span class="text-xs font-bold text-slate-800 uppercase tracking-wide flex items-center gap-1.5">
                         <i class="fas fa-clipboard-check text-amber-500"></i>
-                        <span>কল ফলাফল / কুইক নোট (Save Disposition)</span>
+                        <span>Call Outcome / Quick Disposition</span>
                     </span>
-                    <span class="text-[10.5px] text-slate-400">১-ক্লিকে নোটে সেভ হবে</span>
+                    <span class="text-[10.5px] text-slate-400">1-Click Save to Notes</span>
                 </div>
 
                 <div class="flex flex-wrap gap-1.5 mb-2.5">
-                    <button type="button" @click="saveQuickDisposition('✅ গ্রাহক ফোনে অর্ডার কনফার্ম করেছে')"
+                    <button type="button" @click="saveQuickDisposition('✅ Customer confirmed order over phone')"
                             class="px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition-colors cursor-pointer">
-                        <span>✅ কনফার্ম করেছে</span>
+                        <span>✅ Confirmed</span>
                     </button>
-                    <button type="button" @click="saveQuickDisposition('📞 পরে কল দিতে বলেছে')"
+                    <button type="button" @click="saveQuickDisposition('📞 Customer requested call back later')"
                             class="px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-sky-50 text-sky-700 border border-sky-200 hover:bg-sky-100 transition-colors cursor-pointer">
-                        <span>📞 পরে কল দিবে</span>
+                        <span>📞 Call Later</span>
                     </button>
-                    <button type="button" @click="saveQuickDisposition('📵 ফোন রিসিভ করেনি / ব্যস্ত')"
+                    <button type="button" @click="saveQuickDisposition('📵 Did not pick up / busy')"
                             class="px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 transition-colors cursor-pointer">
-                        <span>📵 ফোন ধরে নি</span>
+                        <span>📵 No Answer</span>
                     </button>
-                    <button type="button" @click="saveQuickDisposition('📴 ফোন বন্ধ / সুইচড অফ পাওয়া গেছে')"
+                    <button type="button" @click="saveQuickDisposition('📴 Phone switched off / unreachable')"
                             class="px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-orange-50 text-orange-700 border border-orange-200 hover:bg-orange-100 transition-colors cursor-pointer">
-                        <span>📴 ফোন বন্ধ</span>
+                        <span>📴 Switched Off</span>
                     </button>
-                    <button type="button" @click="saveQuickDisposition('❌ কাস্টমার প্রোডাক্ট নিতে রাজি নয় (বাতিল)')"
+                    <button type="button" @click="saveQuickDisposition('❌ Customer declined / order cancelled')"
                             class="px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 transition-colors cursor-pointer">
-                        <span>❌ অর্ডার বাতিল</span>
+                        <span>❌ Cancelled</span>
                     </button>
                 </div>
 
                 <div class="flex gap-2">
                     <input type="text" x-model="customNote"
                            @keydown.enter.prevent="saveCustomNote()"
-                           placeholder="কাস্টমারের সাথে আলোচনার বিস্তারিত নোট লিখুন..."
+                           placeholder="Enter customer call notes or conversation details..."
                            class="flex-1 text-xs px-3 py-2 border border-slate-200 rounded-xl text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent">
                     <button type="button" @click="saveCustomNote()"
                             :disabled="savingNote || !customNote.trim()"
                             class="bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white text-xs font-bold px-4 py-2 rounded-xl transition-colors shadow-xs flex items-center gap-1.5 cursor-pointer">
                         <i class="fas fa-paper-plane text-[10px]" :class="{ 'fa-spin fa-spinner': savingNote }"></i>
-                        <span x-text="savingNote ? 'সেভ হচ্ছে...' : 'সেভ'"></span>
+                        <span x-text="savingNote ? 'Saving...' : 'Save'"></span>
                     </button>
                 </div>
 
@@ -386,7 +386,7 @@
             </div>
             <button type="button" @click="close()"
                     class="px-4 py-1.5 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-600 font-semibold text-xs transition-colors cursor-pointer">
-                বন্ধ করুন (Close)
+                Close
             </button>
         </div>
 
@@ -462,9 +462,9 @@ function epbxCallCenter() {
             if (!this.customerPhone) return;
             navigator.clipboard.writeText(this.customerPhone).then(() => {
                 if (typeof showToast === 'function') {
-                    showToast('ফোন নম্বর কপি করা হয়েছে: ' + this.customerPhone, 'info');
+                    showToast('Phone number copied: ' + this.customerPhone, 'info');
                 } else {
-                    this.noteFeedback = 'ফোন নম্বর কপি করা হয়েছে!';
+                    this.noteFeedback = 'Phone number copied!';
                     setTimeout(() => this.noteFeedback = '', 2500);
                 }
             });
@@ -479,7 +479,7 @@ function epbxCallCenter() {
             }
 
             if (typeof SIP === 'undefined') {
-                this.webrtcStatus = 'SIP.js লাইব্রেরি লোড হয়নি। দয়া করে পেজ রিফ্রেশ করুন।';
+                this.webrtcStatus = 'SIP.js library not loaded. Please refresh the page.';
                 return false;
             }
 
@@ -491,7 +491,7 @@ function epbxCallCenter() {
             try {
                 const uri = SIP.UserAgent.makeURI("sip:" + username + "@" + this.webrtcRealm);
                 if (!uri) {
-                    this.webrtcStatus = 'ভুল Extension নম্বর।';
+                    this.webrtcStatus = 'Invalid extension number.';
                     return false;
                 }
 
@@ -528,7 +528,7 @@ function epbxCallCenter() {
                 registerer.stateChange.addListener((newState) => {
                     if (newState === SIP.RegistererState.Registered) {
                         this.webrtcConnected = true;
-                        this.webrtcStatus = 'রেজিস্টার্ড (Ready to Call)';
+                        this.webrtcStatus = 'Registered (Ready to Call)';
                     }
                 });
                 await registerer.register();
@@ -536,7 +536,7 @@ function epbxCallCenter() {
             } catch (e) {
                 this.webrtcConnected = false;
                 this.userAgent = null;
-                this.webrtcStatus = 'WebRTC সার্ভারে সংযোগ হয়নি (' + (e.message || 'Error') + ')। উপরের "ePBX Web Dialer" ব্যবহার করুন।';
+                this.webrtcStatus = 'WebRTC connection failed (' + (e.message || 'Error') + '). Please use ePBX Web Dialer above.';
                 return false;
             }
         },
@@ -545,7 +545,7 @@ function epbxCallCenter() {
             localStorage.setItem('epbx_webrtc_ext', (this.webrtcExtension || '').trim());
             localStorage.setItem('epbx_webrtc_pass', (this.webrtcPassword || '').trim());
             this.showWebrtcSettings = false;
-            this.webrtcStatus = 'তথ্য সংরক্ষিত হয়েছে, PBX-এ কানেক্ট করা হচ্ছে...';
+            this.webrtcStatus = 'Credentials saved, connecting to PBX...';
             this.connectWebRtc();
         },
 
@@ -558,14 +558,14 @@ function epbxCallCenter() {
             // 1. Check if extension & password are provided
             if (!this.webrtcExtension || !this.webrtcPassword) {
                 this.showWebrtcSettings = true;
-                this.webrtcStatus = 'WebRTC-র জন্য Extension ও Password দিন, অথবা উপরের "ePBX Web Dialer" ব্যবহার করুন।';
+                this.webrtcStatus = 'Enter Extension & Password for WebRTC, or use ePBX Web Dialer above.';
                 return;
             }
 
             // 2. Connect if not yet connected
             if (!this.userAgent || !this.webrtcConnected) {
                 this.webrtcCalling = true;
-                this.webrtcStatus = 'PBX সার্ভারে কানেক্ট হচ্ছে...';
+                this.webrtcStatus = 'Connecting to PBX server...';
                 const connected = await this.connectWebRtc();
                 if (!connected || !this.userAgent) {
                     this.webrtcCalling = false;
@@ -576,7 +576,7 @@ function epbxCallCenter() {
             // 3. Guaranteed safety check: NEVER call SIP.Inviter on null userAgent
             if (!this.userAgent) {
                 this.webrtcCalling = false;
-                this.webrtcStatus = 'PBX কানেকশন সক্রিয় নেই। বিকল্প হিসেবে উপরের "ePBX Web Dialer" ওপেন করুন।';
+                this.webrtcStatus = 'PBX connection inactive. Use ePBX Web Dialer above.';
                 return;
             }
 
@@ -584,12 +584,12 @@ function epbxCallCenter() {
             const targetURI = SIP.UserAgent.makeURI("sip:" + cleanPhone + "@" + this.webrtcRealm);
             if (!targetURI) {
                 this.webrtcCalling = false;
-                this.webrtcStatus = 'অকার্যকর ফোন নম্বর: ' + cleanPhone;
+                this.webrtcStatus = 'Invalid phone number: ' + cleanPhone;
                 return;
             }
 
             this.webrtcCalling = true;
-            this.webrtcStatus = 'ডায়াল হচ্ছে: ' + cleanPhone + '...';
+            this.webrtcStatus = 'Dialing: ' + cleanPhone + '...';
 
             try {
                 const inviter = new SIP.Inviter(this.userAgent, targetURI, {
@@ -625,7 +625,7 @@ function epbxCallCenter() {
                 this.currentSession = inviter;
             } catch (err) {
                 this.webrtcCalling = false;
-                this.webrtcStatus = 'কল ব্যর্থ: ' + (err.message || 'Unknown') + '। বিকল্প হিসেবে উপরের "ePBX Web Dialer" ব্যবহার করুন।';
+                this.webrtcStatus = 'Call failed: ' + (err.message || 'Unknown') + '. Use ePBX Web Dialer above.';
             }
         },
 
@@ -667,7 +667,7 @@ function epbxCallCenter() {
             }, 600);
 
             if (typeof showToast === 'function') {
-                showToast(`${protocol.toUpperCase()} ডায়াল রিকোয়েস্ট পাঠানো হয়েছে: ${cleanPhone}`, 'info');
+                showToast(`${protocol.toUpperCase()} dial request sent: ${cleanPhone}`, 'info');
             }
         },
 
@@ -694,7 +694,7 @@ function epbxCallCenter() {
 
             if (popup) {
                 popup.focus();
-                this.webrtcStatus = 'ePBX Web Dialer ওপেন হয়েছে (নম্বর: ' + cleanPhone + ')';
+                this.webrtcStatus = 'ePBX Web Dialer opened (Number: ' + cleanPhone + ')';
             } else {
                 window.open(dialerUrl, '_blank');
             }
@@ -730,23 +730,23 @@ function epbxCallCenter() {
 
                 if (res.ok && data.success) {
                     this.callStatus  = 'success';
-                    this.callMessage = data.message || 'AI Voice Verification Call সফলভাবে পাঠানো হয়েছে!';
+                    this.callMessage = data.message || 'AI Voice Verification Call sent successfully!';
                     if (typeof showToast === 'function') {
                         showToast(this.callMessage, 'success');
                     }
                 } else if (res.status === 402 || data.error_type === 'insufficient_balance') {
                     this.callStatus  = 'insufficient_balance';
-                    this.callMessage = data.message || 'ePBX ওয়ালেটে ব্যালেন্স অপর্যাপ্ত। {{ $epbxHost }} এ রিচার্জ করুন।';
+                    this.callMessage = data.message || 'Insufficient balance in ePBX wallet. Please recharge at {{ $epbxHost }}.';
                 } else if (res.status === 503 || data.error_type === 'tts_unavailable' || (data.message && data.message.toLowerCase().includes('text-to-speech')) || (data.error && data.error.toLowerCase().includes('text-to-speech'))) {
                     this.callStatus  = 'tts_unavailable';
                     this.callMessage = data.message || data.error || 'AI Text-to-Speech service unavailable. Fee refunded.';
                 } else {
                     this.callStatus  = 'error';
-                    this.callMessage = data.message || data.error || 'কল পাঠানো সম্ভব হয়নি।';
+                    this.callMessage = data.message || data.error || 'Could not dispatch call.';
                 }
             } catch (err) {
                 this.callStatus  = 'error';
-                this.callMessage = 'সার্ভারের সাথে সংযোগ স্থাপন করা যায়নি: ' + err.message;
+                this.callMessage = 'Server connection error: ' + err.message;
             } finally {
                 this.isCalling = false;
             }
@@ -787,9 +787,9 @@ function epbxCallCenter() {
                 const data = await res.json().catch(() => ({}));
 
                 if (res.ok && data.success) {
-                    this.noteFeedback = 'নোট সংরক্ষিত হয়েছে!';
+                    this.noteFeedback = 'Note saved successfully!';
                     if (typeof showToast === 'function') {
-                        showToast('নোট সংরক্ষিত হয়েছে: ' + noteText, 'success');
+                        showToast('Note saved: ' + noteText, 'success');
                     }
 
                     const badge = document.getElementById('note-badge-' + this.saleId);
@@ -801,11 +801,11 @@ function epbxCallCenter() {
                     setTimeout(() => { this.noteFeedback = ''; }, 3000);
                     return true;
                 } else {
-                    alert(data.message || 'নোট সংরক্ষণ করা যায়নি।');
+                    alert(data.message || 'Failed to save note.');
                     return false;
                 }
             } catch (e) {
-                alert('নোট সংরক্ষণে সার্ভার এরর!');
+                alert('Server error while saving note!');
                 return false;
             } finally {
                 this.savingNote = false;

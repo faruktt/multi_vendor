@@ -165,7 +165,7 @@
             </div>
             <div>
                 <h1 class="text-xl font-bold text-slate-800">Shipping Charges &amp; Delivery Zones</h1>
-                <p class="text-xs text-slate-500 mt-0.5">থানা-ভিত্তিতে সাব-ঢাকা এরিয়া কনফিগারেশন এবং Inside/Sub/Outside Dhaka ডেলিভারি চার্জ নির্ধারণ করুন।</p>
+                <p class="text-xs text-slate-500 mt-0.5">Configure Thana-wise Sub-Dhaka zones and delivery rates for Inside, Sub-Dhaka, and Outside Dhaka.</p>
             </div>
         </div>
     </div>
@@ -196,7 +196,7 @@
                         <span class="text-[11px] font-semibold text-emerald-600">Dhaka Metro</span>
                     </div>
                     <h3 class="text-base font-bold text-slate-800">Inside Dhaka</h3>
-                    <p class="text-xs text-slate-500 mt-1">ঢাকা মেট্রোপলিটন এলাকা (সাব-ঢাকা ব্যতীত বাকি সকল ঢাকা থানার জন্য স্বয়ংক্রিয়ভাবে প্রযোজ্য)।</p>
+                    <p class="text-xs text-slate-500 mt-1">Dhaka Metropolitan area (applies to all non-suburban Dhaka thanas automatically).</p>
                 </div>
                 <div class="mt-5 pt-4 border-t border-slate-100">
                     <label class="block text-xs font-semibold text-slate-600 mb-1.5">Delivery Fee (৳) <span class="text-red-500">*</span></label>
@@ -220,7 +220,7 @@
                         <span class="text-[11px] font-semibold text-blue-600 font-mono" x-text="getTotalSelectedCount() + ' thanas in ' + getTotalDistrictsCount() + ' dist.'"></span>
                     </div>
                     <h3 class="text-base font-bold text-slate-800">Sub Dhaka</h3>
-                    <p class="text-xs text-slate-500 mt-1">ঢাকার উপশহরীয় থানা (সাভার, কেরানীগঞ্জ ইত্যাদি) এবং আশেপাশের নির্বাচিত থানা সমূহ।</p>
+                    <p class="text-xs text-slate-500 mt-1">Suburban thanas around Dhaka (e.g. Savar, Keraniganj) and designated border thanas.</p>
                 </div>
                 <div class="mt-5 pt-4 border-t border-slate-100">
                     <label class="block text-xs font-semibold text-slate-600 mb-1.5">Delivery Fee (৳) <span class="text-red-500">*</span></label>
@@ -244,7 +244,7 @@
                         <span class="text-[11px] font-semibold text-slate-400">All Remaining</span>
                     </div>
                     <h3 class="text-base font-bold text-slate-800">Outside Dhaka</h3>
-                    <p class="text-xs text-slate-500 mt-1">ঢাকা ও সাব-ঢাকা ব্যতীত সারাদেশের বাকি সকল জেলা ও থানার জন্য স্বয়ংক্রিয়ভাবে প্রযোজ্য।</p>
+                    <p class="text-xs text-slate-500 mt-1">All other districts and thanas across Bangladesh outside Dhaka &amp; Sub-Dhaka.</p>
                 </div>
                 <div class="mt-5 pt-4 border-t border-slate-100">
                     <label class="block text-xs font-semibold text-slate-600 mb-1.5">Delivery Fee (৳) <span class="text-red-500">*</span></label>
@@ -267,10 +267,10 @@
                 <div>
                     <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
                         <i class="fas fa-map-marked-alt text-blue-600"></i>
-                        <span>Thana-Wise Sub-Dhaka Configuration (থানা অনুযায়ী সাব-ঢাকা)</span>
+                        <span>Thana-Wise Sub-Dhaka Configuration</span>
                     </h2>
                     <p class="text-xs text-slate-500 mt-1 leading-relaxed">
-                        প্রথমে জেলা সিলেক্ট করুন, এরপর সেই জেলার কোন কোন থানা <strong class="text-blue-600 font-semibold">Sub Dhaka</strong> এর অন্তর্ভুক্ত হবে তা টিক দিন। চেকআউটে কাস্টমার থানা সিলেক্ট করা মাত্র ডেলিভারি চার্জ স্বয়ংক্রিয়ভাবে নির্ধারিত হবে।
+                        Select a district, then check the thanas that should be treated as <strong class="text-blue-600 font-semibold">Sub Dhaka</strong>. During checkout, selecting these thanas will automatically apply Sub-Dhaka delivery rates.
                     </p>
                 </div>
                 <div class="flex items-center gap-2 flex-wrap">
@@ -291,7 +291,7 @@
             <div class="space-y-2">
                 <div class="flex items-center justify-between flex-wrap gap-2">
                     <label class="text-xs font-bold text-slate-700 uppercase tracking-wide">
-                        1. Select District (জেলা নির্বাচন করুন):
+                        1. Select District:
                     </label>
                     <span class="text-xs text-slate-400">
                         Active: <strong class="text-slate-800 font-bold" x-text="activeDistrict"></strong> 
@@ -344,13 +344,13 @@
                         <template x-if="activeDistrict === 'Dhaka'">
                             <p class="text-xs text-slate-500 mt-1 flex items-center gap-1.5">
                                 <i class="fas fa-info-circle text-blue-500"></i>
-                                <span><strong>ঢাকা জেলার জন্য:</strong> যেসব থানা টিক দিবেন সেগুলো <span class="text-blue-600 font-bold">Sub Dhaka</span> হবে (যেমন: সাভার, ধামরাই, কেরানীগঞ্জ, নবাবগঞ্জ, দোহার)। বাকি আনচেক থানাগুলো <span class="text-emerald-600 font-bold">Inside Dhaka</span> থাকবে।</span>
+                                <span><strong>For Dhaka District:</strong> Checked thanas will be marked as <span class="text-blue-600 font-bold">Sub Dhaka</span> (e.g., Savar, Dhamrai, Keraniganj, Nawabganj, Dohar). All unchecked thanas will remain <span class="text-emerald-600 font-bold">Inside Dhaka</span>.</span>
                             </p>
                         </template>
                         <template x-if="activeDistrict !== 'Dhaka'">
                             <p class="text-xs text-slate-500 mt-1 flex items-center gap-1.5">
                                 <i class="fas fa-info-circle text-blue-500"></i>
-                                <span><strong>অন্যান্য জেলার জন্য:</strong> যেসব থানা টিক দিবেন সেগুলো <span class="text-blue-600 font-bold">Sub Dhaka</span> হবে। বাকি আনচেক থানাগুলো <span class="text-amber-600 font-bold">Outside Dhaka</span> থাকবে।</span>
+                                <span><strong>For Other Districts:</strong> Checked thanas will be marked as <span class="text-blue-600 font-bold">Sub Dhaka</span>. All unchecked thanas will remain <span class="text-amber-600 font-bold">Outside Dhaka</span>.</span>
                             </p>
                         </template>
                     </div>
@@ -459,8 +459,8 @@
                     <i class="fas fa-calculator"></i>
                 </div>
                 <div>
-                    <h3 class="text-sm font-bold text-slate-800">Test Live Zone Detection (সরাসরি টেস্ট করুন)</h3>
-                    <p class="text-xs text-slate-500 mt-0.5">যেকোনো জেলা এবং থানা সিলেক্ট করে দেখুন চেকআউট পেজে কাস্টমারের কী চার্জ আসবে।</p>
+                    <h3 class="text-sm font-bold text-slate-800">Live Zone Detection Simulator</h3>
+                    <p class="text-xs text-slate-500 mt-0.5">Select any district and thana to preview the exact shipping fee applied during checkout.</p>
                 </div>
             </div>
 

@@ -58,4 +58,14 @@ class Customer extends Authenticatable
 
         return $digits;
     }
+
+    /** Profile image / avatar full URL */
+    public function getAvatarUrlAttribute(): ?string
+    {
+        if (!$this->image) return null;
+        if (str_starts_with($this->image, 'http://') || str_starts_with($this->image, 'https://')) {
+            return $this->image;
+        }
+        return \Illuminate\Support\Facades\Storage::disk('uploads')->url($this->image);
+    }
 }

@@ -23,7 +23,7 @@
                 </div>
                 @if($availBal < 0)
                     <div class="text-xs text-rose-200 mt-1 flex items-center gap-1 font-medium">
-                        <i class="fas fa-circle-exclamation"></i> রিটার্ন ডেলিভারি চার্জ বাবদ ঋণাত্মক
+                        <i class="fas fa-circle-exclamation"></i> Negative due to return shipping charges
                     </div>
                 @elseif($dashReseller->pending_withdrawals > 0)
                     <div class="text-xs text-amber-200 mt-1 flex items-center gap-1">
@@ -41,11 +41,11 @@
                     </a>
                 @elseif($availBal < 0)
                     <span class="inline-flex items-center gap-1 px-3 py-1.5 bg-black/20 text-rose-100 font-semibold text-xs rounded-xl">
-                        পরবর্তী লাভ থেকে সমন্বয় হবে
+                        Adjusts from future profit
                     </span>
                 @else
                     <span class="inline-flex items-center gap-1 px-3 py-1.5 bg-white/20 text-white/80 font-semibold text-xs rounded-xl">
-                        উত্তোলনযোগ্য ব্যালেন্স নেই
+                        No withdrawable balance
                     </span>
                 @endif
             </div>
@@ -56,7 +56,7 @@
                 <div class="text-2xl font-bold text-slate-800 mt-1">৳{{ number_format($dashReseller->total_profit, 2) }}</div>
                 @if($retCharge > 0)
                     <div class="text-xs text-rose-600 mt-1 font-semibold flex items-center gap-1">
-                        <i class="fas fa-rotate-left text-[10px]"></i> রিটার্ন চার্জ: -৳{{ number_format($retCharge, 2) }}
+                        <i class="fas fa-rotate-left text-[10px]"></i> Return charges: -৳{{ number_format($retCharge, 2) }}
                     </div>
                 @endif
             </div>

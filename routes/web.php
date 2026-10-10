@@ -25,6 +25,7 @@ use App\Http\Controllers\Web\ActivityLogController;
 use App\Http\Controllers\Web\UserActivityController;
 use App\Http\Controllers\Web\FlashSaleController;
 use App\Http\Controllers\Web\HomeContentController;
+use App\Http\Controllers\Web\PageController;
 use App\Http\Controllers\Web\AdsCostController;
 use App\Http\Controllers\Web\EpbxCallController;
 use App\Http\Controllers\Warehouse\DashboardController as WarehouseDashboardController;
@@ -43,6 +44,7 @@ use App\Http\Controllers\Shop\ProductController as ShopProductController;
 use App\Http\Controllers\Shop\CartController as ShopCartController;
 use App\Http\Controllers\Shop\CheckoutController as ShopCheckoutController;
 use App\Http\Controllers\Shop\OrderTrackingController as ShopOrderTrackingController;
+use App\Http\Controllers\Shop\PageController as ShopPageController;
 use App\Http\Controllers\Shop\CustomerAuthController;
 use App\Http\Controllers\Shop\CustomerAccountController;
 use App\Http\Controllers\Shop\ChatController as ShopChatController;
@@ -79,6 +81,7 @@ use App\Http\Controllers\Web\SupplierProductManagementController;
 Route::get('/', [ShopHomeController::class, 'index'])->name('root');
 Route::get('/product/{productSlug}', [ShopProductController::class, 'show'])->name('shop.products.show');
 Route::get('/supplier-store/{supplier}', [ShopProductController::class, 'supplierStore'])->name('shop.supplier.show');
+Route::get('/page/{slug}', [ShopPageController::class, 'show'])->name('shop.pages.show');
 
 // ── Customer Auth & Account Portal ──────────────────────────────────────────
 Route::prefix('customer')->name('shop.customer.')->group(function () {
@@ -110,6 +113,7 @@ Route::prefix('customer')->name('shop.customer.')->group(function () {
 Route::prefix('shop')->name('shop.')->group(function () {
     Route::get('/',                          [ShopHomeController::class, 'index'])->name('home');
     Route::get('/products',                    [ShopProductController::class, 'index'])->name('products.index');
+    Route::get('/quick-view/{productSlug}',   [ShopProductController::class, 'quickView'])->name('products.quickView');
 
     Route::post('/cart/add',                 [ShopCartController::class, 'add'])->name('cart.add');
     Route::post('/cart/update',               [ShopCartController::class, 'update'])->name('cart.update');
@@ -188,7 +192,7 @@ Route::prefix('moderator')->name('moderator.')->group(function () {
         Route::get('/reports',                [ModeratorWorkController::class, 'myReports'])->name('reports');
         Route::post('/work/{session}/report', [ModeratorWorkController::class, 'updateReport'])->name('work.report.update');
 
-        // My Account (কাজের হিসাব ও বেতন উত্তোলন)
+        // My Account (Work Summary & Salary Withdrawal)
         Route::get('/account',                [ModeratorAccountController::class, 'index'])->name('account');
         Route::post('/withdrawals',           [ModeratorAccountController::class, 'requestWithdrawal'])->name('withdrawals.store');
 
@@ -377,6 +381,15 @@ Route::prefix('admin')->group(function () {
                 Route::put('/{homeContent}',           [HomeContentController::class, 'update'])->name('update');
                 Route::post('/{homeContent}/toggle',   [HomeContentController::class, 'toggle'])->name('toggle');
                 Route::delete('/{homeContent}',        [HomeContentController::class, 'destroy'])->name('destroy');
+            });
+
+            // ── Dynamic Pages Management ──────────────────────────────────
+            Route::prefix('pages')->name('pages.')->group(function () {
+                Route::get('/',                        [PageController::class, 'index'])->name('index');
+                Route::post('/',                       [PageController::class, 'store'])->name('store');
+                Route::put('/{page}',                  [PageController::class, 'update'])->name('update');
+                Route::post('/{page}/toggle',          [PageController::class, 'toggle'])->name('toggle');
+                Route::delete('/{page}',               [PageController::class, 'destroy'])->name('destroy');
             });
 
             // ── Shipping Charges Management ──────────────────────────────

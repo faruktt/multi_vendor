@@ -218,7 +218,7 @@
                             </div>
                             <div>
                                 <h3 class="font-bold text-slate-800 text-sm">Product Variants</h3>
-                                <p class="text-[11px] text-slate-400">Color + Size combination-এ আলাদা price ও stock</p>
+                                <p class="text-[11px] text-slate-400">Custom price and stock per Color + Size combination</p>
                             </div>
                         </div>
 
@@ -439,7 +439,7 @@
                         @else
                         <div class="pt-2 border-t border-emerald-600/70 text-[11px] text-emerald-100/90 leading-relaxed">
                             <i class="fas fa-info-circle text-yellow-300 mr-1"></i>
-                            প্রোডাক্ট সাবমিট করার পর অ্যাডমিন কমিশন রেট নির্ধারণ করবেন এবং অ্যাপ্রুভ করলে লাইভ হবে।
+                            After submitting, admin will review and assign the commission rate before making it live.
                         </div>
                         @endif
                     </div>
@@ -454,14 +454,14 @@
                                 <i class="fas fa-clock text-amber-600 text-sm"></i>
                                 <div>
                                     <span class="font-bold block">Pending Admin Approval</span>
-                                    <span class="text-[11px] text-amber-700">অ্যাডমিন রিভিউ করে কমিশন সেট করলে স্বয়ংক্রিয়ভাবে একটিভ হবে।</span>
+                                    <span class="text-[11px] text-amber-700">Will automatically activate once admin reviews and configures commission.</span>
                                 </div>
                             </div>
                         @elseif($product->isRejected())
                             <div class="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-900 text-xs">
                                 <span class="font-bold block text-rose-700">Product Rejected</span>
                                 @if($product->rejection_reason)
-                                    <p class="text-[11px] text-rose-600 mt-1">কারণ: {{ $product->rejection_reason }}</p>
+                                    <p class="text-[11px] text-rose-600 mt-1">Reason: {{ $product->rejection_reason }}</p>
                                 @endif
                             </div>
                         @else
@@ -469,7 +469,7 @@
                                 <i class="fas fa-check-circle text-emerald-600 text-sm"></i>
                                 <div>
                                     <span class="font-bold block">Approved by Admin</span>
-                                    <span class="text-[11px] text-emerald-700">প্রোডাক্টটি ওয়েবসাইটে দৃশ্যমান রয়েছে।</span>
+                                    <span class="text-[11px] text-emerald-700">This product is published and live on the storefront.</span>
                                 </div>
                             </div>
                             <div>
@@ -489,7 +489,7 @@
                             <i class="fas fa-shield-halved text-blue-600 text-sm"></i>
                             <div>
                                 <span class="font-bold block">Admin Review Required</span>
-                                <span class="text-[11px] text-blue-700">নতুন প্রোডাক্ট যোগ করলে অ্যাডমিন যাচাই করে কমিশন বসিয়ে লাইভ করবেন।</span>
+                                <span class="text-[11px] text-blue-700">Upon submission, admin will review the product, assign commission, and publish it live.</span>
                             </div>
                         </div>
                     @endif

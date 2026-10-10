@@ -253,8 +253,8 @@
                             <div class="w-14 h-14 rounded-2xl bg-slate-50 text-slate-300 flex items-center justify-center mx-auto mb-3 text-2xl">
                                 <i class="fas fa-clock-rotate-left"></i>
                             </div>
-                            <p class="font-bold text-slate-600 text-sm">কোনো অ্যাক্টিভিটি পাওয়া যায়নি</p>
-                            <p class="text-xs text-slate-400 mt-1">ওয়েবসাইটে যেকোনো পরিবর্তন বা অ্যাকশন এখানে স্বয়ংক্রিয়ভাবে লিপিবদ্ধ হবে।</p>
+                            <p class="font-bold text-slate-600 text-sm">No activities found</p>
+                            <p class="text-xs text-slate-400 mt-1">System events, updates, and actions will appear here automatically.</p>
                         </td>
                     </tr>
                     @endforelse
@@ -432,16 +432,16 @@
                 </div>
                 <h3 class="text-base font-bold text-slate-800 text-center mb-1">Clear Activity Logs</h3>
                 <p class="text-xs text-slate-500 text-center mb-5 leading-relaxed">
-                    সিস্টেম ডাটাবেজ হালকা রাখতে আপনি নির্দিষ্ট সময়ের আগের অথবা সকল অ্যাক্টিভিটি লগ মুছে ফেলতে পারেন।
+                    To keep the system database light and optimized, you can prune logs older than a specific date range or clear all history.
                 </p>
 
                 <div class="mb-5">
-                    <label class="block text-xs font-semibold text-slate-700 mb-1.5">সময়সীমা নির্বাচন করুন</label>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1.5">Select Timeframe</label>
                     <select name="days" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-400 bg-white">
-                        <option value="90">90 দিনের আগের লগ মুছুন (Older than 90 days)</option>
-                        <option value="60">60 দিনের আগের লগ মুছুন (Older than 60 days)</option>
-                        <option value="30">30 দিনের আগের লগ মুছুন (Older than 30 days)</option>
-                        <option value="all">সকল লগ সম্পূর্ণ পরিষ্কার করুন (All Logs)</option>
+                        <option value="90">Logs older than 90 days</option>
+                        <option value="60">Logs older than 60 days</option>
+                        <option value="30">Logs older than 30 days</option>
+                        <option value="all">Clear all logs completely</option>
                     </select>
                 </div>
 

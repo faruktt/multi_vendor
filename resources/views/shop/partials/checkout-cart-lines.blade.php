@@ -4,9 +4,9 @@
 @if($lines->isEmpty())
 <div class="p-8 text-center bg-blue-50/30 rounded-2xl border border-blue-100">
     <i class="fas fa-cart-shopping text-blue-200 text-3xl mb-2 block"></i>
-    <p class="text-slate-500 text-xs font-semibold mb-2">আপনার কার্ট খালি রয়েছে</p>
+    <p class="text-slate-500 text-xs font-semibold mb-2">Your cart is empty</p>
     <a href="{{ route('shop.products.index') }}" class="inline-flex items-center gap-1.5 text-blue-600 text-xs font-bold hover:underline">
-        কেনাকাটা করুন <i class="fas fa-arrow-right text-[10px]"></i>
+        Continue Shopping <i class="fas fa-arrow-right text-[10px]"></i>
     </a>
 </div>
 @else
@@ -58,7 +58,7 @@
 
                 <button type="button"
                         @click="window.removeCheckoutQty && window.removeCheckoutQty('{{ $line['key'] }}')"
-                        class="text-slate-300 hover:text-red-500 transition-colors p-1 cursor-pointer" title="মুছে ফেলুন">
+                        class="text-slate-300 hover:text-red-500 transition-colors p-1 cursor-pointer" title="Remove item">
                     <i class="fas fa-trash-can text-xs"></i>
                 </button>
             </div>
@@ -71,7 +71,7 @@
 
     <div class="pt-2.5 pb-0.5 flex items-center justify-end border-t border-blue-100/60">
         <a href="{{ route('shop.products.index') }}" class="text-[11px] sm:text-xs text-blue-600 hover:text-blue-700 font-bold inline-flex items-center gap-1">
-            <i class="fas fa-plus text-[10px]"></i> আরও প্রোডাক্ট যোগ করুন
+            <i class="fas fa-plus text-[10px]"></i> Add More Products
         </a>
     </div>
 </div>

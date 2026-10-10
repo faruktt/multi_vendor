@@ -1,133 +1,148 @@
 @extends('shop.layout')
-@section('title', 'Customer Registration — ' . ($branch->system_name ?? $branch->name))
-@section('main-class', 'w-full max-w-lg mx-auto px-4 py-8')
+@section('title', 'Register — ' . ($branch->system_name ?? $branch->name))
+@section('main-class', 'w-full max-w-lg mx-auto px-4 py-8 sm:py-14')
 
 @section('content')
-<div class="bg-white rounded-3xl border border-gray-200/90 shadow-sm p-6 sm:p-8">
+<div class="bg-white rounded-3xl border border-gray-100 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.08),0_10px_25px_-5px_rgba(0,0,0,0.04)] overflow-hidden ring-1 ring-black/[0.03]">
 
-    <div class="text-center mb-6">
-        <div class="w-14 h-14 rounded-2xl bg-brand/10 text-brand flex items-center justify-center mx-auto mb-3 text-xl font-bold shadow-sm">
-            <i class="fas fa-user-plus"></i>
-        </div>
-        <h1 class="text-2xl font-black tracking-tight text-gray-900">Create Customer Account</h1>
-        <p class="text-xs text-gray-500 mt-1">Join to track your deliveries, save addresses and enjoy fast checkouts</p>
-    </div>
+    {{-- Top Luxury Emerald Accent Bar --}}
+    <div class="h-1.5 w-full bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700"></div>
 
-    @if($errors->any())
-        <div class="bg-red-50 border border-red-200 text-red-700 text-xs font-semibold rounded-xl p-3.5 mb-5 space-y-1">
-            @foreach($errors->all() as $error)
-                <div class="flex items-center gap-1.5"><i class="fas fa-circle-exclamation text-xs"></i> {{ $error }}</div>
-            @endforeach
-        </div>
-    @endif
+    <div class="p-6 sm:p-9">
 
-    <form method="POST" action="{{ route('shop.customer.register.submit') }}" class="space-y-4">
-        @csrf
-
-        {{-- Name --}}
-        <div>
-            <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
-                Full Name *
-            </label>
-            <div class="relative">
-                <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm">
-                    <i class="fas fa-user"></i>
-                </span>
-                <input type="text" name="name" value="{{ old('name') }}" required autofocus
-                       placeholder="e.g. Mohammad Ali"
-                       class="w-full h-11 rounded-xl border border-gray-300 pl-10 pr-4 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand bg-gray-50/50">
+        {{-- Clean Confident Header --}}
+        <div class="mb-6 flex items-center justify-between">
+            <h1 class="text-2xl font-bold tracking-tight text-gray-900">Create Account</h1>
+            <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center text-sm shadow-xs border border-emerald-100/60">
+                <i class="fas fa-user-plus"></i>
             </div>
         </div>
 
-        {{-- Phone & Email --}}
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        @if($errors->any())
+            <div class="bg-rose-50 border border-rose-100 text-rose-700 text-xs rounded-xl p-3.5 mb-5 space-y-1">
+                @foreach($errors->all() as $error)
+                    <div class="flex items-center gap-2">
+                        <span class="w-1.5 h-1.5 rounded-full bg-rose-500 flex-shrink-0"></span>
+                        <span>{{ $error }}</span>
+                    </div>
+                @endforeach
+            </div>
+        @endif
+
+        <form method="POST" action="{{ route('shop.customer.register.submit') }}" class="space-y-4">
+            @csrf
+
+            {{-- Full Name --}}
             <div>
-                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
-                    Phone Number *
+                <label class="block text-xs font-semibold text-gray-700 mb-1.5">
+                    Full Name
                 </label>
                 <div class="relative">
-                    <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm">
-                        <i class="fas fa-phone-alt"></i>
+                    <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs">
+                        <i class="fas fa-user"></i>
                     </span>
-                    <input type="text" name="phone" value="{{ old('phone') }}" required
-                           placeholder="017XXXXXXXX"
-                           class="w-full h-11 rounded-xl border border-gray-300 pl-10 pr-4 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand bg-gray-50/50">
+                    <input type="text" name="name" value="{{ old('name') }}" required autofocus
+                           placeholder="Your full name"
+                           class="w-full h-11 rounded-xl border border-gray-200/90 pl-10 pr-3.5 text-sm text-gray-900 bg-slate-50/50 hover:border-gray-300 focus:bg-white focus:border-emerald-600 focus:ring-4 focus:ring-emerald-600/10 transition-all outline-none">
                 </div>
             </div>
 
-            <div>
-                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
-                    Email Address (Optional)
-                </label>
-                <div class="relative">
-                    <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm">
-                        <i class="fas fa-envelope"></i>
-                    </span>
-                    <input type="email" name="email" value="{{ old('email') }}"
-                           placeholder="name@example.com"
-                           class="w-full h-11 rounded-xl border border-gray-300 pl-10 pr-4 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand bg-gray-50/50">
+            {{-- Phone & Email --}}
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-700 mb-1.5">
+                        Phone Number
+                    </label>
+                    <div class="relative">
+                        <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs">
+                            <i class="fas fa-phone-alt"></i>
+                        </span>
+                        <input type="text" name="phone" value="{{ old('phone') }}" required
+                               placeholder="01XXXXXXXXX"
+                               class="w-full h-11 rounded-xl border border-gray-200/90 pl-10 pr-3.5 text-sm text-gray-900 bg-slate-50/50 hover:border-gray-300 focus:bg-white focus:border-emerald-600 focus:ring-4 focus:ring-emerald-600/10 transition-all outline-none">
+                    </div>
                 </div>
-            </div>
-        </div>
 
-        {{-- Delivery Address --}}
-        <div>
-            <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
-                Delivery Address (Optional)
-            </label>
-            <textarea name="address" rows="2"
-                      placeholder="House, Road, Area, City"
-                      class="w-full rounded-xl border border-gray-300 px-3.5 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand bg-gray-50/50 resize-none">{{ old('address') }}</textarea>
-        </div>
-
-        {{-- Password & Confirmation --}}
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" x-data="{ showPass: false }">
-            <div>
-                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
-                    Password *
-                </label>
-                <div class="relative">
-                    <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm">
-                        <i class="fas fa-lock"></i>
-                    </span>
-                    <input :type="showPass ? 'text' : 'password'" name="password" required
-                           placeholder="Min 6 characters"
-                           class="w-full h-11 rounded-xl border border-gray-300 pl-10 pr-10 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand bg-gray-50/50">
-                    <button type="button" @click="showPass = !showPass"
-                            class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xs">
-                        <i class="fas" :class="showPass ? 'fa-eye-slash' : 'fa-eye'"></i>
-                    </button>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-700 mb-1.5">
+                        Email <span class="text-gray-400 font-normal text-[11px]">(Optional)</span>
+                    </label>
+                    <div class="relative">
+                        <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs">
+                            <i class="fas fa-envelope"></i>
+                        </span>
+                        <input type="email" name="email" value="{{ old('email') }}"
+                               placeholder="name@email.com"
+                               class="w-full h-11 rounded-xl border border-gray-200/90 pl-10 pr-3.5 text-sm text-gray-900 bg-slate-50/50 hover:border-gray-300 focus:bg-white focus:border-emerald-600 focus:ring-4 focus:ring-emerald-600/10 transition-all outline-none">
+                    </div>
                 </div>
             </div>
 
+            {{-- Delivery Address --}}
             <div>
-                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
-                    Confirm Password *
+                <label class="block text-xs font-semibold text-gray-700 mb-1.5">
+                    Delivery Address <span class="text-gray-400 font-normal text-[11px]">(Optional)</span>
                 </label>
                 <div class="relative">
-                    <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm">
-                        <i class="fas fa-lock-open"></i>
+                    <span class="absolute left-3.5 top-3 text-gray-400 text-xs">
+                        <i class="fas fa-map-marker-alt"></i>
                     </span>
-                    <input :type="showPass ? 'text' : 'password'" name="password_confirmation" required
-                           placeholder="Re-enter password"
-                           class="w-full h-11 rounded-xl border border-gray-300 pl-10 pr-4 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand bg-gray-50/50">
+                    <textarea name="address" rows="2"
+                              placeholder="Delivery address"
+                              class="w-full rounded-xl border border-gray-200/90 pl-10 pr-3.5 py-2.5 text-sm text-gray-900 bg-slate-50/50 hover:border-gray-300 focus:bg-white focus:border-emerald-600 focus:ring-4 focus:ring-emerald-600/10 transition-all outline-none resize-none">{{ old('address') }}</textarea>
                 </div>
             </div>
+
+            {{-- Password & Confirmation --}}
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5" x-data="{ showPass: false }">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-700 mb-1.5">
+                        Password
+                    </label>
+                    <div class="relative">
+                        <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs">
+                            <i class="fas fa-lock"></i>
+                        </span>
+                        <input :type="showPass ? 'text' : 'password'" name="password" required
+                               placeholder="••••••••"
+                               class="w-full h-11 rounded-xl border border-gray-200/90 pl-10 pr-9 text-sm text-gray-900 bg-slate-50/50 hover:border-gray-300 focus:bg-white focus:border-emerald-600 focus:ring-4 focus:ring-emerald-600/10 transition-all outline-none">
+                        <button type="button" @click="showPass = !showPass"
+                                class="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xs p-1">
+                            <i class="far" :class="showPass ? 'fa-eye-slash' : 'fa-eye'"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-gray-700 mb-1.5">
+                        Confirm Password
+                    </label>
+                    <div class="relative">
+                        <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs">
+                            <i class="fas fa-lock-open"></i>
+                        </span>
+                        <input :type="showPass ? 'text' : 'password'" name="password_confirmation" required
+                               placeholder="••••••••"
+                               class="w-full h-11 rounded-xl border border-gray-200/90 pl-10 pr-3.5 text-sm text-gray-900 bg-slate-50/50 hover:border-gray-300 focus:bg-white focus:border-emerald-600 focus:ring-4 focus:ring-emerald-600/10 transition-all outline-none">
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit"
+                    class="w-full h-11 bg-gradient-to-r from-emerald-700 via-emerald-800 to-emerald-900 hover:from-emerald-800 hover:via-emerald-900 hover:to-emerald-950 active:scale-[0.99] text-white rounded-xl text-sm font-semibold tracking-wide transition-all shadow-md shadow-emerald-900/20 mt-2">
+                Create Account
+            </button>
+        </form>
+
+        <div class="border-t border-gray-100 mt-6 pt-5 text-center">
+            <p class="text-xs text-gray-500">
+                Already have an account?
+                <a href="{{ route('shop.customer.login') }}" class="font-bold text-emerald-800 hover:text-emerald-950 underline decoration-emerald-800/30 underline-offset-4 hover:decoration-emerald-950 ml-1">
+                    Sign In
+                </a>
+            </p>
         </div>
 
-        <button type="submit"
-                class="w-full h-11 bg-brand hover:bg-brand-dark text-white rounded-xl text-sm font-bold transition-all shadow-md shadow-brand/20 flex items-center justify-center gap-2 mt-2">
-            <i class="fas fa-user-check text-xs"></i> Complete Registration
-        </button>
-    </form>
-
-    <div class="border-t border-gray-100 mt-6 pt-5 text-center">
-        <p class="text-xs text-gray-500">
-            Already have an account?
-            <a href="{{ route('shop.customer.login') }}" class="font-bold text-brand hover:underline">
-                Sign In &rarr;
-            </a>
-        </p>
     </div>
 
 </div>

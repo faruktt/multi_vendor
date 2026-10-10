@@ -31,6 +31,12 @@ class CartController extends Controller
 
         $available = $variant ? $variant->stock_qty : $product->stock_qty;
         if ($available <= 0) {
+            if ($request->wantsJson() || $request->ajax() || $request->header('Accept') === 'application/json') {
+                return response()->json([
+                    'success' => false,
+                    'message' => $product->name . ' is currently out of stock.'
+                ], 422);
+            }
             return back()->with('error', $product->name . ' is currently out of stock.');
         }
 
@@ -51,7 +57,7 @@ class CartController extends Controller
             return redirect()->route('shop.checkout.index');
         }
 
-        return back()->with('success', $product->name . ' added to your cart.');
+        return $this->cartResponse($request, $branch, $product->name . ' added to your cart.');
     }
 
     public function update(Request $request)
@@ -104,6 +110,8 @@ class CartController extends Controller
             $subtotal = $lines->sum('subtotal');
 
             return response()->json([
+                'success'  => true,
+                'message'  => $message,
                 'count'    => $lines->count(),
                 'subtotal' => $subtotal,
                 'html'     => view('shop.partials.cart-drawer-body', [

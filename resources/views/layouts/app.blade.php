@@ -11,7 +11,9 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/solaimanlipi.css">
     <style>
+        body { font-family: 'SolaimanLipi', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important; }
         [x-cloak] { display: none !important; }
 
         .sidebar { background: linear-gradient(180deg, #0f172a 0%, #0e1e38 100%); }
@@ -129,6 +131,9 @@
             $authUser     = auth()->user();
             $isSuperAdmin = $authUser->hasRole('super-admin');
             $colors       = ['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec4899','#06b6d4','#84cc16'];
+            $appFaviconUrl = !empty($appSettings['favicon']) ? asset($appSettings['favicon']) : null;
+            $userAvatarUrl = $authUser->image ? ($authUser->image_url ?? Storage::disk('uploads')->url($authUser->image)) : null;
+            $headerProfileIcon = $userAvatarUrl ?? $appFaviconUrl;
         @endphp
 
         @if($isSuperAdmin)
@@ -265,7 +270,7 @@
                 <span class="icon"><i class="fas fa-warehouse text-[11px]"></i></span> Stock Report
             </a>
             <a href="{{ route('admin.sales-report') }}" class="nav-link {{ request()->routeIs('admin.sales-report*') ? 'is-active' : '' }}">
-                <span class="icon"><i class="fas fa-chart-line text-[11px]"></i></span> Sales Report
+                <span class="icon"><i class="fas fa-file-invoice-dollar text-[11px]"></i></span> Order Report
             </a>
             <a href="{{ route('admin.financial-report') }}" class="nav-link {{ request()->routeIs('admin.financial-report*') ? 'is-active' : '' }}">
                 <span class="icon"><i class="fas fa-coins text-[11px]"></i></span> Financial Report
@@ -402,6 +407,9 @@
             </a>
             <a href="{{ route('admin.home-contents.index') }}" class="nav-link {{ request()->routeIs('admin.home-contents.*') ? 'is-active' : '' }}">
                 <span class="icon"><i class="fas fa-file-lines text-[11px] text-teal-400"></i></span> Homepage Content
+            </a>
+            <a href="{{ route('admin.pages.index') }}" class="nav-link {{ request()->routeIs('admin.pages.*') ? 'is-active' : '' }}">
+                <span class="icon"><i class="fas fa-file-circle-plus text-[11px] text-sky-400"></i></span> Pages
             </a>
             <a href="{{ route('admin.flash-sales.index') }}" class="nav-link {{ request()->routeIs('admin.flash-sales.*') ? 'is-active' : '' }}">
                 <span class="icon"><i class="fas fa-bolt text-[11px] text-amber-500"></i></span> Flash Sale
@@ -555,6 +563,34 @@
             </a>
             @endif
 
+            @if($authUser->can('view_sales_report'))
+            <a href="{{ route('admin.sales-report') }}"
+               class="nav-link {{ request()->routeIs('admin.sales-report*') ? 'is-active' : '' }}">
+                <span class="icon"><i class="fas fa-file-invoice-dollar text-[11px]"></i></span> Order Report
+            </a>
+            @endif
+
+            @if($authUser->canAny(['manage_resellers', 'manage_reseller_orders']))
+            <a href="{{ route('admin.resellers.orders') }}"
+               class="nav-link {{ request()->routeIs('admin.resellers.orders*') ? 'is-active' : '' }}">
+                <span class="icon"><i class="fas fa-handshake text-[11px] text-purple-400"></i></span> Reseller Orders
+            </a>
+            @endif
+
+            @if($authUser->canAny(['manage_suppliers_hub', 'manage_supplier_sales']))
+            <a href="{{ route('admin.supplier-sales.index') }}"
+               class="nav-link {{ request()->routeIs('admin.supplier-sales.*') ? 'is-active' : '' }}">
+                <span class="icon"><i class="fas fa-boxes-packing text-[11px] text-amber-400"></i></span> Supplier Sales
+            </a>
+            @endif
+
+            @if($authUser->can('manage_messages'))
+            <a href="{{ route('admin.messages.index') }}"
+               class="nav-link {{ request()->routeIs('admin.messages.*') ? 'is-active' : '' }}">
+                <span class="icon"><i class="fas fa-comments text-[11px] text-sky-400"></i></span> Live Chat
+            </a>
+            @endif
+
             {{-- Settings always visible (profile/password always accessible) --}}
             <a href="{{ $branch->is_warehouse ? route('admin.warehouse.settings.index') : route('branch.settings.index', $branch) }}"
                class="nav-link {{ request()->routeIs('branch.settings.*') || request()->routeIs('admin.warehouse.settings.*') ? 'is-active' : '' }}">
@@ -569,9 +605,9 @@
     @auth
     <div class="border-t border-white/[.07] px-4 py-3.5 flex-shrink-0">
         <div class="flex items-center gap-2.5">
-            <div class="user-avatar flex items-center justify-center overflow-hidden">
-                @if(auth()->user()->image)
-                <img src="{{ Storage::disk('uploads')->url(auth()->user()->image) }}" class="w-full h-full object-cover" alt="avatar">
+            <div class="user-avatar flex items-center justify-center overflow-hidden {{ $headerProfileIcon ? 'bg-white border border-white/20' : '' }}">
+                @if($headerProfileIcon)
+                <img src="{{ $headerProfileIcon }}" class="w-full h-full object-cover" alt="favicon">
                 @else
                 {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
                 @endif
@@ -1023,9 +1059,9 @@
             <div class="relative" x-data="{ pOpen: false }">
                 <button @click="pOpen = !pOpen" @click.outside="pOpen = false"
                         class="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-xl hover:bg-slate-100 transition-colors group">
-                    <div class="w-7 h-7 rounded-xl bg-gradient-to-br from-blue-500 to-violet-600 flex items-center justify-center text-white text-[11px] font-bold flex-shrink-0 shadow-sm overflow-hidden">
-                        @if(auth()->user()->image)
-                        <img src="{{ Storage::disk('uploads')->url(auth()->user()->image) }}" class="w-full h-full object-cover" alt="avatar">
+                    <div class="w-7 h-7 rounded-xl {{ $headerProfileIcon ? 'bg-white border border-slate-200/90 shadow-xs' : 'bg-gradient-to-br from-blue-500 to-violet-600 text-white shadow-sm' }} flex items-center justify-center text-[11px] font-bold flex-shrink-0 overflow-hidden">
+                        @if($headerProfileIcon)
+                        <img src="{{ $headerProfileIcon }}" class="w-full h-full object-cover" alt="favicon">
                         @else
                         {{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 2)) }}
                         @endif
@@ -1046,9 +1082,9 @@
                     {{-- User card --}}
                     <div class="px-4 py-3.5 bg-gradient-to-br from-blue-600 to-violet-700">
                         <div class="flex items-center gap-2.5">
-                            <div class="w-10 h-10 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center text-white text-sm font-bold flex-shrink-0 overflow-hidden">
-                                @if(auth()->user()->image)
-                                <img src="{{ Storage::disk('uploads')->url(auth()->user()->image) }}" class="w-full h-full object-cover" alt="avatar">
+                            <div class="w-10 h-10 rounded-xl {{ $headerProfileIcon ? 'bg-white/95 border border-white/20' : 'bg-white/20 backdrop-blur text-white' }} flex items-center justify-center text-sm font-bold flex-shrink-0 overflow-hidden">
+                                @if($headerProfileIcon)
+                                <img src="{{ $headerProfileIcon }}" class="w-full h-full object-cover" alt="favicon">
                                 @else
                                 {{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 2)) }}
                                 @endif

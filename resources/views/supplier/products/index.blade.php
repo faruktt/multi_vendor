@@ -148,7 +148,7 @@
                                 <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
                                     <i class="fas fa-clock text-[10px]"></i> Pending Approval
                                 </span>
-                                <div class="text-[10.5px] text-slate-400 mt-1">অ্যাডমিন কমিশন ও অনুমোদনের অপেক্ষায়</div>
+                                <div class="text-[10.5px] text-slate-400 mt-1">Pending admin commission & approval</div>
                             @elseif($product->isApproved())
                                 <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
                                     <i class="fas fa-check-circle text-[10px]"></i> Approved

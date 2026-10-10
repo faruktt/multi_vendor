@@ -1,6 +1,6 @@
 @extends('reseller.layouts.app')
-@section('title', 'My Account — বিস্তারিত হিসাব-নিকাশ')
-@section('heading', 'My Account / আমার একাউন্ট')
+@section('title', 'My Account — Financial Summary')
+@section('heading', 'My Account')
 
 @section('content')
 <div class="py-4 space-y-6">
@@ -60,7 +60,7 @@
                             <i class="fas fa-id-badge text-slate-400"></i> ID: #RES-{{ str_pad($reseller->id, 4, '0', STR_PAD_LEFT) }}
                         </span>
                         <span class="flex items-center gap-1">
-                            <i class="fas fa-calendar-alt text-slate-400"></i> সদস্য: {{ $reseller->created_at->format('d M, Y') }}
+                            <i class="fas fa-calendar-alt text-slate-400"></i> Member Since: {{ $reseller->created_at->format('d M, Y') }}
                         </span>
                     </div>
 
@@ -77,15 +77,15 @@
             <div class="flex flex-wrap items-center gap-2 pt-2 md:pt-0 border-t md:border-t-0 border-slate-100">
                 <a href="{{ route('reseller.withdrawals.index') }}"
                    class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-sm transition">
-                    <i class="fas fa-hand-holding-dollar"></i> টাকা উত্তোলন করুন
+                    <i class="fas fa-hand-holding-dollar"></i> Withdraw Funds
                 </a>
                 <a href="{{ route('reseller.profile') }}"
                    class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition">
-                    <i class="fas fa-user-pen"></i> প্রোফাইল এডিট
+                    <i class="fas fa-user-pen"></i> Edit Profile
                 </a>
                 <a href="{{ route('reseller.orders.create') }}"
                    class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold transition">
-                    <i class="fas fa-plus"></i> নতুন অর্ডার
+                    <i class="fas fa-plus"></i> New Order
                 </a>
             </div>
         </div>
@@ -95,9 +95,9 @@
     <div>
         <div class="flex items-center justify-between mb-3 px-1">
             <h3 class="font-extrabold text-slate-800 text-base flex items-center gap-2">
-                <i class="fas fa-wallet text-indigo-600"></i> একাউন্ট ও আর্থিক হিসাব-নিকাশ (Financial Summary)
+                <i class="fas fa-wallet text-indigo-600"></i> Financial Summary
             </h3>
-            <span class="text-xs text-slate-400">লাইভ আপডেট</span>
+            <span class="text-xs text-slate-400">Live Updates</span>
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -113,9 +113,9 @@
                 <div class="mt-3">
                     <div class="text-3xl font-black text-slate-800">{{ number_format($totalOrders) }}</div>
                     <div class="flex flex-wrap items-center gap-1.5 mt-2 text-[11px] font-medium text-slate-500">
-                        <span class="text-emerald-600 font-bold"><i class="fas fa-check-circle text-[10px]"></i> {{ $completedOrdersCount }} কমপ্লিট</span>
+                        <span class="text-emerald-600 font-bold"><i class="fas fa-check-circle text-[10px]"></i> {{ $completedOrdersCount }} Completed</span>
                         <span class="text-slate-300">•</span>
-                        <span class="text-amber-600 font-semibold">{{ $processingOrdersCount }} চলমান</span>
+                        <span class="text-amber-600 font-semibold">{{ $processingOrdersCount }} In Progress</span>
                     </div>
                 </div>
             </div>
@@ -134,7 +134,7 @@
                 <div class="relative z-10 mt-3">
                     <div class="text-3xl font-black">৳{{ number_format($totalProfit, 2) }}</div>
                     <div class="text-[11px] text-emerald-100/90 mt-2 flex items-center gap-1">
-                        <i class="fas fa-coins text-[10px]"></i> অর্জিত মোট লাভ (কমপ্লিট অর্ডার)
+                        <i class="fas fa-coins text-[10px]"></i> Earned from completed orders
                     </div>
                 </div>
             </div>
@@ -150,7 +150,7 @@
                 <div class="mt-3">
                     <div class="text-3xl font-black text-slate-800">৳{{ number_format($totalWithdrawn, 2) }}</div>
                     <div class="text-[11px] font-medium text-slate-500 mt-2 flex items-center gap-1">
-                        <span class="text-orange-600 font-semibold">সফলভাবে পরিশোধিত টাকা</span>
+                        <span class="text-orange-600 font-semibold">Successfully Disbursed</span>
                     </div>
                 </div>
             </div>
@@ -165,11 +165,11 @@
                     @if($withdrawableBalance >= 10)
                         <a href="{{ route('reseller.withdrawals.index') }}"
                            class="text-[11px] font-bold bg-white text-indigo-800 px-2.5 py-1 rounded-lg hover:bg-indigo-50 shadow-xs transition">
-                            উত্তোলন
+                            Withdraw
                         </a>
                     @elseif($availableBalance < 0)
                         <span class="text-[10px] font-bold bg-white/20 text-rose-100 px-2 py-0.5 rounded-lg">
-                            ঋণাত্মক
+                            Negative
                         </span>
                     @endif
                 </div>
@@ -179,9 +179,9 @@
                     </div>
                     <div class="text-[11px] {{ $availableBalance < 0 ? 'text-rose-200' : 'text-indigo-200' }} mt-2 flex items-center gap-1">
                         @if($availableBalance < 0)
-                            <span>পরবর্তী লাভ থেকে কর্তন হবে</span>
+                            <span>Deducted from future profit</span>
                         @else
-                            <span>উত্তোলনযোগ্য ব্যালেন্স:</span>
+                            <span>Withdrawable Balance:</span>
                             <strong class="text-white font-bold">৳{{ number_format($withdrawableBalance, 2) }}</strong>
                         @endif
                     </div>
@@ -191,19 +191,19 @@
         </div>
     </div>
 
-    {{-- Other Hisab (অন্যান্য হিসাব-নিকাশ ও বিস্তারিত অডিট) --}}
+    {{-- Other Hisab --}}
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
         
         {{-- Balance Breakdown Card --}}
         <div class="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm space-y-4">
             <h4 class="font-bold text-slate-800 text-sm flex items-center gap-2 border-b border-slate-100 pb-3">
-                <i class="fas fa-scale-balanced text-indigo-500"></i> ব্যালেন্স ও প্রফিট বিবরণী (Detailed Balance)
+                <i class="fas fa-scale-balanced text-indigo-500"></i> Detailed Balance Breakdown
             </h4>
 
             <div class="space-y-3 text-xs">
                 <div class="flex items-center justify-between py-1.5 border-b border-slate-50">
                     <span class="text-slate-500 flex items-center gap-1.5">
-                        <i class="fas fa-circle-check text-emerald-500 text-[10px]"></i> অর্জিত মোট প্রফিট (Total Profit)
+                        <i class="fas fa-circle-check text-emerald-500 text-[10px]"></i> Total Profit Earned
                     </span>
                     <span class="font-bold text-slate-800">৳{{ number_format($totalProfit, 2) }}</span>
                 </div>
@@ -211,7 +211,7 @@
                 @if($totalReturnCharge > 0)
                 <div class="flex items-center justify-between py-1.5 border-b border-slate-50 bg-rose-50/50 px-2 rounded-lg">
                     <span class="text-rose-700 font-semibold flex items-center gap-1.5">
-                        <i class="fas fa-rotate-left text-rose-500 text-[10px]"></i> রিটার্ন ডেলিভারি চার্জ কর্তন ({{ $returnedOrdersCount }}টি অর্ডার)
+                        <i class="fas fa-rotate-left text-rose-500 text-[10px]"></i> Return Shipping Fees ({{ $returnedOrdersCount }} orders)
                     </span>
                     <span class="font-bold text-rose-600">- ৳{{ number_format($totalReturnCharge, 2) }}</span>
                 </div>
@@ -219,13 +219,13 @@
 
                 <div class="flex items-center justify-between py-1.5 border-b border-slate-50">
                     <span class="text-slate-500 flex items-center gap-1.5">
-                        <i class="fas fa-arrow-up-right-from-square text-orange-500 text-[10px]"></i> মোট উত্তোলিত টাকা (Withdrawn)
+                        <i class="fas fa-arrow-up-right-from-square text-orange-500 text-[10px]"></i> Total Withdrawn
                     </span>
                     <span class="font-bold text-orange-600">- ৳{{ number_format($totalWithdrawn, 2) }}</span>
                 </div>
 
                 <div class="flex items-center justify-between py-1.5 border-b border-slate-50 {{ $availableBalance < 0 ? 'bg-rose-50' : 'bg-indigo-50/50' }} px-2.5 rounded-lg">
-                    <span class="font-bold {{ $availableBalance < 0 ? 'text-rose-900' : 'text-indigo-900' }}">নেট এভেইলেবল ব্যালেন্স</span>
+                    <span class="font-bold {{ $availableBalance < 0 ? 'text-rose-900' : 'text-indigo-900' }}">Net Available Balance</span>
                     <span class="font-extrabold {{ $availableBalance < 0 ? 'text-rose-700' : 'text-indigo-700' }}">
                         {{ $availableBalance < 0 ? '-৳' . number_format(abs($availableBalance), 2) : '৳' . number_format($availableBalance, 2) }}
                     </span>
@@ -233,7 +233,7 @@
 
                 <div class="flex items-center justify-between py-1.5 border-b border-slate-50">
                     <span class="text-slate-500 flex items-center gap-1.5">
-                        <i class="fas fa-clock text-amber-500 text-[10px]"></i> পেন্ডিং উত্তোলন আবেদন (In Review)
+                        <i class="fas fa-clock text-amber-500 text-[10px]"></i> Pending Payout Requests (In Review)
                     </span>
                     <span class="font-bold text-amber-600">
                         @if($pendingWithdrawals > 0)
@@ -245,13 +245,13 @@
                 </div>
 
                 <div class="flex items-center justify-between py-1.5 border-b border-slate-50 bg-emerald-50/50 px-2.5 rounded-lg">
-                    <span class="font-bold text-emerald-900">বর্তমানে উত্তোলনের যোগ্য ব্যালেন্স</span>
+                    <span class="font-bold text-emerald-900">Current Withdrawable Balance</span>
                     <span class="font-extrabold text-emerald-700">৳{{ number_format($withdrawableBalance, 2) }}</span>
                 </div>
 
                 <div class="flex items-center justify-between py-1.5 pt-2">
-                    <span class="text-slate-500 flex items-center gap-1.5" title="যেসব অর্ডার এখনো কুরিয়ারে বা ডেলিভারির প্রক্রিয়ায় আছে">
-                        <i class="fas fa-hourglass-half text-purple-500 text-[10px]"></i> সম্ভাব্য পেন্ডিং লাভ (In-Transit Orders)
+                    <span class="text-slate-500 flex items-center gap-1.5" title="Orders currently in delivery or in transit">
+                        <i class="fas fa-hourglass-half text-purple-500 text-[10px]"></i> In-Transit Expected Profit
                     </span>
                     <span class="font-bold text-purple-700">+ ৳{{ number_format($pendingProfit, 2) }}</span>
                 </div>
@@ -260,7 +260,7 @@
             <div class="pt-2">
                 <a href="{{ route('reseller.withdrawals.index') }}"
                    class="w-full py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition">
-                    <i class="fas fa-arrow-right"></i> উত্তোলনের হিস্টোরি দেখুন
+                    <i class="fas fa-arrow-right"></i> View Withdrawal History
                 </a>
             </div>
         </div>
@@ -268,49 +268,49 @@
         {{-- Sales & Customer Payment Breakdown --}}
         <div class="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm space-y-4">
             <h4 class="font-bold text-slate-800 text-sm flex items-center gap-2 border-b border-slate-100 pb-3">
-                <i class="fas fa-file-invoice-dollar text-emerald-500"></i> বিক্রয় ও কাস্টমার বিল হিসাব (Sales & Invoicing)
+                <i class="fas fa-file-invoice-dollar text-emerald-500"></i> Sales & Invoicing Overview
             </h4>
 
             <div class="space-y-3 text-xs">
                 <div class="flex items-center justify-between py-1.5 border-b border-slate-50">
-                    <span class="text-slate-500">গ্রাহকদের মোট বিক্রয় মূল্য (Gross Sales)</span>
+                    <span class="text-slate-500">Gross Sales Amount</span>
                     <span class="font-extrabold text-slate-800">৳{{ number_format($totalSalesAmount, 2) }}</span>
                 </div>
 
                 <div class="flex items-center justify-between py-1.5 border-b border-slate-50">
                     <span class="text-slate-500 flex items-center gap-1.5">
-                        <i class="fas fa-circle-check text-blue-500 text-[10px]"></i> কাস্টমার পেইড এমাউন্ট (Customer Paid)
+                        <i class="fas fa-circle-check text-blue-500 text-[10px]"></i> Customer Paid Amount
                     </span>
                     <span class="font-bold text-blue-700">৳{{ number_format($totalPaidAmount, 2) }}</span>
                 </div>
 
                 <div class="flex items-center justify-between py-1.5 border-b border-slate-50">
                     <span class="text-slate-500 flex items-center gap-1.5">
-                        <i class="fas fa-circle-exclamation text-rose-500 text-[10px]"></i> কাস্টমার বাকি / ডিউ (COD / Due)
+                        <i class="fas fa-circle-exclamation text-rose-500 text-[10px]"></i> Customer Outstanding (COD / Due)
                     </span>
                     <span class="font-bold text-rose-600">৳{{ number_format($totalDueAmount, 2) }}</span>
                 </div>
 
                 <div class="flex items-center justify-between py-1.5 border-b border-slate-50">
-                    <span class="text-slate-500">অর্ডার প্রতি গড় লাভ (Avg. Profit / Order)</span>
+                    <span class="text-slate-500">Average Profit / Order</span>
                     <span class="font-bold text-emerald-700">৳{{ number_format($avgProfitPerOrder, 2) }}</span>
                 </div>
 
                 <div class="flex items-center justify-between py-1.5 border-b border-slate-50">
-                    <span class="text-slate-500">মোট ডেলিভার্ড অর্ডার</span>
-                    <span class="font-bold text-slate-700">{{ number_format($deliveredOrdersCount) }} টি</span>
+                    <span class="text-slate-500">Delivered Orders</span>
+                    <span class="font-bold text-slate-700">{{ number_format($deliveredOrdersCount) }} orders</span>
                 </div>
 
                 <div class="flex items-center justify-between py-1.5">
-                    <span class="text-slate-500">বাতিলকৃত অর্ডার (Cancelled)</span>
-                    <span class="font-bold text-red-600">{{ number_format($cancelledOrdersCount) }} টি</span>
+                    <span class="text-slate-500">Cancelled Orders</span>
+                    <span class="font-bold text-red-600">{{ number_format($cancelledOrdersCount) }} orders</span>
                 </div>
             </div>
 
             <div class="pt-2">
                 <a href="{{ route('reseller.orders.index') }}"
                    class="w-full py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition">
-                    <i class="fas fa-receipt"></i> সব অর্ডার তালিকা দেখুন
+                    <i class="fas fa-receipt"></i> View All Orders
                 </a>
             </div>
         </div>
@@ -318,24 +318,24 @@
         {{-- Monthly Performance Card --}}
         <div class="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm space-y-4">
             <h4 class="font-bold text-slate-800 text-sm flex items-center gap-2 border-b border-slate-100 pb-3">
-                <i class="fas fa-calendar-check text-purple-500"></i> চলতি মাসের পারফরম্যান্স (This Month)
+                <i class="fas fa-calendar-check text-purple-500"></i> Performance ({{ now()->format('F Y') }})
             </h4>
 
             <div class="p-4 rounded-xl bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 border border-indigo-100/60">
-                <div class="text-[11px] font-bold text-indigo-900 uppercase tracking-wider">{{ now()->format('F Y') }} প্রফিট</div>
+                <div class="text-[11px] font-bold text-indigo-900 uppercase tracking-wider">{{ now()->format('F Y') }} Profit</div>
                 <div class="text-2xl font-black text-indigo-700 mt-1">৳{{ number_format($thisMonthProfit, 2) }}</div>
                 <div class="text-xs text-slate-600 mt-2 flex items-center justify-between">
-                    <span>চলতি মাসের মোট অর্ডার:</span>
-                    <strong class="font-bold text-slate-800">{{ $thisMonthOrders }} টি</strong>
+                    <span>Total Orders This Month:</span>
+                    <strong class="font-bold text-slate-800">{{ $thisMonthOrders }} orders</strong>
                 </div>
                 <div class="text-xs text-slate-600 mt-1 flex items-center justify-between">
-                    <span>চলতি মাসের মোট সেলস:</span>
+                    <span>Total Sales This Month:</span>
                     <strong class="font-bold text-slate-800">৳{{ number_format($thisMonthSales, 2) }}</strong>
                 </div>
             </div>
 
             <div class="space-y-2 pt-1">
-                <div class="text-xs font-bold text-slate-700 mb-1">অর্ডার স্ট্যাটাস পরিসংখ্যান:</div>
+                <div class="text-xs font-bold text-slate-700 mb-1">Order Status Breakdown:</div>
                 <div class="flex flex-wrap gap-1.5">
                     @php
                         $badgeStyles = [
@@ -355,7 +355,7 @@
                             <strong class="font-bold">{{ $data->count }}</strong>
                         </span>
                     @empty
-                        <span class="text-xs text-slate-400">এখনো কোনো অর্ডার নেই</span>
+                        <span class="text-xs text-slate-400">No orders found yet</span>
                     @endforelse
                 </div>
             </div>
@@ -367,10 +367,10 @@
     <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
         <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
             <h3 class="font-extrabold text-slate-800 text-sm flex items-center gap-2">
-                <i class="fas fa-clock-rotate-left text-indigo-600"></i> সাম্প্রতিক অর্ডার ও প্রফিট বিবরণী (Recent Orders & Profit)
+                <i class="fas fa-clock-rotate-left text-indigo-600"></i> Recent Orders & Profit Breakdown
             </h3>
             <a href="{{ route('reseller.orders.index') }}" class="text-indigo-600 text-xs font-bold hover:underline">
-                সব অর্ডার দেখুন →
+                View All Orders →
             </a>
         </div>
 
@@ -378,14 +378,14 @@
             <table class="w-full text-sm">
                 <thead class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wide">
                     <tr>
-                        <th class="px-5 py-3 text-left">ইনভয়েস</th>
-                        <th class="px-5 py-3 text-left">কাস্টমার</th>
-                        <th class="px-5 py-3 text-left">আইটেম</th>
-                        <th class="px-5 py-3 text-right">বিক্রয় মূল্য</th>
-                        <th class="px-5 py-3 text-right">রিসেলার লাভ (Profit)</th>
-                        <th class="px-5 py-3 text-left">স্ট্যাটাস</th>
-                        <th class="px-5 py-3 text-left">তারিখ</th>
-                        <th class="px-5 py-3 text-center">অ্যাকশন</th>
+                        <th class="px-5 py-3 text-left">Invoice</th>
+                        <th class="px-5 py-3 text-left">Customer</th>
+                        <th class="px-5 py-3 text-left">Items</th>
+                        <th class="px-5 py-3 text-right">Sale Amount</th>
+                        <th class="px-5 py-3 text-right">Reseller Profit</th>
+                        <th class="px-5 py-3 text-left">Status</th>
+                        <th class="px-5 py-3 text-left">Date</th>
+                        <th class="px-5 py-3 text-center">Action</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
@@ -404,7 +404,7 @@
                                 @endif
                             </td>
                             <td class="px-5 py-3 text-slate-500 text-xs">
-                                {{ $order->saleItems->count() }} টি পণ্য
+                                {{ $order->saleItems->count() }} item(s)
                             </td>
                             <td class="px-5 py-3 text-right font-bold text-slate-800">
                                 ৳{{ number_format($order->total, 2) }}
@@ -438,7 +438,7 @@
                                     <a href="{{ route('reseller.orders.show', $order) }}"
                                        class="text-indigo-600 hover:text-indigo-800 text-xs font-semibold px-2 py-1 rounded-lg hover:bg-indigo-50 transition"
                                        title="View Details">
-                                        বিস্তারিত
+                                        Details
                                     </a>
                                     <a href="{{ route('reseller.orders.invoice', $order) }}" target="_blank"
                                        class="text-slate-500 hover:text-indigo-600 text-xs font-bold px-2 py-1 rounded-lg hover:bg-indigo-50 transition"
@@ -452,7 +452,7 @@
                         <tr>
                             <td colspan="8" class="px-5 py-10 text-center text-slate-400 text-xs">
                                 <i class="fas fa-inbox text-3xl mb-2 text-slate-300 block"></i>
-                                এখনো কোনো অর্ডার পাওয়া যায়নি।
+                                No orders found yet.
                             </td>
                         </tr>
                     @endforelse
@@ -465,10 +465,10 @@
     <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
         <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
             <h3 class="font-extrabold text-slate-800 text-sm flex items-center gap-2">
-                <i class="fas fa-hand-holding-dollar text-orange-500"></i> সাম্প্রতিক উত্তোলন সমূহ (Recent Withdrawals)
+                <i class="fas fa-hand-holding-dollar text-orange-500"></i> Recent Withdrawals
             </h3>
             <a href="{{ route('reseller.withdrawals.index') }}" class="text-indigo-600 text-xs font-bold hover:underline">
-                উত্তোলনের আবেদন করুন →
+                Request Payout →
             </a>
         </div>
 
@@ -476,13 +476,13 @@
             <table class="w-full text-sm">
                 <thead class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wide">
                     <tr>
-                        <th class="px-5 py-3 text-left">আইডি</th>
-                        <th class="px-5 py-3 text-right">পরিমাণ (Amount)</th>
-                        <th class="px-5 py-3 text-left">পেমেন্ট মেথড</th>
-                        <th class="px-5 py-3 text-left">একাউন্ট ডিটেইলস</th>
-                        <th class="px-5 py-3 text-left">স্ট্যাটাস</th>
-                        <th class="px-5 py-3 text-left">আবেদনের তারিখ</th>
-                        <th class="px-5 py-3 text-left">প্রক্রিয়াকরণ</th>
+                        <th class="px-5 py-3 text-left">ID</th>
+                        <th class="px-5 py-3 text-right">Amount</th>
+                        <th class="px-5 py-3 text-left">Payment Method</th>
+                        <th class="px-5 py-3 text-left">Account Details</th>
+                        <th class="px-5 py-3 text-left">Status</th>
+                        <th class="px-5 py-3 text-left">Request Date</th>
+                        <th class="px-5 py-3 text-left">Processed Date</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
@@ -527,7 +527,7 @@
                     @empty
                         <tr>
                             <td colspan="7" class="px-5 py-8 text-center text-slate-400 text-xs">
-                                এখনো কোনো টাকা উত্তোলনের হিস্টোরি নেই।
+                                No withdrawal history found yet.
                             </td>
                         </tr>
                     @endforelse

@@ -226,7 +226,7 @@
                     </div>
 
                     <div class="flex items-center justify-between border-b border-slate-100 pb-2">
-                        <span class="text-xs font-medium text-slate-500">NID (নিজ)</span>
+                        <span class="text-xs font-medium text-slate-500">Reseller NID</span>
                         <div class="flex items-center gap-1.5">
                             @if($selectedReseller->nid_front_url)
                                 <button type="button" @click="previewImage('{{ $selectedReseller->nid_front_url }}', '{{ addslashes($selectedReseller->name) }} - Reseller NID Front')"
@@ -241,7 +241,7 @@
                                 </button>
                             @endif
                             @if(!$selectedReseller->nid_front_url && !$selectedReseller->nid_back_url)
-                                <span class="text-slate-300 text-xs">নেই</span>
+                                <span class="text-slate-300 text-xs">None</span>
                             @endif
                         </div>
                     </div>
@@ -262,7 +262,7 @@
                                 </button>
                             @endif
                             @if(!$selectedReseller->guardian_nid_front_url && !$selectedReseller->guardian_nid_back_url)
-                                <span class="text-slate-300 text-xs">নেই</span>
+                                <span class="text-slate-300 text-xs">None</span>
                             @endif
                         </div>
                     </div>
@@ -494,7 +494,7 @@
                     <tr>
                         <th class="px-5 py-3.5 text-left">Reseller Info</th>
                         <th class="px-5 py-3.5 text-left">Business</th>
-                        <th class="px-4 py-3.5 text-center">NID ডকুমেন্টস</th>
+                        <th class="px-4 py-3.5 text-center">NID Documents</th>
                         <th class="px-5 py-3.5 text-center">Orders</th>
                         <th class="px-5 py-3.5 text-right">Total Sales</th>
                         <th class="px-5 py-3.5 text-right">Available Profit</th>
@@ -549,7 +549,7 @@
                                             </button>
                                         @endif
                                         @if(!$r->nid_front_url && !$r->nid_back_url)
-                                            <span class="text-slate-300">নেই</span>
+                                            <span class="text-slate-300">None</span>
                                         @endif
                                     </div>
                                     {{-- Guardian NID --}}
@@ -568,7 +568,7 @@
                                             </button>
                                         @endif
                                         @if(!$r->guardian_nid_front_url && !$r->guardian_nid_back_url)
-                                            <span class="text-slate-300">নেই</span>
+                                            <span class="text-slate-300">None</span>
                                         @endif
                                     </div>
                                 </div>
@@ -746,10 +746,10 @@
             <div class="p-3 bg-slate-50 border-t border-slate-100 flex justify-between items-center text-xs">
                 <a :href="previewSrc" target="_blank" class="text-indigo-600 hover:underline font-bold flex items-center gap-1">
                     <i class="fas fa-external-link-alt text-[10px]"></i>
-                    <span>আসল সাইজে দেখুন</span>
+                    <span>View Original Size</span>
                 </a>
                 <button type="button" @click="previewModalOpen = false" class="px-4 py-1.5 rounded-xl bg-slate-200 text-slate-700 font-bold hover:bg-slate-300">
-                    বন্ধ করুন
+                    Close
                 </button>
             </div>
         </div>

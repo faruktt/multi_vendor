@@ -20,7 +20,7 @@ class ResellerApprovedMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: '🎉 অভিনন্দন! আপনার রিসেলার অ্যাকাউন্ট অনুমোদিত হয়েছে — ব্যবসা শুরু করুন',
+            subject: '🎉 Congratulations! Your Reseller Account Has Been Approved',
         );
     }
 

@@ -34,7 +34,7 @@
             <a href="{{ route('admin.suppliers.withdrawals') }}"
                class="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-xs shadow-md shadow-emerald-600/20 transition-all inline-flex items-center gap-2 hover:scale-[1.02] active:scale-[0.98]">
                 <i class="fas fa-hand-holding-dollar text-sm"></i>
-                <span>Supplier Withdrawals (প্রফিট উত্তোলন)</span>
+                <span>Supplier Withdrawals</span>
             </a>
         </div>
     </div>
@@ -137,7 +137,7 @@
                     <tr>
                         <th class="px-5 py-3.5 font-semibold">Supplier / Store</th>
                         <th class="px-4 py-3.5 font-semibold">Contact Info</th>
-                        <th class="px-3 py-3.5 font-semibold text-center">NID ডকুমেন্টস</th>
+                        <th class="px-3 py-3.5 font-semibold text-center">NID Documents</th>
                         <th class="px-3 py-3.5 font-semibold text-center">Products</th>
                         <th class="px-4 py-3.5 font-semibold text-center">Commission Rate</th>
                         <th class="px-4 py-3.5 font-semibold text-right">Total Sales</th>
@@ -157,11 +157,11 @@
                                     @if($supplier->image_url)
                                         <img src="{{ $supplier->image_url }}" alt="{{ $supplier->display_name }}"
                                              class="w-full h-full object-cover cursor-pointer"
-                                             @click="previewImage('{{ $supplier->image_url }}', '{{ addslashes($supplier->display_name) }} (প্রোফাইল ছবি)')">
+                                             @click="previewImage('{{ $supplier->image_url }}', '{{ addslashes($supplier->display_name) }} (Profile Photo)')">
                                     @elseif($supplier->logo_url)
                                         <img src="{{ $supplier->logo_url }}" alt="{{ $supplier->display_name }}"
                                              class="w-full h-full object-cover cursor-pointer"
-                                             @click="previewImage('{{ $supplier->logo_url }}', '{{ addslashes($supplier->display_name) }} (লোগো)')">
+                                             @click="previewImage('{{ $supplier->logo_url }}', '{{ addslashes($supplier->display_name) }} (Logo)')">
                                     @else
                                         {{ strtoupper(substr($supplier->display_name, 0, 1)) }}
                                     @endif
@@ -208,7 +208,7 @@
                                         </button>
                                     @endif
                                     @if(!$supplier->nid_front_url && !$supplier->nid_back_url)
-                                        <span class="text-slate-300">নেই</span>
+                                        <span class="text-slate-300">None</span>
                                     @endif
                                 </div>
                                 {{-- Guardian NID --}}
@@ -227,7 +227,7 @@
                                         </button>
                                     @endif
                                     @if(!$supplier->guardian_nid_front_url && !$supplier->guardian_nid_back_url)
-                                        <span class="text-slate-300">নেই</span>
+                                        <span class="text-slate-300">None</span>
                                     @endif
                                 </div>
                             </div>
@@ -305,7 +305,7 @@
                                 <button type="button"
                                         @click="openDirectWithdrawModal({{ $supplier->id }}, '{{ addslashes($supplier->display_name) }}', '{{ $supplier->phone }}', {{ (float) $supplier->availableBalance() }}, '{{ addslashes($supplier->bkash_number ?? '') }}', '{{ addslashes($supplier->bank_info ?? '') }}')"
                                         class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-600 text-emerald-700 hover:text-white font-bold text-xs transition border border-emerald-200 shadow-sm"
-                                        title="Direct Profit Withdrawal (সরাসরি প্রফিট উত্তোলন)">
+                                        title="Direct Profit Withdrawal">
                                     <i class="fas fa-hand-holding-dollar text-[11px]"></i>
                                     <span>Withdraw</span>
                                 </button>
@@ -409,7 +409,7 @@
                             <div class="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center text-white text-base">
                                 <i class="fas fa-hand-holding-dollar"></i>
                             </div>
-                            <h3 class="font-bold text-base">প্রফিট উইথড্র</h3>
+                            <h3 class="font-bold text-base">Withdraw Profit</h3>
                         </div>
                         <button type="button" @click="directModalOpen = false" class="text-white/70 hover:text-white text-base">
                             <i class="fas fa-times"></i>
@@ -421,10 +421,10 @@
                         <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
                             <div>
                                 <div class="text-xs font-bold text-slate-800" x-text="selectedSupplierName"></div>
-                                <div class="text-[11px] text-slate-500" x-text="selectedSupplierPhone || 'ফোন নেই'"></div>
+                                <div class="text-[11px] text-slate-500" x-text="selectedSupplierPhone || 'No phone'"></div>
                             </div>
                             <div class="text-right">
-                                <div class="text-[10px] font-bold text-slate-400 uppercase">ব্যালেন্স</div>
+                                <div class="text-[10px] font-bold text-slate-400 uppercase">Balance</div>
                                 <div class="text-base font-black text-emerald-600">৳<span x-text="Number(selectedAvailableBalance || 0).toFixed(2)"></span></div>
                             </div>
                         </div>
@@ -432,7 +432,7 @@
                         <template x-if="Number(selectedAvailableBalance || 0) <= 0">
                             <div class="p-2 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-[11px] font-medium flex items-center gap-1.5">
                                 <i class="fas fa-exclamation-triangle text-amber-500"></i>
-                                <span>ব্যালেন্স নেই</span>
+                                <span>No available balance</span>
                             </div>
                         </template>
 
@@ -440,12 +440,12 @@
                         <div>
                             <div class="flex items-center justify-between mb-1">
                                 <label class="text-xs font-bold text-slate-700">
-                                    পরিমাণ (৳) <span class="text-rose-500">*</span>
+                                    Amount (৳) <span class="text-rose-500">*</span>
                                 </label>
                                 <template x-if="Number(selectedAvailableBalance || 0) > 0">
                                     <button type="button" @click="setFullDirectBalance()"
                                             class="text-[11px] font-bold text-emerald-600 hover:text-emerald-800">
-                                        সব টাকা (৳<span x-text="Number(selectedAvailableBalance).toFixed(2)"></span>)
+                                        Max (৳<span x-text="Number(selectedAvailableBalance).toFixed(2)"></span>)
                                     </button>
                                 </template>
                             </div>
@@ -462,7 +462,7 @@
                         {{-- Payment Method Selection --}}
                         <div>
                             <label class="block text-xs font-bold text-slate-700 mb-1">
-                                পেমেন্ট মেথড <span class="text-rose-500">*</span>
+                                Payment Method <span class="text-rose-500">*</span>
                             </label>
                             <input type="hidden" name="payment_method" :value="directPaymentMethod">
                             <div class="grid grid-cols-5 gap-1.5">
@@ -497,20 +497,20 @@
                         {{-- Payment Details / Account / Trx ID --}}
                         <div>
                             <label class="block text-xs font-bold text-slate-700 mb-1">
-                                অ্যাকাউন্ট / Trx ID
+                                Account / Trx ID
                             </label>
                             <input type="text" name="payment_details" x-model="directPaymentDetails"
-                                   placeholder="নম্বর বা Trx ID"
+                                   placeholder="Number or Trx ID"
                                    class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition">
                         </div>
 
                         {{-- Note --}}
                         <div>
                             <label class="block text-xs font-bold text-slate-700 mb-1">
-                                নোট (ঐচ্ছিক)
+                                Note (Optional)
                             </label>
                             <input type="text" name="note" x-model="directNote"
-                                   placeholder="নোট লিখুন..."
+                                   placeholder="Enter note..."
                                    class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition">
                         </div>
                     </div>
@@ -518,12 +518,12 @@
                     <div class="px-5 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-2">
                         <button type="button" @click="directModalOpen = false"
                                 class="px-3.5 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 text-xs font-bold transition">
-                            বাতিল
+                            Cancel
                         </button>
                         <button type="submit"
                                 :disabled="!selectedSupplierId || !directAmount || Number(directAmount) <= 0 || Number(directAmount) > Number(selectedAvailableBalance || 0)"
                                 class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-bold shadow transition flex items-center gap-1.5">
-                            <i class="fas fa-check"></i> উইথড্র করুন
+                            <i class="fas fa-check"></i> Withdraw
                         </button>
                     </div>
                 </form>
@@ -546,10 +546,10 @@
             <div class="p-3 bg-slate-50 border-t border-slate-100 flex justify-between items-center text-xs">
                 <a :href="previewSrc" target="_blank" class="text-emerald-600 hover:underline font-bold flex items-center gap-1">
                     <i class="fas fa-external-link-alt text-[10px]"></i>
-                    <span>আসল সাইজে দেখুন</span>
+                    <span>View Original Size</span>
                 </a>
                 <button type="button" @click="previewModalOpen = false" class="px-4 py-1.5 rounded-xl bg-slate-200 text-slate-700 font-bold hover:bg-slate-300">
-                    বন্ধ করুন
+                    Close
                 </button>
             </div>
         </div>
@@ -603,7 +603,7 @@ function supplierIndexData() {
             } else if (this.directPaymentMethod === 'bank' && this.selectedBankInfo) {
                 this.directPaymentDetails = this.selectedBankInfo;
             } else if (this.directPaymentMethod === 'cash') {
-                this.directPaymentDetails = 'Cash Payout (ক্যাশ পেমেন্ট)';
+                this.directPaymentDetails = 'Cash Payout';
             } else {
                 this.directPaymentDetails = '';
             }

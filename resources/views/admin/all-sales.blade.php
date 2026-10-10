@@ -63,31 +63,31 @@
 <div class="flex items-center gap-2 flex-wrap mb-3">
     <a href="{{ route('admin.all-sales', request()->except('source', 'page')) }}"
        class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl font-bold text-xs transition-all {{ !request('source') ? 'bg-slate-900 text-white shadow-sm' : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200' }}">
-        <i class="fas fa-boxes-stacked text-[11px]"></i> All Sales (সব সেল)
+        <i class="fas fa-boxes-stacked text-[11px]"></i> All Sales
         <span class="px-1.5 py-0.2 rounded-full text-[10px] {{ !request('source') ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-700' }}">{{ $channelStats['total'] ?? 0 }}</span>
     </a>
 
     <a href="{{ route('admin.all-sales', array_merge(request()->except('source', 'page'), ['source' => 'website'])) }}"
        class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl font-bold text-xs transition-all {{ request('source') === 'website' ? 'bg-blue-600 text-white shadow-sm' : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200' }}">
-        <i class="fas fa-globe text-[11px] text-blue-500"></i> Website Sales (ওয়েবসাইট)
+        <i class="fas fa-globe text-[11px] text-blue-500"></i> Website Sales
         <span class="px-1.5 py-0.2 rounded-full text-[10px] {{ request('source') === 'website' ? 'bg-white/20 text-white' : 'bg-blue-50 text-blue-700' }}">{{ $channelStats['website'] ?? 0 }}</span>
     </a>
 
     <a href="{{ route('admin.all-sales', array_merge(request()->except('source', 'page'), ['source' => 'pos'])) }}"
        class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl font-bold text-xs transition-all {{ request('source') === 'pos' ? 'bg-emerald-600 text-white shadow-sm' : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200' }}">
-        <i class="fas fa-cash-register text-[11px] text-emerald-500"></i> POS Sales (পিওএস কাউন্টার)
+        <i class="fas fa-cash-register text-[11px] text-emerald-500"></i> POS Sales
         <span class="px-1.5 py-0.2 rounded-full text-[10px] {{ request('source') === 'pos' ? 'bg-white/20 text-white' : 'bg-emerald-50 text-emerald-700' }}">{{ $channelStats['pos'] ?? 0 }}</span>
     </a>
 
     <a href="{{ route('admin.all-sales', array_merge(request()->except('source', 'page'), ['source' => 'reseller'])) }}"
        class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl font-bold text-xs transition-all {{ request('source') === 'reseller' ? 'bg-purple-600 text-white shadow-sm' : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200' }}">
-        <i class="fas fa-handshake text-[11px] text-purple-500"></i> Reseller Sales (রিসেলার)
+        <i class="fas fa-handshake text-[11px] text-purple-500"></i> Reseller Sales
         <span class="px-1.5 py-0.2 rounded-full text-[10px] {{ request('source') === 'reseller' ? 'bg-white/20 text-white' : 'bg-purple-50 text-purple-700' }}">{{ $channelStats['reseller'] ?? 0 }}</span>
     </a>
 
     <a href="{{ route('admin.all-sales', array_merge(request()->except('source', 'page'), ['source' => 'supplier'])) }}"
        class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl font-bold text-xs transition-all {{ request('source') === 'supplier' ? 'bg-amber-500 text-white shadow-sm' : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200' }}">
-        <i class="fas fa-store text-[11px] text-amber-500"></i> Supplier Sales (সাপ্লায়ার)
+        <i class="fas fa-store text-[11px] text-amber-500"></i> Supplier Sales
         <span class="px-1.5 py-0.2 rounded-full text-[10px] {{ request('source') === 'supplier' ? 'bg-white/20 text-white' : 'bg-amber-50 text-amber-700' }}">{{ $channelStats['supplier'] ?? 0 }}</span>
     </a>
 </div>
@@ -98,11 +98,11 @@
         <input type="text" name="search" value="{{ request('search') }}" placeholder="Invoice, customer, phone, reseller, supplier..."
                class="border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-52">
         <select name="source" class="border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <option value="">All Sources (সব উৎস)</option>
-            <option value="website"  {{ request('source')=='website'  ? 'selected':'' }}>🌐 Website (ওয়েবসাইট)</option>
-            <option value="pos"      {{ request('source')=='pos'      ? 'selected':'' }}>🧾 POS (কাউন্টার)</option>
-            <option value="reseller" {{ request('source')=='reseller' ? 'selected':'' }}>🤝 Reseller (রিসেলার)</option>
-            <option value="supplier" {{ request('source')=='supplier' ? 'selected':'' }}>🏪 Supplier (সাপ্লায়ার)</option>
+            <option value="">All Sources</option>
+            <option value="website"  {{ request('source')=='website'  ? 'selected':'' }}>🌐 Website</option>
+            <option value="pos"      {{ request('source')=='pos'      ? 'selected':'' }}>🧾 POS</option>
+            <option value="reseller" {{ request('source')=='reseller' ? 'selected':'' }}>🤝 Reseller</option>
+            <option value="supplier" {{ request('source')=='supplier' ? 'selected':'' }}>🏪 Supplier</option>
         </select>
         <select name="vendor_id" class="border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
             <option value="">All Branches</option>
@@ -429,48 +429,7 @@
                                 @endif
                             </div>
                         @else
-                            @if(($activeCouriers ?? collect())->isEmpty())
-                                <span class="text-[11px] text-slate-300">—</span>
-                            @elseif(($activeCouriers ?? collect())->count() === 1)
-                                @php $singleCourier = ($activeCouriers ?? collect())->first(); @endphp
-                                <button type="button"
-                                        @click="openCourierModal({
-                                            saleId: {{ $sale->id }},
-                                            invoice: '{{ $sale->invoice_no }}',
-                                            courierCode: '{{ $singleCourier->code }}',
-                                            courierName: '{{ $singleCourier->name }}',
-                                            recipientName: @js($sale->customer?->name ?? 'Walk-in Customer'),
-                                            recipientPhone: @js($sale->customer?->phone ?? ''),
-                                            recipientAddress: @js($sale->customer?->address ?? ''),
-                                            district: @js($sale->district ?? ''),
-                                            thana: @js($sale->thana ?? ''),
-                                            codAmount: {{ $sale->due_amount > 0 ? $sale->due_amount : ($sale->payment_status === 'paid' ? 0 : $sale->total) }},
-                                            note: @js($sale->note ?? '')
-                                        })"
-                                        class="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-lg border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 transition-all hover:scale-105 shadow-2xs cursor-pointer">
-                                    <i class="fas fa-paper-plane text-[9px]"></i>
-                                    <span>Send to {{ $singleCourier->name }}</span>
-                                </button>
-                            @else
-                                <button type="button"
-                                        @click="openCourierModal({
-                                            saleId: {{ $sale->id }},
-                                            invoice: '{{ $sale->invoice_no }}',
-                                            courierCode: '{{ ($activeCouriers ?? collect())->first()->code }}',
-                                            courierName: '{{ ($activeCouriers ?? collect())->first()->name }}',
-                                            recipientName: @js($sale->customer?->name ?? 'Walk-in Customer'),
-                                            recipientPhone: @js($sale->customer?->phone ?? ''),
-                                            recipientAddress: @js($sale->customer?->address ?? ''),
-                                            district: @js($sale->district ?? ''),
-                                            thana: @js($sale->thana ?? ''),
-                                            codAmount: {{ $sale->due_amount > 0 ? $sale->due_amount : ($sale->payment_status === 'paid' ? 0 : $sale->total) }},
-                                            note: @js($sale->note ?? '')
-                                        })"
-                                        class="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-all hover:scale-105 shadow-2xs cursor-pointer">
-                                    <i class="fas fa-truck-fast text-[9px]"></i>
-                                    <span>Send to Courier</span>
-                                </button>
-                            @endif
+                            <span class="text-[11px] text-slate-300">—</span>
                         @endif
                     </td>
                     <td class="px-4 py-3">
@@ -607,7 +566,7 @@
                 <div class="w-12 h-12 mx-auto mb-3 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center">
                     <i class="fas fa-spinner fa-spin text-xl"></i>
                 </div>
-                <p class="text-sm font-medium text-slate-700">BD Courier থেকে তথ্য লোড হচ্ছে...</p>
+                <p class="text-sm font-medium text-slate-700">Loading courier intelligence...</p>
                 <p class="text-xs text-slate-400 mt-1 font-mono" x-text="bdPhone"></p>
             </div>
 
@@ -619,11 +578,11 @@
                             <i class="fas fa-triangle-exclamation text-sm"></i>
                         </div>
                         <div class="flex-1">
-                            <h4 class="font-bold text-red-800 text-sm">তথ্য লোড করা যায়নি</h4>
+                            <h4 class="font-bold text-red-800 text-sm">Failed to load courier data</h4>
                             <p class="text-red-700 text-xs mt-1 leading-relaxed" x-text="bdError"></p>
                             <button type="button" @click="checkBdCourier()"
                                     class="mt-3 text-xs bg-red-600 hover:bg-red-700 text-white font-semibold px-3 py-1.5 rounded-lg inline-flex items-center gap-1.5 transition-colors">
-                                <i class="fas fa-rotate-right text-[10px]"></i> আবার চেষ্টা করুন
+                                <i class="fas fa-rotate-right text-[10px]"></i> Retry
                             </button>
                         </div>
                     </div>
@@ -669,8 +628,8 @@
                                 <i class="fas fa-boxes-stacked text-xs"></i>
                             </div>
                             <p class="text-2xl font-black text-blue-700 leading-none" x-text="bdRiskInfo.total"></p>
-                            <p class="text-[11px] font-bold text-blue-600/90 mt-1.5">মোট অর্ডার</p>
-                            <p class="text-[9px] text-slate-400">Total Parcels</p>
+                            <p class="text-[11px] font-bold text-blue-600/90 mt-1.5">Total Parcels</p>
+                            <p class="text-[9px] text-slate-400">All Couriers</p>
                         </div>
 
                         {{-- Delivered --}}
@@ -679,8 +638,8 @@
                                 <i class="fas fa-circle-check text-xs"></i>
                             </div>
                             <p class="text-2xl font-black text-emerald-700 leading-none" x-text="bdRiskInfo.delivered"></p>
-                            <p class="text-[11px] font-bold text-emerald-600/90 mt-1.5">ডেলিভার্ড</p>
-                            <p class="text-[9px] text-slate-400">Delivered</p>
+                            <p class="text-[11px] font-bold text-emerald-600/90 mt-1.5">Delivered</p>
+                            <p class="text-[9px] text-slate-400">Successful</p>
                         </div>
 
                         {{-- Cancelled --}}
@@ -689,15 +648,15 @@
                                 <i class="fas fa-circle-xmark text-xs"></i>
                             </div>
                             <p class="text-2xl font-black text-rose-700 leading-none" x-text="bdRiskInfo.cancelled"></p>
-                            <p class="text-[11px] font-bold text-rose-600/90 mt-1.5">বাতিল</p>
-                            <p class="text-[9px] text-slate-400">Cancelled</p>
+                            <p class="text-[11px] font-bold text-rose-600/90 mt-1.5">Cancelled</p>
+                            <p class="text-[9px] text-slate-400">Returned</p>
                         </div>
                     </div>
 
                     {{-- Courier-wise Breakdown --}}
                     <div x-show="bdCourierRows.length > 0" class="border border-slate-100 rounded-2xl p-4 bg-white">
                         <div class="flex items-center justify-between mb-3">
-                            <p class="text-xs font-bold text-slate-700 uppercase tracking-wide">কুরিয়ার ভিত্তিক রিপোর্ট</p>
+                            <p class="text-xs font-bold text-slate-700 uppercase tracking-wide">Courier Breakdown</p>
                             <span class="text-[11px] text-slate-400" x-text="bdCourierRows.length + ' couriers'"></span>
                         </div>
                         <div class="overflow-x-auto">
@@ -737,7 +696,7 @@
                     <div x-show="bdResult && bdResult.reports && bdResult.reports.length > 0" class="bg-amber-50 border border-amber-200 rounded-2xl p-3.5">
                         <div class="flex items-center gap-2 mb-2 text-amber-800 font-bold text-xs">
                             <i class="fas fa-triangle-exclamation text-amber-500"></i>
-                            <span>রিপোর্ট ও অভিযোগ</span>
+                            <span>Reports & Flags</span>
                         </div>
                         <ul class="space-y-1 text-xs text-amber-900 list-disc list-inside">
                             <template x-for="(rep, i) in (bdResult?.reports || [])" :key="i">
@@ -780,7 +739,7 @@
             {{-- Loading --}}
             <div x-show="notesLoading" class="py-12 text-center text-slate-400">
                 <i class="fas fa-spinner fa-spin text-2xl text-amber-500 mb-2"></i>
-                <p class="text-xs">নোট লোড হচ্ছে...</p>
+                <p class="text-xs">Loading notes...</p>
             </div>
 
             {{-- Empty State --}}
@@ -789,8 +748,8 @@
                     <div class="w-12 h-12 rounded-full bg-amber-50 text-amber-500 flex items-center justify-center mx-auto mb-2.5">
                         <i class="fas fa-note-sticky text-xl"></i>
                     </div>
-                    <p class="text-sm font-semibold text-slate-600">কোনো নোট যোগ করা হয়নি</p>
-                    <p class="text-xs text-slate-400 mt-1">অর্ডার সংক্রান্ত যেকোনো নির্দেশনা বা তথ্য নিচে লিখে যোগ করুন।</p>
+                    <p class="text-sm font-semibold text-slate-600">No notes added yet</p>
+                    <p class="text-xs text-slate-400 mt-1">Add any order instructions or updates below.</p>
                 </div>
             </template>
 
@@ -821,149 +780,42 @@
         <div class="p-4 border-t border-slate-100 bg-white">
             {{-- Quick Chips --}}
             <div class="flex items-center gap-1.5 overflow-x-auto pb-2.5 mb-2 scrollbar-none text-[11px]">
-                <span class="text-slate-400 text-[10px] font-semibold whitespace-nowrap mr-0.5">কুইক নোট:</span>
-                <button type="button" @click="insertQuickNote('কাস্টমার প্রোডাক্ট নিবে না')"
+                <span class="text-slate-400 text-[10px] font-semibold whitespace-nowrap mr-0.5">Quick Notes:</span>
+                <button type="button" @click="insertQuickNote('Customer will not receive product')"
                         class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 hover:bg-amber-100 hover:text-amber-800 transition-colors whitespace-nowrap">
-                    ❌ প্রোডাক্ট নিবে না
+                    ❌ Refused delivery
                 </button>
-                <button type="button" @click="insertQuickNote('পরে কল দিতে বলেছে')"
+                <button type="button" @click="insertQuickNote('Requested call back later')"
                         class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 hover:bg-amber-100 hover:text-amber-800 transition-colors whitespace-nowrap">
-                    📞 পরে কল দিবে
+                    📞 Call later
                 </button>
-                <button type="button" @click="insertQuickNote('ঠিকানা পরিবর্তন করতে বলেছে')"
+                <button type="button" @click="insertQuickNote('Requested address change')"
                         class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 hover:bg-amber-100 hover:text-amber-800 transition-colors whitespace-nowrap">
-                    📍 ঠিকানা পরিবর্তন
+                    📍 Address update
                 </button>
-                <button type="button" @click="insertQuickNote('ডেলিভারি কনফার্ম করেছে')"
+                <button type="button" @click="insertQuickNote('Delivery confirmed by customer')"
                         class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 hover:bg-amber-100 hover:text-amber-800 transition-colors whitespace-nowrap">
-                    ✅ ডেলিভারি কনফার্ম
+                    ✅ Confirmed delivery
                 </button>
             </div>
 
             <form @submit.prevent="submitNote" class="space-y-2.5">
-                <textarea x-model="newNoteText" rows="2" required placeholder="এই অর্ডারের জন্য নোট লিখুন (যেমন: কাস্টমার প্রোডাক্ট নিবে না, ইত্যাদি)..."
+                <textarea x-model="newNoteText" rows="2" required placeholder="Write internal note for this order..."
                           class="w-full text-xs rounded-xl border border-slate-200 p-2.5 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent resize-none leading-relaxed"></textarea>
                 
                 <div class="flex items-center justify-between">
                     <span class="text-[11px] text-slate-400">
-                        <i class="fas fa-user-pen mr-1"></i>নোট আপনার নামে সেভ হবে
+                        <i class="fas fa-user-pen mr-1"></i>Saved under your name
                     </span>
                     <button type="submit" :disabled="submittingNote || !newNoteText.trim()"
                             class="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white text-xs font-bold px-4 py-2 rounded-xl transition-colors shadow-sm shadow-amber-200">
                         <i class="fas fa-paper-plane text-[10px]" x-show="!submittingNote"></i>
                         <i class="fas fa-spinner fa-spin text-[10px]" x-show="submittingNote"></i>
-                        <span x-text="submittingNote ? 'সংরক্ষণ হচ্ছে...' : 'নোট যোগ করুন'"></span>
+                        <span x-text="submittingNote ? 'Saving...' : 'Add Note'"></span>
                     </button>
                 </div>
             </form>
         </div>
-    </div>
-</div>
-
-{{-- ── Send to Courier Modal ────────────────────────────────────── --}}
-<div x-show="courierModal" x-cloak
-     class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-     @keydown.escape.window="courierModal = false">
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[95vh] flex flex-col overflow-hidden" @click.outside="courierModal = false">
-        {{-- Header --}}
-        <div class="flex items-center justify-between p-5 border-b border-slate-100 bg-gradient-to-r from-blue-50/70 to-indigo-50/70">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-md shadow-blue-200 flex-shrink-0">
-                    <i class="fas fa-truck-fast text-base"></i>
-                </div>
-                <div>
-                    <div class="flex items-center gap-2">
-                        <h3 class="font-bold text-slate-800 text-[15px]">Send Order to Courier</h3>
-                        <span class="font-mono text-xs bg-white text-blue-700 font-semibold px-2 py-0.5 rounded-md border border-blue-200" x-text="'#' + courierForm.invoice"></span>
-                    </div>
-                    <p class="text-xs text-slate-500 mt-0.5">কুরিয়ারে পার্সেল তৈরি ও বুকিং কনফার্ম করুন</p>
-                </div>
-            </div>
-            <button @click="courierModal = false" class="text-slate-400 hover:text-slate-600 w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/80 transition-colors">
-                <i class="fas fa-times text-sm"></i>
-            </button>
-        </div>
-
-        {{-- Body Form --}}
-        <form @submit.prevent="submitCourierDispatch()" class="p-5 space-y-3.5 overflow-y-auto flex-1">
-            @if(($activeCouriers ?? collect())->count() > 1)
-            <div>
-                <label class="block text-[11px] font-semibold text-slate-500 mb-1.5 uppercase tracking-wider">Select Courier Service</label>
-                <div class="grid grid-cols-{{ min(($activeCouriers ?? collect())->count(), 3) }} gap-2">
-                    @foreach($activeCouriers as $c)
-                    <label class="cursor-pointer border rounded-xl p-2.5 flex items-center gap-2 transition-all"
-                           :class="courierForm.courierCode === '{{ $c->code }}' ? 'border-blue-500 bg-blue-50/50 text-blue-900 ring-2 ring-blue-200' : 'border-slate-200 text-slate-600 hover:bg-slate-50'">
-                        <input type="radio" name="courier_code" value="{{ $c->code }}" x-model="courierForm.courierCode" class="sr-only">
-                        <i class="{{ $c->icon }} text-sm text-blue-600"></i>
-                        <span class="text-xs font-semibold">{{ $c->name }}</span>
-                    </label>
-                    @endforeach
-                </div>
-            </div>
-            @endif
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                    <label class="block text-[11px] font-semibold text-slate-500 mb-1 uppercase tracking-wider">Recipient Name *</label>
-                    <input type="text" x-model="courierForm.recipientName" required
-                           class="w-full text-xs rounded-xl border border-slate-200 px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                </div>
-                <div>
-                    <label class="block text-[11px] font-semibold text-slate-500 mb-1 uppercase tracking-wider">Phone Number *</label>
-                    <input type="text" x-model="courierForm.recipientPhone" required
-                           class="w-full text-xs rounded-xl border border-slate-200 px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono">
-                </div>
-            </div>
-
-            <div>
-                <label class="block text-[11px] font-semibold text-slate-500 mb-1 uppercase tracking-wider">Delivery Address *</label>
-                <textarea x-model="courierForm.recipientAddress" rows="2" required
-                          class="w-full text-xs rounded-xl border border-slate-200 px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          placeholder="House, Road, Area, Thana, District"></textarea>
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                    <label class="block text-[11px] font-semibold text-slate-500 mb-1 uppercase tracking-wider">COD Collection Amount (৳) *</label>
-                    <div class="relative">
-                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">৳</span>
-                        <input type="number" step="any" min="0" x-model="courierForm.codAmount" required
-                               class="w-full text-xs rounded-xl border border-slate-200 pl-7 pr-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 font-bold">
-                    </div>
-                    <p class="text-[10px] text-slate-400 mt-0.5">কাস্টমারের কাছ থেকে প্রদেয় ক্যাশ অন ডেলিভারি টাকা</p>
-                </div>
-                <div>
-                    <label class="block text-[11px] font-semibold text-slate-500 mb-1 uppercase tracking-wider">Delivery Area / City</label>
-                    <input type="text" x-model="courierForm.deliveryArea"
-                           class="w-full text-xs rounded-xl border border-slate-200 px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                           placeholder="e.g. Dhaka, Chittagong...">
-                </div>
-            </div>
-
-            <div>
-                <label class="block text-[11px] font-semibold text-slate-500 mb-1 uppercase tracking-wider">Instruction / Note (Optional)</label>
-                <input type="text" x-model="courierForm.note"
-                       class="w-full text-xs rounded-xl border border-slate-200 px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                       placeholder="e.g. Handle with care / ডেলিভারির পূর্বে কল করবেন">
-            </div>
-
-            <div x-show="courierError" x-cloak class="p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-start gap-2">
-                <i class="fas fa-circle-exclamation text-red-500 mt-0.5"></i>
-                <span x-text="courierError" class="flex-1"></span>
-            </div>
-
-            <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-2.5">
-                <button type="button" @click="courierModal = false" :disabled="courierSending"
-                        class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors">
-                    Cancel
-                </button>
-                <button type="submit" :disabled="courierSending"
-                        class="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-xs font-semibold px-5 py-2.5 rounded-xl shadow-xs transition-all flex items-center gap-2 cursor-pointer">
-                    <i class="fas fa-paper-plane text-[10px]" :class="{ 'fa-spin fa-spinner': courierSending }"></i>
-                    <span x-text="courierSending ? 'Booking Order...' : 'Confirm & Book Parcel'"></span>
-                </button>
-            </div>
-        </form>
     </div>
 </div>
 
@@ -1048,92 +900,6 @@ function salesAdminPage() {
             this.payOpen   = true;
         },
 
-        courierModal: false,
-        courierSending: false,
-        courierError: null,
-        courierForm: {
-            saleId: null,
-            invoice: '',
-            courierCode: '{{ ($activeCouriers ?? collect())->first()?->code ?? "" }}',
-            courierName: '',
-            recipientName: '',
-            recipientPhone: '',
-            recipientAddress: '',
-            deliveryArea: '',
-            codAmount: 0,
-            note: ''
-        },
-
-        openCourierModal(data) {
-            this.courierError = null;
-            this.courierForm = {
-                saleId: data.saleId,
-                invoice: data.invoice,
-                courierCode: data.courierCode || '{{ ($activeCouriers ?? collect())->first()?->code ?? "" }}',
-                courierName: data.courierName || '',
-                recipientName: data.recipientName || '',
-                recipientPhone: data.recipientPhone || '',
-                recipientAddress: data.recipientAddress || [data.thana, data.district].filter(Boolean).join(', '),
-                deliveryArea: data.district || data.thana || 'Dhaka',
-                codAmount: data.codAmount || 0,
-                note: data.note || ''
-            };
-            this.courierModal = true;
-        },
-
-        async submitCourierDispatch() {
-            this.courierSending = true;
-            this.courierError = null;
-
-            try {
-                const res = await fetch(`/admin/branch/${this.courierForm.saleId}/send-courier`, {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRF-TOKEN': document.querySelector('[name=csrf-token]')?.content || document.querySelector('meta[name="csrf-token"]')?.content,
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(this.courierForm)
-                });
-
-                const data = await res.json();
-                if (res.ok && data.success) {
-                    this.courierModal = false;
-                    alert(data.message);
-
-                    const cell = document.getElementById('courier-cell-' + this.courierForm.saleId);
-                    if (cell) {
-                        const cColor = data.courier_code === 'steadfast' ? 'teal' : (data.courier_code === 'pathao' ? 'rose' : 'indigo');
-                        const cIcon = data.courier_code === 'steadfast' ? 'fas fa-shipping-fast' : (data.courier_code === 'pathao' ? 'fas fa-motorcycle' : 'fas fa-truck-fast');
-                        cell.innerHTML = `
-                            <div class="flex flex-col items-center gap-1">
-                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-${cColor}-50 text-${cColor}-700 border border-${cColor}-200 shadow-2xs">
-                                    <i class="${cIcon} text-[9px]"></i>
-                                    ${data.courier_name}
-                                </span>
-                                <div class="flex items-center gap-1 text-[11px] font-mono text-slate-700">
-                                    <span>${data.tracking_code}</span>
-                                    <button type="button" onclick="navigator.clipboard.writeText('${data.tracking_code}'); alert('Tracking copied!')" title="Copy Tracking Code"
-                                            class="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer">
-                                        <i class="fas fa-copy text-[10px]"></i>
-                                    </button>
-                                </div>
-                                <span class="text-[9.5px] px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 font-medium capitalize">
-                                    ${(data.status || 'pending').replace('_', ' ')}
-                                </span>
-                            </div>
-                        `;
-                    }
-                } else {
-                    this.courierError = data.message || 'Courier এ অর্ডার পাঠাতে সমস্যা হয়েছে।';
-                }
-            } catch (err) {
-                this.courierError = 'সার্ভার এরর: সংযোগ স্থাপন করা যায়নি।';
-            } finally {
-                this.courierSending = false;
-            }
-        },
-
         copyText(text) {
             navigator.clipboard.writeText(text).then(() => {
                 alert('Tracking code copied: ' + text);
@@ -1158,7 +924,7 @@ function salesAdminPage() {
             if (this.bdPhone) {
                 this.checkBdCourier();
             } else {
-                this.bdError = 'গ্রাহকের কোনো ফোন নম্বর পাওয়া যায়নি।';
+                this.bdError = 'No customer phone number available.';
             }
         },
 
@@ -1176,11 +942,11 @@ function salesAdminPage() {
             }
 
             const config = {
-                excellent: { label: 'নিরাপদ গ্রাহক (Safe)',           message: 'ডেলিভারি সফলতার হার অত্যন্ত চমৎকার।',        ring: '#22c55e', text: 'text-emerald-600', badgeBg: 'bg-emerald-100 text-emerald-700 border border-emerald-200' },
-                good:      { label: 'সন্তোষজনক (Good)',               message: 'মোটামুটি নির্ভরযোগ্য ডেলিভারি ইতিহাস।',        ring: '#0ea5e9', text: 'text-sky-600',     badgeBg: 'bg-sky-100 text-sky-700 border border-sky-200' },
-                average:   { label: 'মাঝারি ঝুঁকি (Average)',        message: 'পার্সেল পাঠানোর পূর্বে অর্ডারটি নিশ্চিত করুন।',   ring: '#f59e0b', text: 'text-amber-600',   badgeBg: 'bg-amber-100 text-amber-700 border border-amber-200' },
-                risky:     { label: 'উচ্চ ঝুঁকিপূর্ণ (High Risk)',     message: 'বাতিল বা রিটার্ন হওয়ার সম্ভাবনা বেশি।',       ring: '#ef4444', text: 'text-red-600',     badgeBg: 'bg-red-100 text-red-700 border border-red-200' },
-                none:      { label: 'নতুন গ্রাহক (No Data)',          message: 'পূর্বে কোনো কুরিয়ার ডেলিভারি ইতিহাস নেই।',      ring: '#94a3b8', text: 'text-slate-500',   badgeBg: 'bg-slate-100 text-slate-600 border border-slate-200' },
+                excellent: { label: 'Safe Customer',     message: 'Excellent parcel delivery success rate.',  ring: '#22c55e', text: 'text-emerald-600', badgeBg: 'bg-emerald-100 text-emerald-700 border border-emerald-200' },
+                good:      { label: 'Good Customer',     message: 'Reliable parcel delivery history.',         ring: '#0ea5e9', text: 'text-sky-600',     badgeBg: 'bg-sky-100 text-sky-700 border border-sky-200' },
+                average:   { label: 'Moderate Risk',     message: 'Verify order before parcel dispatch.',       ring: '#f59e0b', text: 'text-amber-600',   badgeBg: 'bg-amber-100 text-amber-700 border border-amber-200' },
+                risky:     { label: 'High Risk',         message: 'Higher likelihood of return or refusal.',    ring: '#ef4444', text: 'text-red-600',     badgeBg: 'bg-red-100 text-red-700 border border-red-200' },
+                none:      { label: 'New Customer',      message: 'No previous courier delivery record found.', ring: '#94a3b8', text: 'text-slate-500',   badgeBg: 'bg-slate-100 text-slate-600 border border-slate-200' },
             };
 
             return {
@@ -1217,10 +983,10 @@ function salesAdminPage() {
                 if (res.ok && data.success) {
                     this.bdResult = data;
                 } else {
-                    this.bdError = data.error || 'BD Courier তথ্য লোড করা যায়নি।';
+                    this.bdError = data.error || 'Failed to fetch courier details.';
                 }
             } catch (e) {
-                this.bdError = 'সার্ভারের সাথে সংযোগ বিচ্ছিন্ন হয়েছে।';
+                this.bdError = 'Connection lost to server.';
             }
 
             this.bdLoading = false;
@@ -1289,7 +1055,7 @@ function salesAdminPage() {
                 if (res.ok && data.success) {
                     this.notesList.unshift(data.note);
                     this.newNoteText = '';
-                    showToast(data.message || 'নোট সংরক্ষিত হয়েছে', 'success');
+                    showToast(data.message || 'Note saved successfully', 'success');
 
                     // Update badge on row
                     const badge = document.getElementById('note-badge-' + this.activeSaleId);
@@ -1298,10 +1064,10 @@ function salesAdminPage() {
                         badge.classList.remove('hidden');
                     }
                 } else {
-                    showToast(data.message || data.error || 'নোট সংরক্ষণ করা যায়নি।', 'error');
+                    showToast(data.message || data.error || 'Failed to save note.', 'error');
                 }
             } catch (e) {
-                showToast('সার্ভার এরর!', 'error');
+                showToast('Server error!', 'error');
             }
 
             this.submittingNote = false;

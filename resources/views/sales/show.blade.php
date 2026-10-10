@@ -314,7 +314,7 @@
                 {{-- Notes timeline --}}
                 <div class="space-y-2 mb-3 max-h-56 overflow-y-auto pr-1">
                     <template x-if="notes.length === 0">
-                        <p class="text-xs text-slate-400 italic py-2 text-center">কোনো নোট যোগ করা হয়নি।</p>
+                        <p class="text-xs text-slate-400 italic py-2 text-center">No notes added yet.</p>
                     </template>
                     <template x-for="n in notes" :key="n.id">
                         <div class="bg-amber-50/50 border border-amber-100 rounded-xl p-2.5 text-xs text-slate-700">
@@ -332,18 +332,18 @@
 
                 {{-- Quick notes chips --}}
                 <div class="flex items-center gap-1 overflow-x-auto pb-1.5 mb-2 text-[10.5px]">
-                    <button type="button" @click="addQuickNote('কাস্টমার প্রোডাক্ট নিবে না')" class="px-2 py-0.5 rounded bg-slate-100 hover:bg-amber-100 text-slate-600 transition-colors whitespace-nowrap">❌ প্রোডাক্ট নিবে না</button>
-                    <button type="button" @click="addQuickNote('পরে কল দিতে বলেছে')" class="px-2 py-0.5 rounded bg-slate-100 hover:bg-amber-100 text-slate-600 transition-colors whitespace-nowrap">📞 পরে কল দিবে</button>
-                    <button type="button" @click="addQuickNote('ডেলিভারি কনফার্ম করেছে')" class="px-2 py-0.5 rounded bg-slate-100 hover:bg-amber-100 text-slate-600 transition-colors whitespace-nowrap">✅ ডেলিভারি কনফার্ম</button>
+                    <button type="button" @click="addQuickNote('Customer cancelled order')" class="px-2 py-0.5 rounded bg-slate-100 hover:bg-amber-100 text-slate-600 transition-colors whitespace-nowrap">❌ Cancelled</button>
+                    <button type="button" @click="addQuickNote('Customer requested call back later')" class="px-2 py-0.5 rounded bg-slate-100 hover:bg-amber-100 text-slate-600 transition-colors whitespace-nowrap">📞 Call Back</button>
+                    <button type="button" @click="addQuickNote('Customer confirmed delivery')" class="px-2 py-0.5 rounded bg-slate-100 hover:bg-amber-100 text-slate-600 transition-colors whitespace-nowrap">✅ Confirmed</button>
                 </div>
 
                 {{-- Add Note Form --}}
                 <form @submit.prevent="submitNote" class="flex gap-2">
-                    <input type="text" x-model="noteText" placeholder="নোট লিখুন (যেমন: কাস্টমার প্রোডাক্ট নিবে না)..." required
+                    <input type="text" x-model="noteText" placeholder="Enter note (e.g. Call back later)..." required
                            class="flex-1 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-amber-400">
                     <button type="submit" :disabled="noteSaving || !noteText.trim()"
                             class="bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white text-xs font-bold px-3.5 py-2 rounded-xl transition-colors flex-shrink-0">
-                        <span x-show="!noteSaving">যোগ করুন</span>
+                        <span x-show="!noteSaving">Add Note</span>
                         <span x-show="noteSaving"><i class="fas fa-spinner fa-spin"></i></span>
                     </button>
                 </form>

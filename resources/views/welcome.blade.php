@@ -7,6 +7,12 @@
         <title>{{ config('app.name', 'Laravel') }}</title>
 
         @fonts
+        <link rel="stylesheet" href="/css/solaimanlipi.css">
+        <style>
+            body, html, input, button, select, textarea {
+                font-family: 'SolaimanLipi', sans-serif !important;
+            }
+        </style>
 
         <!-- Styles / Scripts -->
         @if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))

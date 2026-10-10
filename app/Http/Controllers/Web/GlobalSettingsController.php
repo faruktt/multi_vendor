@@ -55,9 +55,14 @@ class GlobalSettingsController extends Controller
             'seo_title'       => 'nullable|string|max:255',
             'seo_description' => 'nullable|string|max:500',
             'og_image'        => 'nullable|image|max:2048',
+            'facebook'        => 'nullable|string|max:255',
+            'youtube'         => 'nullable|string|max:255',
+            'twitter'         => 'nullable|string|max:255',
+            'instagram'       => 'nullable|string|max:255',
+            'tiktok'          => 'nullable|string|max:255',
         ]);
 
-        $data = $request->only('name', 'tagline', 'address', 'phone', 'email', 'currency', 'footer_text', 'seo_title', 'seo_description');
+        $data = $request->only('name', 'tagline', 'address', 'phone', 'email', 'currency', 'footer_text', 'seo_title', 'seo_description', 'facebook', 'youtube', 'twitter', 'instagram', 'tiktok');
 
         if ($request->hasFile('logo')) {
             $old = AppSetting::get('logo_path');
