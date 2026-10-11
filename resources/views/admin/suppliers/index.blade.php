@@ -196,16 +196,18 @@
                                 <div class="flex items-center gap-1">
                                     <span class="text-slate-400 font-semibold">NID:</span>
                                     @if($supplier->nid_front_url)
-                                        <button type="button" @click="previewImage('{{ $supplier->nid_front_url }}', '{{ addslashes($supplier->display_name) }} - NID Front')"
-                                                class="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 font-bold border border-emerald-200 hover:bg-emerald-100 cursor-pointer">
-                                            Front
-                                        </button>
+                                        <button type="button"
+    @click="previewImage(@js($supplier->nid_front_url), @js($supplier->display_name . ' - NID Front'))"
+    class="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 font-bold border border-emerald-200 cursor-pointer">
+    Front
+</button>
                                     @endif
                                     @if($supplier->nid_back_url)
-                                        <button type="button" @click="previewImage('{{ $supplier->nid_back_url }}', '{{ addslashes($supplier->display_name) }} - NID Back')"
-                                                class="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 font-bold border border-emerald-200 hover:bg-emerald-100 cursor-pointer">
-                                            Back
-                                        </button>
+                                        <button type="button"
+    @click="previewImage(@js($supplier->nid_front_url), @js($supplier->display_name . ' - NID Front'))"
+    class="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 font-bold border border-emerald-200 cursor-pointer">
+    Front
+</button>
                                     @endif
                                     @if(!$supplier->nid_front_url && !$supplier->nid_back_url)
                                         <span class="text-slate-300">None</span>
@@ -541,7 +543,9 @@
                 </button>
             </div>
             <div class="p-4 flex items-center justify-center bg-slate-900/5 max-h-[75vh] overflow-auto">
-                <img :src="previewSrc" :alt="previewTitle" class="max-w-full max-h-[70vh] rounded-xl object-contain shadow-md">
+                <img :src="previewSrc"
+     :alt="previewTitle"
+     class="max-w-full max-h-[70vh] rounded-xl object-contain shadow-md">
             </div>
             <div class="p-3 bg-slate-50 border-t border-slate-100 flex justify-between items-center text-xs">
                 <a :href="previewSrc" target="_blank" class="text-emerald-600 hover:underline font-bold flex items-center gap-1">
@@ -576,10 +580,15 @@ function supplierIndexData() {
         directNote: '',
 
         previewImage(src, title) {
-            this.previewSrc = src;
-            this.previewTitle = title;
-            this.previewModalOpen = true;
-        },
+    if (!src) {
+        alert('NID image URL not found!');
+        return;
+    }
+
+    this.previewSrc = src;
+    this.previewTitle = title;
+    this.previewModalOpen = true;
+},
 
         openDirectWithdrawModal(id, name, phone, balance, bkash, bank) {
             this.selectedSupplierId = id;
