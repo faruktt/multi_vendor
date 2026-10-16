@@ -4,15 +4,38 @@ namespace App\Models;
 
 use App\Traits\BelongsToVendor;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class Category extends Model
 {
     use BelongsToVendor;
 
-    protected $fillable = ['vendor_id', 'parent_id', 'name', 'slug', 'image', 'show_on_homepage', 'homepage_sort_order'];
+    protected $fillable = ['vendor_id', 'parent_id', 'name', 'slug', 'image', 'status', 'show_on_homepage', 'homepage_sort_order'];
 
-    protected $casts = ['show_on_homepage' => 'boolean'];
+    protected $casts = [
+        'show_on_homepage' => 'boolean',
+    ];
+
+    public function getImageUrlAttribute(): ?string
+    {
+        if ($this->image) {
+            return Storage::disk('uploads')->url($this->image);
+        }
+
+        // Fallback: check if sibling category row with same name has an uploaded image
+        $siblingImage = static::withoutGlobalScopes()
+            ->where('name', $this->name)
+            ->whereNotNull('image')
+            ->value('image');
+
+        return $siblingImage ? Storage::disk('uploads')->url($siblingImage) : null;
+    }
+
+    public function isActive(): bool
+    {
+        return ($this->status ?? 'active') === 'active';
+    }
 
     protected static function booted()
     {
@@ -55,5 +78,20 @@ class Category extends Model
     public function children()
     {
         return $this->hasMany(Category::class, 'parent_id');
+    }
+
+    public function subCategories()
+    {
+        return $this->hasMany(Category::class, 'parent_id');
+    }
+
+    public function scopeParents($query)
+    {
+        return $query->whereNull('parent_id');
+    }
+
+    public function scopeSubcategories($query)
+    {
+        return $query->whereNotNull('parent_id');
     }
 }
