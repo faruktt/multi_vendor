@@ -5,6 +5,7 @@ namespace App\Models;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 
 class Coupon extends Model
 {
@@ -13,6 +14,7 @@ class Coupon extends Model
     protected $fillable = [
         'code',
         'name',
+        'image',
         'discount_type',
         'discount_amount',
         'min_order_amount',
@@ -26,6 +28,15 @@ class Coupon extends Model
         'status',
         'created_by',
     ];
+
+    public function getImageUrlAttribute(): string
+    {
+        if ($this->image) {
+            return Storage::disk('uploads')->url($this->image);
+        }
+
+        return '/uploads/system/coupon_popup.jpg';
+    }
 
     protected $casts = [
         'discount_amount'     => 'decimal:2',
