@@ -214,25 +214,53 @@
 </div>
 
 @foreach($categoryShelves as $shelf)
-@php $trackId = 'shelf-cat-' . $shelf->category->id . '-track'; @endphp
+@php
+    $trackId = 'shelf-cat-' . $shelf->category->id . '-track';
+    $catImage = $shelf->category->image_url;
+@endphp
 <div class="max-w-[1440px] mx-auto px-4 mt-5 {{ $loop->last ? 'mb-10' : '' }}">
     <div class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
         <div class="flex items-baseline justify-between mb-3">
             <h2 class="text-lg font-extrabold tracking-tight">{{ $shelf->category->name }}</h2>
             <a href="{{ route('shop.products.category', $shelf->category->slug) }}" class="text-xs font-bold text-gray-500 hover:text-brand-dark">See All &rsaquo;</a>
         </div>
-        <div class="relative">
-            <button type="button" onclick="shelfScroll('{{ $trackId }}', -1)" class="flex absolute -left-4 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-white border border-gray-200 shadow-md items-center justify-center text-gray-500 hover:text-brand-dark hover:shadow-lg transition-shadow">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
-            </button>
-            <button type="button" onclick="shelfScroll('{{ $trackId }}', 1)" class="flex absolute -right-4 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-white border border-gray-200 shadow-md items-center justify-center text-gray-500 hover:text-brand-dark hover:shadow-lg transition-shadow">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
-            </button>
-            <div id="{{ $trackId }}" class="flex gap-4 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-1">
-                @foreach($shelf->products as $product)
-                    @include('shop.partials.shelf-product-card', ['product' => $product])
-                @endforeach
-            </div>
+
+        @if($catImage)
+        {{-- Category Big Image Banner --}}
+        <div class="mb-4">
+            <a href="{{ route('shop.products.category', $shelf->category->slug) }}"
+               class="group block relative w-full overflow-hidden rounded-xl border border-gray-100 shadow-2xs hover:shadow-md transition-all duration-300">
+                <div class="relative w-full aspect-[1400/400] min-h-[140px] overflow-hidden bg-gray-50" style="aspect-ratio: 1400 / 400;">
+                    <img src="{{ $catImage }}"
+                         alt="{{ $shelf->category->name }}"
+                         class="w-full h-full object-cover object-center group-hover:scale-[1.01] transition-transform duration-500 ease-out" />
+                    {{-- Ambient gradient overlay with category info & CTA --}}
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-black/15 to-transparent flex items-end p-3 sm:p-5 md:p-6">
+                        <div class="flex items-center justify-between w-full gap-3">
+                            <div class="min-w-0">
+                                <span class="hidden sm:inline-block px-2.5 py-0.5 rounded-full bg-white/25 backdrop-blur-md text-white text-[10px] sm:text-[11px] font-bold tracking-wider uppercase mb-1">
+                                    Featured Collection
+                                </span>
+                                <p class="text-sm sm:text-xl md:text-2xl font-black text-white drop-shadow-sm leading-tight truncate">
+                                    {{ $shelf->category->name }}
+                                </p>
+                            </div>
+                            <span class="inline-flex items-center gap-1 sm:gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg sm:rounded-xl bg-white/95 text-gray-900 font-extrabold text-[11px] sm:text-xs shadow-md group-hover:bg-brand group-hover:text-white transition-colors duration-200 flex-shrink-0">
+                                <span>Shop Collection</span>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        @endif
+
+        {{-- 2 Lines Grid (6 products per line on desktop = 12 products total) --}}
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
+            @foreach($shelf->products as $product)
+                @include('shop.partials.shelf-product-card', ['product' => $product, 'widthClass' => 'w-full'])
+            @endforeach
         </div>
     </div>
 </div>
@@ -559,6 +587,7 @@
 </style>
 @endif
 
+@include('shop.partials.coupon-popup')
 @endsection
 
 @push('scripts')
