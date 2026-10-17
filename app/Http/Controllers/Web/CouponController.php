@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Coupon;
 use App\Models\CouponUsage;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class CouponController extends Controller
 {
@@ -60,6 +61,7 @@ class CouponController extends Controller
         $validated = $request->validate([
             'code'                 => 'required|string|max:50|unique:coupons,code',
             'name'                 => 'nullable|string|max:255',
+            'image'                => 'nullable|image|max:2048',
             'discount_type'        => 'required|in:percentage,fixed',
             'discount_amount'      => 'required|numeric|min:0.01',
             'min_order_amount'     => 'nullable|numeric|min:0',
@@ -74,6 +76,10 @@ class CouponController extends Controller
 
         $validated['created_by'] = auth()->id();
         $validated['min_order_amount'] = $validated['min_order_amount'] ?? 0;
+
+        if ($request->hasFile('image')) {
+            $validated['image'] = $request->file('image')->store('coupons', 'uploads');
+        }
 
         Coupon::create($validated);
 
@@ -90,6 +96,7 @@ class CouponController extends Controller
         $validated = $request->validate([
             'code'                 => 'required|string|max:50|unique:coupons,code,' . $coupon->id,
             'name'                 => 'nullable|string|max:255',
+            'image'                => 'nullable|image|max:2048',
             'discount_type'        => 'required|in:percentage,fixed',
             'discount_amount'      => 'required|numeric|min:0.01',
             'min_order_amount'     => 'nullable|numeric|min:0',
@@ -103,6 +110,13 @@ class CouponController extends Controller
         ]);
 
         $validated['min_order_amount'] = $validated['min_order_amount'] ?? 0;
+
+        if ($request->hasFile('image')) {
+            if ($coupon->image) {
+                Storage::disk('uploads')->delete($coupon->image);
+            }
+            $validated['image'] = $request->file('image')->store('coupons', 'uploads');
+        }
 
         $coupon->update($validated);
 
@@ -121,6 +135,9 @@ class CouponController extends Controller
     /** Delete a coupon */
     public function destroy(Coupon $coupon)
     {
+        if ($coupon->image) {
+            Storage::disk('uploads')->delete($coupon->image);
+        }
         $code = $coupon->code;
         $coupon->delete();
 

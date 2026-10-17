@@ -135,9 +135,13 @@
                             {{-- Code & Name --}}
                             <td class="px-5 py-3.5">
                                 <div class="flex items-center gap-2.5">
-                                    <div class="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-700 flex items-center justify-center font-black text-xs flex-shrink-0 border border-indigo-100">
-                                        <i class="fas fa-tag"></i>
-                                    </div>
+                                    @if($coupon->image)
+                                        <img src="{{ Storage::disk('uploads')->url($coupon->image) }}" class="w-9 h-9 rounded-xl object-cover border border-slate-200 shadow-2xs flex-shrink-0" alt="Coupon">
+                                    @else
+                                        <div class="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-700 flex items-center justify-center font-black text-xs flex-shrink-0 border border-indigo-100">
+                                            <i class="fas fa-tag"></i>
+                                        </div>
+                                    @endif
                                     <div>
                                         <div class="font-mono font-black text-indigo-700 text-base tracking-wide">{{ $coupon->code }}</div>
                                         <div class="text-xs text-slate-500 font-medium">{{ $coupon->name ?? 'No label' }}</div>
@@ -285,7 +289,7 @@
                     </button>
                 </div>
 
-                <form :action="isEditing ? `/admin/coupons/${form.id}` : '{{ route('admin.coupons.store') }}'" method="POST" class="space-y-4">
+                <form :action="isEditing ? `/admin/coupons/${form.id}` : '{{ route('admin.coupons.store') }}'" method="POST" enctype="multipart/form-data" class="space-y-4">
                     @csrf
                     <template x-if="isEditing">
                         <input type="hidden" name="_method" value="PUT">
@@ -302,6 +306,34 @@
                             <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Coupon Title / Description</label>
                             <input type="text" name="name" x-model="form.name" placeholder="e.g. Eid 10% Discount"
                                    class="w-full h-11 border border-slate-300 rounded-xl px-3 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white">
+                        </div>
+                    </div>
+
+                    {{-- Popup Banner Image (Uploaded image will be shown on frontend popup) --}}
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">
+                            Popup Banner Image <span class="text-slate-400 font-normal lowercase">(optional - shown on homepage popup)</span>
+                        </label>
+                        <div class="flex items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-2xl">
+                            <div class="w-16 h-20 rounded-xl overflow-hidden bg-slate-200 border border-slate-300 flex-shrink-0 flex items-center justify-center relative">
+                                <template x-if="imagePreview">
+                                    <img :src="imagePreview" alt="Preview" class="w-full h-full object-cover">
+                                </template>
+                                <template x-if="!imagePreview && form.image_url">
+                                    <img :src="form.image_url" alt="Current Image" class="w-full h-full object-cover">
+                                </template>
+                                <template x-if="!imagePreview && !form.image_url">
+                                    <div class="text-slate-400 text-[10px] text-center flex flex-col items-center p-1">
+                                        <i class="fas fa-image text-base mb-1"></i>
+                                        <span>Default</span>
+                                    </div>
+                                </template>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <input type="file" name="image" accept="image/*" @change="previewImage($event)"
+                                       class="block w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer">
+                                <p class="text-[10px] text-slate-400 mt-1">Recommended: vertical/portrait ratio (JPG, PNG, WEBP, max 2MB). If left empty, default lifestyle banner will be shown.</p>
+                            </div>
                         </div>
                     </div>
 
@@ -439,10 +471,12 @@ function couponManagement() {
     return {
         modalOpen: false,
         isEditing: false,
+        imagePreview: null,
         form: {
             id: null,
             code: '',
             name: '',
+            image_url: null,
             applicable_for: 'everyone',
             discount_type: 'percentage',
             discount_amount: '',
@@ -456,10 +490,12 @@ function couponManagement() {
         },
         openCreateModal() {
             this.isEditing = false;
+            this.imagePreview = null;
             this.form = {
                 id: null,
                 code: '',
                 name: '',
+                image_url: null,
                 applicable_for: 'everyone',
                 discount_type: 'percentage',
                 discount_amount: '',
@@ -475,10 +511,12 @@ function couponManagement() {
         },
         openEditModal(coupon) {
             this.isEditing = true;
+            this.imagePreview = null;
             this.form = {
                 id: coupon.id,
                 code: coupon.code,
                 name: coupon.name || '',
+                image_url: coupon.image ? ('/uploads/' + coupon.image) : null,
                 applicable_for: coupon.applicable_for || 'everyone',
                 discount_type: coupon.discount_type || 'percentage',
                 discount_amount: coupon.discount_amount,
@@ -491,6 +529,18 @@ function couponManagement() {
                 status: coupon.status || 'active',
             };
             this.modalOpen = true;
+        },
+        previewImage(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    this.imagePreview = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            } else {
+                this.imagePreview = null;
+            }
         }
     }
 }
