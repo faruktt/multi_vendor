@@ -30,10 +30,10 @@
     <div class="bg-gradient-to-r from-blue-50 via-indigo-50/50 to-blue-50 border border-blue-100/80 rounded-2xl p-4 flex items-start gap-3 text-xs text-slate-600">
         <i class="fas fa-circle-info text-blue-500 text-base mt-0.5 flex-shrink-0"></i>
         <div class="space-y-1">
-            <p class="font-semibold text-slate-800 text-[13px]">Instructions:</p>
-            <p>1. Log into your courier merchant portal to obtain API credentials and enter them below.</p>
-            <p>2. Enable <strong>Status "Active"</strong> for courier services you want to activate on the Sales page.</p>
-            <p>3. On the Sales page, click <strong>"Send to Courier"</strong> to dispatch orders and generate tracking parcels instantly.</p>
+            <p class="font-semibold text-slate-800 text-[13px]">কুরিয়ার ইন্টিগ্রেশন ও অটোমেটিক ক্যানসেল (Auto-Cancel):</p>
+            <p>১. আপনার কুরিয়ার মার্চেন্ট পোর্টাল থেকে API Key / Secret সংগ্রহ করে নিচে সেভ করুন।</p>
+            <p>২. Sales পেজে কুরিয়ার অপশন পাওয়ার জন্য <strong>Status "Active"</strong> অন রাখুন।</p>
+            <p>৩. <strong>স্বয়ংক্রিয় অর্ডার ক্যানসেল (Auto-Cancel):</strong> কাস্টমার পার্সেল গ্রহণ না করলে বা কুরিয়ার কোম্পানি পার্সেল বাতিল/রিটার্ন করলে ওয়েবসাইটের অর্ডার স্ট্যাটাস স্বয়ংক্রিয়ভাবে <strong>Cancelled</strong> হয়ে যাবে। নিচের প্রতিটি কুরিয়ারের <strong>Webhook URL</strong> কপি করে আপনার কুরিয়ার পোর্টালে বসিয়ে দিন অথবা All Sales পেজ থেকে <strong>"কুরিয়ার স্ট্যাটাস সিঙ্ক"</strong> বাটনে ক্লিক করুন।</p>
         </div>
     </div>
 
@@ -203,6 +203,25 @@
                                class="w-full text-xs font-mono rounded-xl border border-slate-200 px-3 py-2 text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
                     @endif
+
+                    {{-- Webhook URL for Auto-Cancel --}}
+                    <div class="rounded-xl bg-slate-50 border border-slate-200/80 p-2.5 space-y-1">
+                        <div class="flex items-center justify-between">
+                            <span class="text-[10px] font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1">
+                                <i class="fas fa-bolt text-amber-500"></i> Webhook URL (Auto-Cancel)
+                            </span>
+                            <button type="button" 
+                                    @click="navigator.clipboard.writeText('{{ url('/api/courier/webhook/' . $courier->code) }}'); if(typeof showToast==='function'){showToast('Webhook URL copied!', 'info');}else{alert('Webhook URL copied!');}"
+                                    class="text-[10px] text-blue-600 hover:text-blue-800 font-bold cursor-pointer">
+                                Copy URL
+                            </button>
+                        </div>
+                        <input type="text" readonly value="{{ url('/api/courier/webhook/' . $courier->code) }}" 
+                               class="w-full text-[10px] font-mono rounded-lg border border-slate-200 bg-white px-2 py-1 text-slate-600 select-all focus:outline-none">
+                        <p class="text-[9.5px] text-slate-500 leading-tight">
+                            এই URL টি কুরিয়ার মার্চেন্ট পোর্টালে Webhook হিসেবে বসিয়ে দিলে কাস্টমার পার্সেল রিসিভ না করে কুরিয়ার ক্যানসেল করলে ওয়েবসাইটে অর্ডারটি স্বয়ংক্রিয়ভাবে <strong>Cancelled</strong> হয়ে যাবে।
+                        </p>
+                    </div>
                 </div>
 
                 {{-- Save Button --}}

@@ -7,6 +7,7 @@ use App\Models\CourierSetting;
 use App\Models\Sale;
 use App\Models\SaleNote;
 use App\Services\Courier\CourierManager;
+use App\Services\Courier\CourierStatusHandler;
 use Illuminate\Http\Request;
 use Exception;
 
@@ -121,7 +122,19 @@ class CourierOrderController extends Controller
             $result  = $service->checkStatus($sale->courier_tracking_code);
 
             if ($result['success'] && !empty($result['status'])) {
-                $sale->update(['courier_status' => $result['status']]);
+                $handled = CourierStatusHandler::applyStatus($sale, $result['status'], $courier->name, $result['raw'] ?? null);
+
+                return response()->json([
+                    'success'              => true,
+                    'status'               => $handled['courier_status'],
+                    'courier_status'       => $handled['courier_status'],
+                    'order_status'         => $handled['order_status'],
+                    'order_status_changed' => $handled['order_status_changed'],
+                    'is_cancelled'         => $handled['is_cancelled'],
+                    'is_delivered'         => $handled['is_delivered'],
+                    'message'              => $handled['message'],
+                    'raw'                  => $result['raw'] ?? null,
+                ]);
             }
 
             return response()->json($result);
@@ -131,5 +144,82 @@ class CourierOrderController extends Controller
                 'message' => 'Status চেক ব্যর্থ হয়েছে: ' . $e->getMessage(),
             ], 500);
         }
+    }
+
+    /**
+     * Batch sync live courier statuses for orders
+     */
+    public function syncBatch(Request $request)
+    {
+        $saleIds = $request->input('sale_ids', []);
+
+        $query = Sale::withoutGlobalScopes()
+            ->whereNotNull('courier_tracking_code')
+            ->whereNotNull('courier_name');
+
+        if (!empty($saleIds) && is_array($saleIds)) {
+            $query->whereIn('id', $saleIds);
+        } else {
+            // Default: check active orders sent to courier that are not completed/cancelled
+            $query->whereNotIn('order_status', ['completed', 'cancelled']);
+        }
+
+        $sales = $query->limit(50)->get();
+
+        if ($sales->isEmpty()) {
+            return response()->json([
+                'success'   => true,
+                'message'   => 'সিঙ্ক করার মতো কোনো সক্রিয় কুরিয়ার অর্ডার পাওয়া যায়নি।',
+                'checked'   => 0,
+                'cancelled' => 0,
+                'updates'   => [],
+            ]);
+        }
+
+        $checked = 0;
+        $cancelledCount = 0;
+        $updates = [];
+        $courierSettings = CourierSetting::all()->keyBy('code');
+
+        foreach ($sales as $sale) {
+            $courier = $courierSettings->get($sale->courier_name);
+            if (!$courier) continue;
+
+            try {
+                $service = CourierManager::resolve($courier);
+                $res = $service->checkStatus($sale->courier_tracking_code);
+
+                if ($res['success'] && !empty($res['status'])) {
+                    $checked++;
+                    $handled = CourierStatusHandler::applyStatus($sale, $res['status'], $courier->name, $res['raw'] ?? null);
+                    if ($handled['is_cancelled']) {
+                        $cancelledCount++;
+                    }
+                    $updates[] = [
+                        'sale_id'              => $sale->id,
+                        'invoice_no'           => $sale->invoice_no,
+                        'courier_status'       => $handled['courier_status'],
+                        'order_status'         => $handled['order_status'],
+                        'order_status_changed' => $handled['order_status_changed'],
+                        'is_cancelled'         => $handled['is_cancelled'],
+                    ];
+                }
+            } catch (\Throwable $e) {
+                // Continue to next order
+            }
+        }
+
+        $msg = "{$checked} টি অর্ডারের কুরিয়ার স্ট্যাটাস চেক করা হয়েছে।";
+        if ($cancelledCount > 0) {
+            $msg .= " এর মধ্যে {$cancelledCount} টি ক্যানসেলড অর্ডার অটোমেটিক 'Cancelled' করা হয়েছে!";
+        }
+
+        return response()->json([
+            'success'   => true,
+            'message'   => $msg,
+            'checked'   => $checked,
+            'cancelled' => $cancelledCount,
+            'updates'   => $updates,
+        ]);
     }
 }
