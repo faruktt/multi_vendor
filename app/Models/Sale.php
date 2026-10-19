@@ -37,6 +37,14 @@ class Sale extends Model
                 $sale->invoice_no = self::generateInvoiceNo($prefix);
             }
         });
+
+        static::saving(function ($sale) {
+            if (in_array(strtolower((string) $sale->order_status), ['delivered', 'completed', 'complete'])) {
+                $sale->payment_status = 'paid';
+                $sale->paid_amount    = $sale->total;
+                $sale->due_amount     = 0;
+            }
+        });
     }
 
     /**
@@ -107,6 +115,31 @@ class Sale extends Model
         };
     }
 
+    /**
+     * Scope query to sales eligible for revenue reports and price calculations.
+     * POS orders (not cancelled) are immediately eligible.
+     * Non-POS orders (website, reseller, etc.) are only eligible when status is 'completed' or 'complete'.
+     */
+    public function scopeCompletedOrPos($query)
+    {
+        return $query->where(function ($q) {
+            $q->where(function ($posQ) {
+                $posQ->where('channel', 'pos')
+                     ->whereNotIn('order_status', ['cancelled']);
+            })->orWhereIn('order_status', ['completed', 'complete']);
+        });
+    }
+
+    /**
+     * Check if this sale model is eligible for revenue and financial reports.
+     */
+    public function isEligibleForRevenue(): bool
+    {
+        if (strtolower((string)$this->channel) === 'pos') {
+            return strtolower((string)$this->order_status) !== 'cancelled';
+        }
+        return in_array(strtolower((string)$this->order_status), ['completed', 'complete']);
+    }
 
     public function customer()
     {
@@ -126,6 +159,16 @@ class Sale extends Model
     public function coupon()
     {
         return $this->belongsTo(Coupon::class);
+    }
+
+    public function couponUsage()
+    {
+        return $this->hasOne(CouponUsage::class);
+    }
+
+    public function getResellerCouponDiscountAttribute(): float
+    {
+        return (float) ($this->couponUsage?->discount_amount ?? 0);
     }
 
     public function createdBy()
