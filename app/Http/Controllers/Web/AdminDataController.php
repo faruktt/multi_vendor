@@ -17,6 +17,7 @@ use App\Models\StockMovement;
 use App\Models\Supplier;
 use App\Models\Vendor;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Validation\Rule;
@@ -62,11 +63,23 @@ class AdminDataController extends Controller
         if ($request->filled('vendor_id')) {
             $query->where('vendor_id', $request->vendor_id);
         }
-        if ($request->filled('status')) {
-            $query->where('payment_status', $request->status);
+        if ($request->filled('payment_status')) {
+            $query->where('payment_status', $request->payment_status);
         }
         if ($request->filled('order_status')) {
             $query->where('order_status', $request->order_status);
+        }
+        if ($request->filled('status')) {
+            $val = $request->status;
+            if (in_array($val, ['paid', 'partial', 'pending', 'unpaid'])) {
+                if (!$request->filled('payment_status')) {
+                    $query->where('payment_status', $val === 'unpaid' ? 'pending' : $val);
+                }
+            } else {
+                if (!$request->filled('order_status')) {
+                    $query->where('order_status', $val);
+                }
+            }
         }
         if ($request->filled('from')) {
             $query->whereDate('created_at', '>=', $request->from);
@@ -106,8 +119,8 @@ class AdminDataController extends Controller
         $branchSummary = $vendors->map(fn($v) => [
             'vendor'  => $v,
             'orders'  => Sale::withoutGlobalScopes()->where('vendor_id', $v->id)->count(),
-            'revenue' => Sale::withoutGlobalScopes()->where('vendor_id', $v->id)->sum('total'),
-            'due'     => Sale::withoutGlobalScopes()->where('vendor_id', $v->id)->sum('due_amount'),
+            'revenue' => Sale::withoutGlobalScopes()->where('vendor_id', $v->id)->completedOrPos()->sum('total'),
+            'due'     => Sale::withoutGlobalScopes()->where('vendor_id', $v->id)->completedOrPos()->sum('due_amount'),
         ]);
 
         // Channel breakdown counters
@@ -119,11 +132,58 @@ class AdminDataController extends Controller
             'supplier' => Sale::withoutGlobalScopes()->where(fn($q) => $q->whereNotNull('supplier_id')->orWhereHas('saleItems', fn($sq) => $sq->whereNotNull('supplier_id')))->count(),
         ];
 
+        // Calculate repeat order count per phone number on the current page
+        $phonesOnPage = $sales->map(function ($s) {
+            $p = $s->customer?->phone ?? $s->reseller?->phone ?? $s->supplier?->phone ?? '';
+            $clean = preg_replace('/[^\d]/', '', (string)$p);
+            if (str_starts_with($clean, '880')) $clean = substr($clean, 2);
+            if (strlen($clean) > 11) $clean = substr($clean, -11);
+            return $clean ?: null;
+        })->filter()->unique()->values()->toArray();
+
+        $repeatOrderCounts = [];
+        if (!empty($phonesOnPage)) {
+            $matchingSales = Sale::withoutGlobalScopes()
+                ->where(function($q) use ($phonesOnPage) {
+                    $q->whereHas('customer', function($cq) use ($phonesOnPage) {
+                        $cq->where(function($inner) use ($phonesOnPage) {
+                            foreach ($phonesOnPage as $p) {
+                                $inner->orWhere('phone', 'like', "%{$p}");
+                            }
+                        });
+                    })->orWhereHas('reseller', function($rq) use ($phonesOnPage) {
+                        $rq->where(function($inner) use ($phonesOnPage) {
+                            foreach ($phonesOnPage as $p) {
+                                $inner->orWhere('phone', 'like', "%{$p}");
+                            }
+                        });
+                    })->orWhereHas('supplier', function($sq) use ($phonesOnPage) {
+                        $sq->where(function($inner) use ($phonesOnPage) {
+                            foreach ($phonesOnPage as $p) {
+                                $inner->orWhere('phone', 'like', "%{$p}");
+                            }
+                        });
+                    });
+                })
+                ->with(['customer:id,phone', 'reseller:id,phone', 'supplier:id,phone'])
+                ->get();
+
+            foreach ($matchingSales as $ms) {
+                $p = $ms->customer?->phone ?? $ms->reseller?->phone ?? $ms->supplier?->phone ?? '';
+                $clean = preg_replace('/[^\d]/', '', (string)$p);
+                if (str_starts_with($clean, '880')) $clean = substr($clean, 2);
+                if (strlen($clean) > 11) $clean = substr($clean, -11);
+                if ($clean) {
+                    $repeatOrderCounts[$clean] = ($repeatOrderCounts[$clean] ?? 0) + 1;
+                }
+            }
+        }
+
         $paymentMethods = PaymentMethod::options();
         $activeCouriers = CourierSetting::active()->get();
         $orderStatuses  = OrderStatus::orderBy('sort_order')->get();
 
-        return view('admin.all-sales', compact('sales', 'vendors', 'branchSummary', 'paymentMethods', 'activeCouriers', 'orderStatuses', 'channelStats'));
+        return view('admin.all-sales', compact('sales', 'vendors', 'branchSummary', 'paymentMethods', 'activeCouriers', 'orderStatuses', 'channelStats', 'repeatOrderCounts'));
     }
 
     /**
@@ -135,13 +195,24 @@ class AdminDataController extends Controller
             'order_status' => ['required', Rule::in(OrderStatus::pluck('key'))],
         ]);
 
-        $sale->update(['order_status' => $request->order_status]);
+        $updateData = ['order_status' => $request->order_status];
+        if (in_array(strtolower($request->order_status), ['delivered', 'completed', 'complete'])) {
+            $updateData['payment_status'] = 'paid';
+            $updateData['paid_amount']    = $sale->total;
+            $updateData['due_amount']     = 0;
+        }
+
+        $sale->update($updateData);
+        $freshSale = $sale->fresh();
 
         if ($request->wantsJson()) {
             return response()->json([
-                'success'      => true,
-                'order_status' => $sale->order_status,
-                'message'      => 'Order status updated successfully.'
+                'success'        => true,
+                'order_status'   => $freshSale->order_status,
+                'payment_status' => $freshSale->payment_status,
+                'paid_amount'    => (float) $freshSale->paid_amount,
+                'due_amount'     => (float) $freshSale->due_amount,
+                'message'        => 'Order status updated successfully.'
             ]);
         }
 
@@ -240,6 +311,174 @@ class AdminDataController extends Controller
     }
 
     /**
+     * Batch BD Courier lookup for admin all-sales page (auto-loaded on page view)
+     */
+    public function bdCourierCheckBatch(Request $request)
+    {
+        $phones = $request->input('phones', []);
+        if (!is_array($phones) || empty($phones)) {
+            return response()->json(['success' => true, 'results' => []]);
+        }
+
+        $apiKey  = config('services.bd_courier.api_key') ?: env('BD_COURIER_API_KEY');
+        $baseUrl = rtrim(config('services.bd_courier.base_url') ?: env('BD_COURIER_BASE_URL', 'https://api.bdcourier.com'), '/');
+
+        if (empty($apiKey)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'BD_COURIER_API_KEY is not configured',
+                'results' => []
+            ]);
+        }
+
+        $results = [];
+        $phonesToFetch = [];
+
+        foreach ($phones as $phone) {
+            $cleanPhone = preg_replace('/[^\d]/', '', (string)$phone);
+            if (str_starts_with($cleanPhone, '880')) {
+                $cleanPhone = substr($cleanPhone, 2);
+            }
+            if (strlen($cleanPhone) > 11) {
+                $cleanPhone = substr($cleanPhone, -11);
+            }
+
+            if (strlen($cleanPhone) < 10) {
+                continue;
+            }
+
+            $cacheKey = 'bd_courier_summary_' . $cleanPhone;
+            $cached = Cache::get($cacheKey);
+            if ($cached !== null) {
+                $results[$cleanPhone] = $cached;
+            } else {
+                $phonesToFetch[$cleanPhone] = $cleanPhone;
+            }
+        }
+
+        if (!empty($phonesToFetch)) {
+            $chunks = array_chunk($phonesToFetch, 25, true);
+            foreach ($chunks as $chunk) {
+                $responses = Http::pool(function ($pool) use ($chunk, $baseUrl, $apiKey) {
+                    $reqs = [];
+                    foreach ($chunk as $cleanPhone) {
+                        $reqs[$cleanPhone] = $pool->as($cleanPhone)
+                            ->withoutVerifying()
+                            ->withHeaders([
+                                'Authorization' => 'Bearer ' . $apiKey,
+                                'Content-Type'  => 'application/json',
+                                'Accept'        => 'application/json',
+                            ])
+                            ->timeout(6)
+                            ->post($baseUrl . '/courier-check', [
+                                'phone' => $cleanPhone,
+                            ]);
+                    }
+                    return $reqs;
+                });
+
+                foreach ($chunk as $cleanPhone) {
+                    $response = $responses[$cleanPhone] ?? null;
+                    if ($response instanceof \Illuminate\Http\Client\Response && $response->successful()) {
+                        $json = $response->json();
+                        $payload = $json['data'] ?? $json;
+                        $summary = $payload['summary'] ?? null;
+
+                        $total     = (int)($summary['total_parcel'] ?? $payload['total_parcel'] ?? $payload['total_parcels'] ?? 0);
+                        $delivered = (int)($summary['success_parcel'] ?? $payload['success_parcel'] ?? $payload['total_delivered'] ?? 0);
+                        $cancelled = (int)($summary['cancelled_parcel'] ?? $payload['cancelled_parcel'] ?? $payload['total_cancel'] ?? 0);
+
+                        // If summary totals are 0, aggregate from individual couriers if present
+                        if ($total === 0 && is_array($payload)) {
+                            foreach ($payload as $k => $v) {
+                                if ($k === 'summary' || !is_array($v)) continue;
+                                $total     += (int)($v['total_parcel'] ?? 0);
+                                $delivered += (int)($v['success_parcel'] ?? 0);
+                                $cancelled += (int)($v['cancelled_parcel'] ?? 0);
+                            }
+                        }
+
+                        // If steadfast has parcel_range and total is still 0
+                        if ($total === 0 && !empty($payload['steadfast']['parcel_range'])) {
+                            $range = (int)$payload['steadfast']['parcel_range'];
+                            if ($range > 0) {
+                                $total = $range;
+                                $sRatio = (float)($summary['success_ratio'] ?? $payload['steadfast']['success_ratio'] ?? 0);
+                                $delivered = (int)round(($sRatio / 100) * $total);
+                                $cancelled = max(0, $total - $delivered);
+                            }
+                        }
+
+                        $successRatio  = (float)($summary['success_ratio'] ?? ($total > 0 ? round(($delivered / $total) * 100, 1) : 0));
+                        $deliveryRatio = $total > 0 ? (int)round(($delivered / $total) * 100) : (int)round($successRatio);
+                        $cancelRatio   = $total > 0 ? (int)round(($cancelled / $total) * 100) : ($deliveryRatio > 0 ? max(0, 100 - $deliveryRatio) : 0);
+
+                        $level = 'none';
+                        $color = 'slate';
+                        $label = '0% New';
+
+                        if ($total > 0 || $successRatio > 0) {
+                            if ($deliveryRatio >= 80) {
+                                $level = 'safe';
+                                $color = 'emerald';
+                                $label = $deliveryRatio . '% Safe';
+                            } elseif ($deliveryRatio >= 60) {
+                                $level = 'good';
+                                $color = 'sky';
+                                $label = $deliveryRatio . '% Good';
+                            } elseif ($deliveryRatio >= 40) {
+                                $level = 'average';
+                                $color = 'amber';
+                                $label = $deliveryRatio . '% Medium';
+                            } else {
+                                $level = 'risky';
+                                $color = 'red';
+                                $label = $deliveryRatio . '% Risky';
+                            }
+                        }
+
+                        $info = [
+                            'phone'            => $cleanPhone,
+                            'total_parcel'     => $total,
+                            'success_parcel'   => $delivered,
+                            'cancelled_parcel' => $cancelled,
+                            'success_ratio'    => $successRatio,
+                            'delivery_ratio'   => $deliveryRatio,
+                            'cancel_ratio'     => $cancelRatio,
+                            'level'            => $level,
+                            'color'            => $color,
+                            'label'            => $label,
+                        ];
+
+                        Cache::put('bd_courier_summary_' . $cleanPhone, $info, now()->addHours(6));
+                        $results[$cleanPhone] = $info;
+                    } else {
+                        $fallback = [
+                            'phone'            => $cleanPhone,
+                            'total_parcel'     => 0,
+                            'success_parcel'   => 0,
+                            'cancelled_parcel' => 0,
+                            'success_ratio'    => 0,
+                            'delivery_ratio'   => 0,
+                            'cancel_ratio'     => 0,
+                            'level'            => 'none',
+                            'color'            => 'slate',
+                            'label'            => '0% New',
+                        ];
+                        Cache::put('bd_courier_summary_' . $cleanPhone, $fallback, now()->addMinutes(30));
+                        $results[$cleanPhone] = $fallback;
+                    }
+                }
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'results' => $results,
+        ]);
+    }
+
+    /**
      * Get notes list for admin all-sales
      */
     public function getNotes(Sale $sale)
@@ -303,7 +542,7 @@ class AdminDataController extends Controller
         // Warehouse's own rows are internal clones of branch products, not distinct catalog items.
         $query = Product::withoutGlobalScopes()
             ->whereHas('vendor', fn($q) => $q->where('is_warehouse', false))
-            ->with(['vendor', 'category'])
+            ->with(['vendor', 'category', 'subCategory'])
             ->latest();
 
         if ($request->filled('vendor_id')) {
@@ -337,7 +576,8 @@ class AdminDataController extends Controller
         // Warehouse's only category is its own hidden auto-created "General" bucket — internal noise here.
         $query = Category::withoutGlobalScopes()
             ->whereHas('vendor', fn($q) => $q->where('is_warehouse', false))
-            ->with('vendor')
+            ->whereNull('parent_id')
+            ->with(['vendor', 'parent'])
             ->withCount(['products' => fn($q) => $q->withoutGlobalScopes()])
             ->latest();
 
@@ -352,11 +592,48 @@ class AdminDataController extends Controller
         $vendors    = Vendor::where('is_warehouse', false)->orderBy('name')->get();
         $branchSummary = $vendors->map(fn($v) => [
             'vendor'   => $v,
-            'count'    => Category::withoutGlobalScopes()->where('vendor_id', $v->id)->count(),
+            'count'    => Category::withoutGlobalScopes()->where('vendor_id', $v->id)->whereNull('parent_id')->count(),
             'products' => Product::withoutGlobalScopes()->where('vendor_id', $v->id)->count(),
         ]);
 
-        return view('admin.all-categories', compact('categories', 'vendors', 'branchSummary'));
+        $parentCategories = Category::withoutGlobalScopes()
+            ->whereNull('parent_id')
+            ->get()
+            ->unique('name')
+            ->values();
+
+        return view('admin.all-categories', compact('categories', 'vendors', 'branchSummary', 'parentCategories'));
+    }
+
+    public function allSubcategories(Request $request)
+    {
+        $query = Category::withoutGlobalScopes()
+            ->whereHas('vendor', fn($q) => $q->where('is_warehouse', false))
+            ->whereNotNull('parent_id')
+            ->with(['vendor', 'parent'])
+            ->withCount(['products' => fn($q) => $q->withoutGlobalScopes()])
+            ->latest();
+
+        if ($request->filled('vendor_id')) {
+            $query->where('vendor_id', $request->vendor_id);
+        }
+        if ($request->filled('parent_id')) {
+            $query->where('parent_id', $request->parent_id);
+        }
+        if ($request->filled('search')) {
+            $query->where('name', 'like', '%'.$request->search.'%');
+        }
+
+        $subcategories = $query->paginate(25)->withQueryString();
+        $vendors       = Vendor::where('is_warehouse', false)->orderBy('name')->get();
+
+        $parentCategories = Category::withoutGlobalScopes()
+            ->whereNull('parent_id')
+            ->get()
+            ->unique('name')
+            ->values();
+
+        return view('admin.all-subcategories', compact('subcategories', 'vendors', 'parentCategories'));
     }
 
     // ── All Purchases ──────────────────────────────────────────────────────
@@ -396,10 +673,11 @@ class AdminDataController extends Controller
         return view('admin.all-purchases', compact('purchases', 'vendors', 'branchSummary', 'paymentMethods'));
     }
 
-    // ── All Suppliers ──────────────────────────────────────────────────────
+    // ── All Suppliers (Purchase Suppliers) ────────────────────────────────
     public function allSuppliers(Request $request)
     {
         $query = Supplier::withoutGlobalScopes()
+            ->purchase()
             ->with('vendor')
             ->withCount(['purchases' => fn($q) => $q->withoutGlobalScopes()])
             ->withSum(['purchases as total_purchase' => fn($q) => $q->withoutGlobalScopes()], 'total')
@@ -420,7 +698,7 @@ class AdminDataController extends Controller
         $vendors   = Vendor::orderBy('name')->get();
         $branchSummary = $vendors->map(fn($v) => [
             'vendor'  => $v,
-            'count'   => Supplier::withoutGlobalScopes()->where('vendor_id', $v->id)->count(),
+            'count'   => Supplier::withoutGlobalScopes()->purchase()->where('vendor_id', $v->id)->count(),
             'total'   => Purchase::withoutGlobalScopes()->where('vendor_id', $v->id)->sum('total'),
         ]);
 
@@ -539,14 +817,14 @@ class AdminDataController extends Controller
         $branchSummary = $vendors->map(fn($v) => [
             'vendor'   => $v,
             'count'    => Customer::withoutGlobalScopes()->where('vendor_id', $v->id)->count(),
-            'revenue'  => Sale::withoutGlobalScopes()->where('vendor_id', $v->id)->sum('total'),
+            'revenue'  => Sale::withoutGlobalScopes()->where('vendor_id', $v->id)->completedOrPos()->sum('total'),
         ]);
 
         // Main paginated list
         $query = Customer::withoutGlobalScopes()
             ->with('vendor')
             ->withCount(['sales' => fn($q) => $q->withoutGlobalScopes()])
-            ->withSum(['sales as total_spent' => fn($q) => $q->withoutGlobalScopes()], 'total')
+            ->withSum(['sales as total_spent' => fn($q) => $q->withoutGlobalScopes()->completedOrPos()], 'total')
             ->latest();
 
         if ($request->filled('vendor_id')) {
@@ -568,7 +846,7 @@ class AdminDataController extends Controller
     public function salesReport(Request $request)
     {
         $vendors       = Vendor::where('is_warehouse', false)->orderBy('name')->get();
-        $suppliers     = Supplier::orderBy('name')->get();
+        $suppliers     = Supplier::marketplace()->orderBy('name')->get();
         $resellers     = Reseller::orderBy('name')->get();
         $orderStatuses = OrderStatus::orderBy('sort_order')->get();
 
@@ -654,7 +932,8 @@ class AdminDataController extends Controller
         // Per-branch summary respecting active filters
         $branchSummary = $vendors->map(function ($v) use ($filteredAllSales) {
             $vSales = $filteredAllSales->where('vendor_id', $v->id);
-            $gross = (float) $vSales->sum('total');
+            $vEligible = $vSales->filter(fn($s) => $s->isEligibleForRevenue());
+            $gross = (float) $vEligible->sum('total');
             $vReturns = $vSales->filter(fn($s) => in_array(strtolower((string)$s->order_status), ['return', 'returned']));
             $vRetAmt = (float) $vReturns->sum('total');
             $vRetShip = (float) $vReturns->sum('delivery_charge');
@@ -665,7 +944,7 @@ class AdminDataController extends Controller
                 'return_orders'          => $vReturns->count(),
                 'return_shipping_charge' => $vRetShip,
                 'net_revenue'            => (float) ($gross - $vRetAmt - $vRetShip),
-                'due'                    => (float) $vSales->sum('due_amount'),
+                'due'                    => (float) $vEligible->sum('due_amount'),
             ];
         });
 
@@ -715,12 +994,13 @@ class AdminDataController extends Controller
     private function calculateSalesMetrics($sales): array
     {
         $totalOrders   = $sales->count();
-        $grossSales    = (float) $sales->sum('total');
-        $paidAmount    = (float) $sales->sum('paid_amount');
-        $dueAmount     = (float) $sales->sum('due_amount');
+        $eligibleSales = $sales->filter(fn($s) => $s->isEligibleForRevenue());
+        $grossSales    = (float) $eligibleSales->sum('total');
+        $paidAmount    = (float) $eligibleSales->sum('paid_amount');
+        $dueAmount     = (float) $eligibleSales->sum('due_amount');
         $totalShipping = (float) $sales->sum('delivery_charge');
 
-        $delivered = $sales->filter(fn($s) => in_array(strtolower((string)$s->order_status), ['delivered', 'completed']));
+        $delivered = $sales->filter(fn($s) => in_array(strtolower((string)$s->order_status), ['delivered', 'completed', 'complete']));
         $deliveredCount = $delivered->count();
         $deliveredAmount = (float) $delivered->sum('total');
 
