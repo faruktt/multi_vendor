@@ -250,6 +250,7 @@
                             openStatusRow = null;
                         }
                     }"
+                         @order-status-updated-{{ $sale->id }}.window="status = $event.detail"
                          @click.outside="if (openStatusRow === {{ $sale->id }}) openStatusRow = null"
                          class="relative inline-block text-left">
                         <button @click="openStatusRow = (openStatusRow === {{ $sale->id }} ? null : {{ $sale->id }})"
@@ -301,12 +302,32 @@
                                 </button>
                             </div>
                             @if($sale->courier_status)
-                            <span class="text-[9.5px] px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 font-medium capitalize" id="cstatus-{{ $sale->id }}">
+                            <span class="text-[9.5px] px-1.5 py-0.2 rounded font-medium capitalize {{ in_array(strtolower($sale->courier_status), ['cancelled', 'return', 'returned', 'failed', 'delivery_failed']) ? 'bg-rose-100 text-rose-700 font-bold' : 'bg-slate-100 text-slate-600' }}" id="cstatus-{{ $sale->id }}">
                                 {{ str_replace('_', ' ', $sale->courier_status) }}
                             </span>
+                            @else
+                            <span class="text-[9.5px] px-1.5 py-0.2 rounded bg-slate-100 text-slate-400 font-medium capitalize" id="cstatus-{{ $sale->id }}">
+                                pending
+                            </span>
                             @endif
+                            <button type="button" 
+                                    @click="checkCourierStatus({{ $sale->id }})" 
+                                    :disabled="checkingCourier === {{ $sale->id }}"
+                                    title="কুরিয়ার লাইভ স্ট্যাটাস চেক করুন (কুরিয়ার বাতিল করলে ওয়েবসাইট অটো Cancelled হবে)"
+                                    class="inline-flex items-center gap-1 text-[8.5px] text-blue-600 hover:text-blue-800 font-bold px-1.5 py-0.5 rounded bg-blue-50 hover:bg-blue-100 border border-blue-200 transition-all cursor-pointer mt-0.5">
+                                <i class="fas fa-arrows-rotate text-[7.5px]" :class="{ 'fa-spin': checkingCourier === {{ $sale->id }} }"></i>
+                                <span>Sync</span>
+                            </button>
                         </div>
                     @else
+                        @php
+                            $prodPrice = max(0, (float)($sale->subtotal ?? 0) - (float)($sale->discount ?? 0));
+                            if ($prodPrice <= 0 && (float)$sale->total > 0) {
+                                $prodPrice = max(0, (float)$sale->total - (float)($sale->delivery_charge ?? 0));
+                            }
+                            $shipCharge = (float)($sale->delivery_charge ?? 0);
+                            $calculatedCod = round($prodPrice + $shipCharge, 2);
+                        @endphp
                         @if(($activeCouriers ?? collect())->isEmpty())
                             <span class="text-[11px] text-slate-300" title="No active courier. Configure in Admin > Courier Settings">—</span>
                         @elseif(($activeCouriers ?? collect())->count() === 1)
@@ -322,7 +343,9 @@
                                         recipientAddress: @js($sale->customer?->address ?? ''),
                                         district: @js($sale->district ?? ''),
                                         thana: @js($sale->thana ?? ''),
-                                        codAmount: {{ $sale->due_amount > 0 ? $sale->due_amount : ($sale->payment_status === 'paid' ? 0 : $sale->total) }},
+                                        productPrice: {{ $prodPrice }},
+                                        shippingCharge: {{ $shipCharge }},
+                                        codAmount: {{ $calculatedCod }},
                                         note: @js($sale->note ?? '')
                                     })"
                                     class="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-lg border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 transition-all hover:scale-105 shadow-2xs cursor-pointer">
@@ -341,7 +364,9 @@
                                         recipientAddress: @js($sale->customer?->address ?? ''),
                                         district: @js($sale->district ?? ''),
                                         thana: @js($sale->thana ?? ''),
-                                        codAmount: {{ $sale->due_amount > 0 ? $sale->due_amount : ($sale->payment_status === 'paid' ? 0 : $sale->total) }},
+                                        productPrice: {{ $prodPrice }},
+                                        shippingCharge: {{ $shipCharge }},
+                                        codAmount: {{ $calculatedCod }},
                                         note: @js($sale->note ?? '')
                                     })"
                                     class="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-all hover:scale-105 shadow-2xs cursor-pointer">
@@ -811,13 +836,18 @@
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                    <label class="block text-[11px] font-semibold text-slate-500 mb-1 uppercase tracking-wider">COD Collection Amount (৳) *</label>
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">COD Collection Amount (৳) *</label>
+                        <span class="text-[10px] text-emerald-700 font-bold bg-emerald-50 border border-emerald-200 px-1.5 py-0.2 rounded" x-show="courierForm.productPrice || courierForm.shippingCharge">
+                            প্রোডাক্ট ৳<span x-text="courierForm.productPrice"></span> + শিপিং ৳<span x-text="courierForm.shippingCharge"></span>
+                        </span>
+                    </div>
                     <div class="relative">
                         <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">৳</span>
                         <input type="number" step="any" min="0" x-model="courierForm.codAmount" required
                                class="w-full text-xs rounded-xl border border-slate-200 pl-7 pr-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 font-bold">
                     </div>
-                    <p class="text-[10px] text-slate-400 mt-0.5">Cash on delivery collection amount</p>
+                    <p class="text-[10px] text-slate-400 mt-0.5">প্রোডাক্ট প্রাইজ ও শিপিং চার্জ যোগ হয়ে অটো ক্যালকুলেট হয়েছে</p>
                 </div>
                 <div>
                     <label class="block text-[11px] font-semibold text-slate-500 mb-1 uppercase tracking-wider">Delivery Area / City</label>
@@ -952,13 +982,18 @@ function salesPage() {
             recipientName: '',
             recipientPhone: '',
             recipientAddress: '',
-            deliveryArea: '',
+            productPrice: 0,
+            shippingCharge: 0,
             codAmount: 0,
             note: ''
         },
 
         openCourierModal(data) {
             this.courierError = null;
+            const prodPrice = Number(data.productPrice || 0);
+            const shipCharge = Number(data.shippingCharge || 0);
+            const calculatedCod = Number(data.codAmount !== undefined ? data.codAmount : (prodPrice + shipCharge));
+
             this.courierForm = {
                 saleId: data.saleId,
                 invoice: data.invoice,
@@ -968,7 +1003,9 @@ function salesPage() {
                 recipientPhone: data.recipientPhone || '',
                 recipientAddress: data.recipientAddress || [data.thana, data.district].filter(Boolean).join(', '),
                 deliveryArea: data.district || data.thana || 'Dhaka',
-                codAmount: data.codAmount || 0,
+                productPrice: prodPrice,
+                shippingCharge: shipCharge,
+                codAmount: calculatedCod,
                 note: data.note || ''
             };
             this.courierModal = true;
@@ -986,6 +1023,7 @@ function salesPage() {
                         'X-CSRF-TOKEN': csrf,
                         'Accept': 'application/json',
                         'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
                     },
                     body: JSON.stringify({
                         courier_code: this.courierForm.courierCode,
@@ -998,7 +1036,13 @@ function salesPage() {
                     })
                 });
 
-                const data = await res.json();
+                let data;
+                try {
+                    data = await res.json();
+                } catch (parseErr) {
+                    throw new Error(`Server response error (${res.status} ${res.statusText})`);
+                }
+
                 if (res.ok && data.success) {
                     this.courierModal = false;
                     showToast(data.message, 'success');
@@ -1021,7 +1065,7 @@ function salesPage() {
                                     </button>
                                 </div>
                                 <span class="text-[9.5px] px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 font-medium capitalize">
-                                    ${(data.status || 'pending').replace('_', ' ')}
+                                    ${(data.status || 'pending').replace(/_/g, ' ')}
                                 </span>
                             </div>
                         `;
@@ -1030,9 +1074,57 @@ function salesPage() {
                     this.courierError = data.message || 'Failed to dispatch order to courier.';
                 }
             } catch (err) {
-                this.courierError = 'Server error: Connection failed.';
+                this.courierError = err.message || 'Server error: Connection failed.';
             } finally {
                 this.courierSending = false;
+            }
+        },
+
+        checkingCourier: null,
+
+        async checkCourierStatus(saleId) {
+            this.checkingCourier = saleId;
+            try {
+                const res = await fetch(`/admin/all-sales/${saleId}/courier-status`, {
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                const data = await res.json();
+                if (data.success) {
+                    const statusEl = document.getElementById('cstatus-' + saleId);
+                    if (statusEl && data.courier_status) {
+                        statusEl.textContent = data.courier_status.replace(/_/g, ' ');
+                        if (data.is_cancelled) {
+                            statusEl.className = 'text-[9.5px] px-1.5 py-0.2 rounded bg-rose-100 text-rose-700 font-bold capitalize';
+                        }
+                    }
+
+                    if (data.order_status) {
+                        window.dispatchEvent(new CustomEvent('order-status-updated-' + saleId, { detail: data.order_status }));
+                    }
+
+                    if (data.is_cancelled) {
+                        if (typeof showToast === 'function') {
+                            showToast(`অর্ডারটি কুরিয়ার থেকে বাতিল হয়েছে! ওয়েবসাইট অর্ডার স্ট্যাটাস অটোমেটিক 'Cancelled' করা হয়েছে।`, 'warning');
+                        }
+                    } else {
+                        if (typeof showToast === 'function') {
+                            showToast(data.message || `কুরিয়ার স্ট্যাটাস: ${data.courier_status}`, 'info');
+                        }
+                    }
+                } else {
+                    if (typeof showToast === 'function') {
+                        showToast(data.message || 'কুরিয়ার স্ট্যাটাস চেক ব্যর্থ হয়েছে।', 'error');
+                    }
+                }
+            } catch (err) {
+                if (typeof showToast === 'function') {
+                    showToast('কুরিয়ার সার্ভারে সংযোগ সমস্যা হয়েছে।', 'error');
+                }
+            } finally {
+                this.checkingCourier = null;
             }
         },
 

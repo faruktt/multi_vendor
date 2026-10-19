@@ -92,9 +92,17 @@
     </div>
 </div>
 
-{{-- ── Screen Invoice ───────────────────────────────────────────── --}}
-<div class="no-print max-w-2xl">
-    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+@php
+    $cPhone = trim($sale->customer?->phone ?? '');
+    $cName  = $sale->customer?->name ?? 'Customer';
+@endphp
+
+{{-- ── Screen Invoice & Courier Intelligence 2-Column Grid ──────────────────────── --}}
+<div class="no-print grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+    {{-- LEFT COLUMN: Invoice Receipt Card --}}
+    <div class="lg:col-span-7 xl:col-span-7">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
         {{-- Brand header --}}
         <div class="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-5 text-center">
             <h2 class="text-xl font-bold text-white">{{ $branch->system_name ?? $branch->name }}</h2>
@@ -350,7 +358,253 @@
             </div>
         </div>
     </div>
-</div>
+    </div>{{-- /LEFT COLUMN: lg:col-span-7 --}}
+
+    {{-- RIGHT COLUMN: Courier Order Percentage & BD Courier Status (Image 2) --}}
+    <div class="lg:col-span-5 xl:col-span-5 space-y-4 lg:sticky lg:top-4">
+
+        {{-- BD Courier Status Card --}}
+        <div class="bg-white rounded-3xl shadow-sm border border-slate-200/90 p-5 space-y-4">
+
+            {{-- Card Header --}}
+            <div class="flex items-center justify-between pb-3.5 border-b border-slate-100">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-2xl bg-indigo-600 text-white flex items-center justify-center text-base shadow-sm">
+                        <i class="fas fa-truck-fast"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h3 class="font-bold text-slate-800 text-[15px]">BD Courier Status</h3>
+                            <span class="text-[10px] font-semibold bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full">api.bdcourier.com</span>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-0.5">
+                            <span x-text="bdName" class="font-medium text-slate-700"></span>
+                            <span x-show="bdName && bdPhone"> · </span>
+                            <span class="font-mono font-semibold text-slate-600" x-text="bdPhone || 'No phone number'"></span>
+                        </p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-1.5">
+                    <button type="button" @click="checkBdCourier()" :disabled="bdLoading"
+                            title="Re-check / Refresh Courier Records"
+                            class="text-slate-400 hover:text-indigo-600 w-8 h-8 flex items-center justify-center rounded-xl hover:bg-indigo-50 transition-colors cursor-pointer">
+                        <i class="fas fa-arrows-rotate text-xs" :class="bdLoading ? 'fa-spin text-indigo-600' : ''"></i>
+                    </button>
+                </div>
+            </div>
+
+            {{-- Phone number editor / search if needed --}}
+            <div class="bg-slate-50 rounded-2xl p-2.5 border border-slate-100 flex items-center gap-2">
+                <div class="w-7 h-7 rounded-xl bg-white text-slate-400 flex items-center justify-center text-xs flex-shrink-0 shadow-2xs">
+                    <i class="fas fa-phone"></i>
+                </div>
+                <input type="text" x-model="bdPhone" @keydown.enter="checkBdCourier()" placeholder="Enter customer phone (e.g. 017xxxxxxxx)..."
+                       class="flex-1 bg-transparent border-0 text-xs text-slate-800 font-mono font-semibold focus:outline-none focus:ring-0 placeholder:text-slate-400">
+                <button type="button" @click="checkBdCourier()" :disabled="bdLoading || !bdPhone.trim()"
+                        class="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-xs font-bold px-3 py-1.5 rounded-xl transition-colors flex-shrink-0 cursor-pointer">
+                    <span x-show="!bdLoading">Check</span>
+                    <span x-show="bdLoading"><i class="fas fa-spinner fa-spin"></i></span>
+                </button>
+            </div>
+
+            {{-- Loading State --}}
+            <div x-show="bdLoading" class="py-10 text-center text-slate-400">
+                <div class="w-12 h-12 mx-auto mb-3 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                    <i class="fas fa-spinner fa-spin text-xl"></i>
+                </div>
+                <p class="text-sm font-bold text-slate-700">Checking Courier Records...</p>
+                <p class="text-xs text-slate-400 mt-1 font-mono" x-text="bdPhone"></p>
+            </div>
+
+            {{-- Error State --}}
+            <template x-if="!bdLoading && bdError">
+                <div class="bg-red-50 border border-red-200 rounded-2xl p-4">
+                    <div class="flex items-start gap-3">
+                        <div class="w-8 h-8 rounded-xl bg-red-100 text-red-600 flex items-center justify-center flex-shrink-0 mt-0.5">
+                            <i class="fas fa-triangle-exclamation text-sm"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <h4 class="font-bold text-red-800 text-sm">Courier Check Notice</h4>
+                            <p class="text-red-700 text-xs mt-1 leading-relaxed" x-text="bdError"></p>
+                            <button type="button" @click="checkBdCourier()"
+                                    class="mt-2.5 text-xs bg-red-600 hover:bg-red-700 text-white font-semibold px-3 py-1.5 rounded-xl inline-flex items-center gap-1.5 transition-colors cursor-pointer">
+                                <i class="fas fa-rotate-right text-[10px]"></i> Try Again
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </template>
+
+            {{-- Main Courier Info (Matches Image 2) --}}
+            <template x-if="!bdLoading && (!bdError || bdResult)">
+                <div class="space-y-4">
+
+                    {{-- Top Status / Percentage SVG Gauge --}}
+                    <div class="bg-gradient-to-br from-slate-50 to-indigo-50/40 border border-slate-100 rounded-2xl p-4 flex items-center gap-4">
+                        {{-- Circular SVG Gauge --}}
+                        <div class="relative w-24 h-24 flex-shrink-0">
+                            <svg width="96" height="96" viewBox="0 0 100 100" class="-rotate-90">
+                                <circle cx="50" cy="50" r="40" fill="none" stroke="#e2e8f0" stroke-width="8"/>
+                                <circle cx="50" cy="50" r="40" fill="none" :stroke="bdRiskInfo.ring" stroke-width="8" stroke-linecap="round"
+                                        stroke-dasharray="251.32"
+                                        :stroke-dashoffset="251.32 * (1 - Math.min(100, Math.max(0, bdRiskInfo.deliverPct)) / 100)"
+                                        style="transition: stroke-dashoffset .6s ease, stroke .3s ease"/>
+                            </svg>
+                            <div class="absolute inset-0 flex flex-col items-center justify-center">
+                                <span class="text-xl font-black text-slate-800 leading-none" x-text="bdRiskInfo.deliverPct + '%'"></span>
+                                <span class="text-[9.5px] font-semibold text-slate-400 mt-1">Success</span>
+                            </div>
+                        </div>
+
+                        <div class="flex-1 min-w-0">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold"
+                                  :class="bdRiskInfo.badgeBg"
+                                  x-text="bdRiskInfo.label"></span>
+                            <p class="text-xs text-slate-600 mt-1.5 leading-relaxed font-medium" x-text="bdRiskInfo.message"></p>
+                            <p class="text-[11.5px] font-mono text-slate-500 mt-1.5 flex items-center gap-1.5">
+                                <i class="fas fa-mobile-screen text-slate-400 text-xs"></i>
+                                <span x-text="bdPhone"></span>
+                            </p>
+                        </div>
+                    </div>
+
+                    {{-- 3 Key Metric Cards --}}
+                    <div class="grid grid-cols-3 gap-2.5">
+                        {{-- Total Orders --}}
+                        <div class="bg-blue-50/80 border border-blue-100 rounded-2xl p-3 text-center">
+                            <div class="w-7 h-7 mx-auto rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center mb-1.5 shadow-2xs">
+                                <i class="fas fa-boxes-stacked text-xs"></i>
+                            </div>
+                            <p class="text-xl font-black text-blue-700 leading-none font-mono" x-text="bdRiskInfo.total"></p>
+                            <p class="text-[10.5px] font-bold text-blue-600/90 mt-1.5">Total Parcels</p>
+                            <p class="text-[9px] text-slate-400 font-medium">All Couriers</p>
+                        </div>
+
+                        {{-- Delivered --}}
+                        <div class="bg-emerald-50/80 border border-emerald-100 rounded-2xl p-3 text-center">
+                            <div class="w-7 h-7 mx-auto rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center mb-1.5 shadow-2xs">
+                                <i class="fas fa-circle-check text-xs"></i>
+                            </div>
+                            <p class="text-xl font-black text-emerald-700 leading-none font-mono" x-text="bdRiskInfo.delivered"></p>
+                            <p class="text-[10.5px] font-bold text-emerald-600/90 mt-1.5">Delivered</p>
+                            <p class="text-[9px] text-slate-400 font-medium">Successful</p>
+                        </div>
+
+                        {{-- Cancelled --}}
+                        <div class="bg-rose-50/80 border border-rose-100 rounded-2xl p-3 text-center">
+                            <div class="w-7 h-7 mx-auto rounded-lg bg-rose-100 text-rose-600 flex items-center justify-center mb-1.5 shadow-2xs">
+                                <i class="fas fa-circle-xmark text-xs"></i>
+                            </div>
+                            <p class="text-xl font-black text-rose-700 leading-none font-mono" x-text="bdRiskInfo.cancelled"></p>
+                            <p class="text-[10.5px] font-bold text-rose-600/90 mt-1.5">Cancelled</p>
+                            <p class="text-[9px] text-slate-400 font-medium">Returned</p>
+                        </div>
+                    </div>
+
+                    {{-- Courier-wise Breakdown (7 Couriers) --}}
+                    <div class="border border-slate-100 rounded-2xl p-4 bg-white shadow-2xs">
+                        <div class="flex items-center justify-between mb-2.5 pb-2 border-b border-slate-100">
+                            <p class="text-xs font-bold text-slate-700 uppercase tracking-wide">Courier Breakdown</p>
+                            <span class="text-[11px] text-slate-400 font-medium" x-text="bdCourierRows.length + ' couriers'"></span>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-xs">
+                                <thead>
+                                    <tr class="border-b border-slate-100 text-[10.5px] text-slate-400">
+                                        <th class="py-2 text-left font-semibold">Courier</th>
+                                        <th class="py-2 text-center font-semibold">Total</th>
+                                        <th class="py-2 text-center font-semibold text-emerald-600">Delivered</th>
+                                        <th class="py-2 text-center font-semibold text-rose-500">Cancel</th>
+                                        <th class="py-2 text-right font-semibold">Rate</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-50">
+                                    <template x-for="c in bdCourierRows" :key="c.name">
+                                        <tr class="hover:bg-slate-50/60 transition-colors">
+                                            <td class="py-2.5 font-semibold text-slate-700">
+                                                <div class="flex items-center gap-2">
+                                                    <template x-if="c.logo">
+                                                        <img :src="c.logo" :alt="c.name" class="w-4 h-4 object-contain flex-shrink-0">
+                                                    </template>
+                                                    <template x-if="!c.logo">
+                                                        <span class="w-4 h-4 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center text-[9px] font-black flex-shrink-0" x-text="c.name.substring(0, 1)"></span>
+                                                    </template>
+                                                    <span x-text="c.name" class="truncate"></span>
+                                                </div>
+                                            </td>
+                                            <td class="py-2.5 text-center font-medium text-slate-600 font-mono" x-text="c.total_parcel"></td>
+                                            <td class="py-2.5 text-center font-bold text-emerald-600 font-mono" x-text="c.success_parcel"></td>
+                                            <td class="py-2.5 text-center font-bold text-rose-500 font-mono" x-text="c.cancelled_parcel"></td>
+                                            <td class="py-2.5 text-right font-bold text-slate-800 font-mono" x-text="(c.success_ratio || 0) + '%'"></td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    {{-- Reports list if any --}}
+                    <div x-show="bdResult && bdResult.reports && bdResult.reports.length > 0" class="bg-amber-50 border border-amber-200 rounded-2xl p-3.5">
+                        <div class="flex items-center gap-2 mb-2 text-amber-800 font-bold text-xs">
+                            <i class="fas fa-triangle-exclamation text-amber-500"></i>
+                            <span>Reports &amp; Flags</span>
+                        </div>
+                        <ul class="space-y-1 text-xs text-amber-900 list-disc list-inside">
+                            <template x-for="(rep, i) in (bdResult?.reports || [])" :key="i">
+                                <li x-text="typeof rep === 'string' ? rep : (rep.note || rep.reason || JSON.stringify(rep))"></li>
+                            </template>
+                        </ul>
+                    </div>
+
+                </div>
+            </template>
+
+        </div>
+
+        {{-- Dispatched Courier Shipment Card (If already booked/sent) --}}
+        @if($sale->courier_name || $sale->courier_tracking_code || $sale->courier_consignment_id)
+        <div class="bg-white rounded-3xl shadow-sm border border-slate-200/90 p-5 space-y-3">
+            <div class="flex items-center justify-between pb-2.5 border-b border-slate-100">
+                <div class="flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-sky-500 animate-pulse"></span>
+                    <h4 class="font-bold text-slate-800 text-xs uppercase tracking-wide">This Order's Shipment</h4>
+                </div>
+                <span class="text-xs font-bold px-2.5 py-0.5 rounded-full bg-sky-50 text-sky-700 border border-sky-200 capitalize">
+                    {{ $sale->courier_display_name }}
+                </span>
+            </div>
+            <div class="grid grid-cols-2 gap-3 text-xs">
+                @if($sale->courier_consignment_id)
+                <div class="bg-slate-50 rounded-xl p-2.5 border border-slate-100">
+                    <span class="text-[10px] text-slate-400 block font-medium uppercase tracking-wider">Consignment ID</span>
+                    <span class="font-mono font-bold text-slate-800 text-xs">{{ $sale->courier_consignment_id }}</span>
+                </div>
+                @endif
+                @if($sale->courier_tracking_code)
+                <div class="bg-slate-50 rounded-xl p-2.5 border border-slate-100">
+                    <span class="text-[10px] text-slate-400 block font-medium uppercase tracking-wider">Tracking Code</span>
+                    <span class="font-mono font-bold text-slate-800 text-xs">{{ $sale->courier_tracking_code }}</span>
+                </div>
+                @endif
+                @if($sale->courier_status)
+                <div class="bg-slate-50 rounded-xl p-2.5 border border-slate-100">
+                    <span class="text-[10px] text-slate-400 block font-medium uppercase tracking-wider">Courier Status</span>
+                    <span class="font-bold text-emerald-600 text-xs capitalize">{{ str_replace('_', ' ', $sale->courier_status) }}</span>
+                </div>
+                @endif
+                @if($sale->courier_sent_at)
+                <div class="bg-slate-50 rounded-xl p-2.5 border border-slate-100">
+                    <span class="text-[10px] text-slate-400 block font-medium uppercase tracking-wider">Dispatched Date</span>
+                    <span class="text-slate-700 font-medium text-xs">{{ $sale->courier_sent_at->format('d M Y, h:i A') }}</span>
+                </div>
+                @endif
+            </div>
+        </div>
+        @endif
+
+    </div>{{-- /RIGHT COLUMN --}}
+
+</div>{{-- /2-Column Grid --}}
 
 {{-- ── Due Payment Modal (screen only) ────────────────────────── --}}
 @if($sale->due_amount > 0)
@@ -668,6 +922,102 @@ function showSale() {
         noteText: '',
         noteSaving: false,
 
+        bdPhone: '{{ $cPhone }}',
+        bdName: @js($cName),
+        bdLoading: false,
+        bdResult: null,
+        bdError: null,
+
+        get bdRiskInfo() {
+            if (!this.bdResult || !this.bdResult.summary) {
+                return {
+                    deliverPct: 0,
+                    total: 0,
+                    delivered: 0,
+                    cancelled: 0,
+                    label: 'New Customer',
+                    message: 'No previous courier delivery record found.',
+                    ring: '#94a3b8',
+                    text: 'text-slate-500',
+                    badgeBg: 'bg-slate-100 text-slate-600 border border-slate-200'
+                };
+            }
+            const s = this.bdResult.summary;
+            const total      = Number(s.total_parcel || 0);
+            const delivered  = Number(s.success_parcel || 0);
+            const cancelled  = Number(s.cancelled_parcel || 0);
+            const deliverPct = Number(s.success_ratio !== undefined ? s.success_ratio : (total > 0 ? Math.round((delivered / total) * 1000) / 10 : 0));
+
+            let key = 'none';
+            if (total > 0) {
+                key = deliverPct >= 80 ? 'excellent' : (deliverPct >= 60 ? 'good' : (deliverPct >= 40 ? 'average' : 'risky'));
+            }
+
+            const config = {
+                excellent: { label: 'Safe Customer',     message: 'Excellent parcel delivery success rate.',  ring: '#22c55e', text: 'text-emerald-600', badgeBg: 'bg-emerald-100 text-emerald-700 border border-emerald-200' },
+                good:      { label: 'Good Customer',     message: 'Reliable parcel delivery history.',         ring: '#0ea5e9', text: 'text-sky-600',     badgeBg: 'bg-sky-100 text-sky-700 border border-sky-200' },
+                average:   { label: 'Moderate Risk',     message: 'Verify order before parcel dispatch.',       ring: '#f59e0b', text: 'text-amber-600',   badgeBg: 'bg-amber-100 text-amber-700 border border-amber-200' },
+                risky:     { label: 'High Risk',         message: 'Higher likelihood of return or refusal.',    ring: '#ef4444', text: 'text-red-600',     badgeBg: 'bg-red-100 text-red-700 border border-red-200' },
+                none:      { label: 'New Customer',      message: 'No previous courier delivery record found.', ring: '#94a3b8', text: 'text-slate-500',   badgeBg: 'bg-slate-100 text-slate-600 border border-slate-200' },
+            };
+
+            return {
+                deliverPct,
+                total,
+                delivered,
+                cancelled,
+                ...(config[key] || config.none)
+            };
+        },
+
+        get bdCourierRows() {
+            if (this.bdResult && this.bdResult.couriers && this.bdResult.couriers.length > 0) {
+                return this.bdResult.couriers;
+            }
+            return [
+                { name: 'Pathao',       total_parcel: 0, success_parcel: 0, cancelled_parcel: 0, success_ratio: 0 },
+                { name: 'SteadFast',    total_parcel: 0, success_parcel: 0, cancelled_parcel: 0, success_ratio: 0 },
+                { name: 'ParcelDex',    total_parcel: 0, success_parcel: 0, cancelled_parcel: 0, success_ratio: 0 },
+                { name: 'CourrierFast', total_parcel: 0, success_parcel: 0, cancelled_parcel: 0, success_ratio: 0 },
+                { name: 'Redx',         total_parcel: 0, success_parcel: 0, cancelled_parcel: 0, success_ratio: 0 },
+                { name: 'PaperFly',     total_parcel: 0, success_parcel: 0, cancelled_parcel: 0, success_ratio: 0 },
+                { name: 'CarryBee',     total_parcel: 0, success_parcel: 0, cancelled_parcel: 0, success_ratio: 0 },
+            ];
+        },
+
+        async checkBdCourier() {
+            const phone = (this.bdPhone || '').trim();
+            if (!phone) {
+                this.bdError = 'Customer phone number is required to check courier status.';
+                return;
+            }
+            this.bdLoading = true;
+            this.bdError   = null;
+
+            try {
+                const res = await fetch('{{ route('branch.sales.bd-courier-check', $branch) }}', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('[name=csrf-token]')?.content || document.querySelector('meta[name="csrf-token"]')?.content,
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: new URLSearchParams({ phone: phone }),
+                });
+
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    this.bdResult = data;
+                } else {
+                    this.bdError = data.error || 'Failed to fetch courier details.';
+                }
+            } catch (e) {
+                this.bdError = 'Connection error to BD Courier API.';
+            }
+
+            this.bdLoading = false;
+        },
+
         addQuickNote(msg) {
             this.noteText = this.noteText.trim() === '' ? msg : (this.noteText + ', ' + msg);
         },
@@ -704,6 +1054,10 @@ function showSale() {
             @if(request()->has('auto_print'))
             window.addEventListener('load', () => setTimeout(() => window.print(), 400));
             @endif
+
+            if (this.bdPhone && this.bdPhone.trim() !== '') {
+                this.checkBdCourier();
+            }
         }
     };
 }

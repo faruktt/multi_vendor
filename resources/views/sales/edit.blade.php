@@ -102,9 +102,10 @@
                                 <span class="font-bold text-blue-600">৳<span x-text="Number(item.quantity * item.unit_price).toLocaleString()"></span></span>
                             </td>
                             <td class="px-4 py-3 text-center">
-                                <button @click="removeItem(i)"
-                                        class="w-7 h-7 rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-50 flex items-center justify-center transition-all opacity-0 group-hover:opacity-100">
-                                    <i class="fas fa-times text-xs"></i>
+                                <button type="button" @click="removeItem(i)"
+                                        title="Remove product from order"
+                                        class="w-7 h-7 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 flex items-center justify-center transition-all opacity-70 group-hover:opacity-100">
+                                    <i class="fas fa-trash-alt text-xs"></i>
                                 </button>
                             </td>
                         </tr>
@@ -124,6 +125,20 @@
                     </tr>
                 </tfoot>
             </table>
+
+            {{-- Notice when items were removed --}}
+            <div x-show="removedItemsCount > 0" x-cloak
+                 class="m-3 p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-between text-xs text-amber-900">
+                <div class="flex items-center gap-2">
+                    <div class="w-6 h-6 rounded-lg bg-amber-200 flex items-center justify-center text-amber-800 flex-shrink-0">
+                        <i class="fas fa-rotate-left text-[11px]"></i>
+                    </div>
+                    <span>
+                        <strong x-text="removedItemsCount"></strong> item(s) removed from this order. They will be sent to the <strong>Partial Return</strong> list for restocking.
+                    </span>
+                </div>
+                <span class="text-[10px] font-bold uppercase tracking-wider bg-amber-200 text-amber-800 px-2 py-0.5 rounded-full">Queued</span>
+            </div>
         </div>
     </div>
 
@@ -242,6 +257,7 @@
 <script>
 function editApp() {
     return {
+        initialCart: @json($initialCart),
         cart: @json($initialCart),
         customerId: '{{ $sale->customer_id ?? "" }}',
         customerName: '{{ $sale->customer?->name ?? "" }}',
@@ -256,6 +272,11 @@ function editApp() {
         searchResults: [],
         searchLoading: false,
         saving: false,
+
+        get removedItemsCount() {
+            const currentKeys = this.cart.map(c => c._key);
+            return this.initialCart.filter(i => !currentKeys.includes(i._key)).length;
+        },
 
         get subtotal() {
             return this.cart.reduce((s, i) => s + i.quantity * i.unit_price, 0);
