@@ -12,6 +12,8 @@ use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\Sale;
 use App\Models\SaleItem;
+use App\Models\SaleReturn;
+use App\Models\SaleReturnItem;
 use App\Models\StockMovement;
 use App\Models\Vendor;
 use Illuminate\Http\Request;
@@ -283,25 +285,127 @@ class SaleController extends Controller
             'payment_method'         => 'nullable|string|max:50',
         ]);
 
-        DB::transaction(function () use ($request, $sale) {
-            // Restore stock from old items
-            foreach ($sale->saleItems()->get() as $old) {
-                Product::withoutGlobalScopes()->where('id', $old->product_id)
-                    ->increment('stock_qty', $old->quantity);
-                if ($old->product_variant_id) {
-                    ProductVariant::where('id', $old->product_variant_id)
-                        ->increment('stock_qty', $old->quantity);
+        DB::transaction(function () use ($request, $sale, $branch) {
+            $oldItems = $sale->saleItems()->with('product')->get();
+            $newItems = $request->items;
+
+            // Map old items by product_id and variant_id
+            $oldMap = [];
+            foreach ($oldItems as $old) {
+                $vId = $old->product_variant_id ? (int) $old->product_variant_id : 0;
+                $key = $old->product_id . '_' . $vId;
+                if (!isset($oldMap[$key])) {
+                    $oldMap[$key] = [
+                        'product_id'         => $old->product_id,
+                        'product_variant_id' => $old->product_variant_id,
+                        'variant_name'       => $old->variant_name,
+                        'unit_price'         => (float) $old->unit_price,
+                        'quantity'           => 0,
+                        'supplier_id'        => $old->supplier_id ?? $old->product?->supplier_id,
+                        'product'            => $old->product,
+                    ];
+                }
+                $oldMap[$key]['quantity'] += (int) $old->quantity;
+            }
+
+            // Map new items by product_id and variant_id
+            $newMap = [];
+            foreach ($newItems as $item) {
+                $vId = !empty($item['variant_id']) ? (int) $item['variant_id'] : 0;
+                $pId = (int) $item['product_id'];
+                $key = $pId . '_' . $vId;
+                if (!isset($newMap[$key])) {
+                    $newMap[$key] = [
+                        'product_id'         => $pId,
+                        'product_variant_id' => !empty($item['variant_id']) ? (int) $item['variant_id'] : null,
+                        'variant_name'       => $item['variant_name'] ?? null,
+                        'unit_price'         => (float) $item['unit_price'],
+                        'quantity'           => 0,
+                    ];
+                }
+                $newMap[$key]['quantity'] += (int) $item['quantity'];
+            }
+
+            // 1. Identify deleted / reduced items -> create SaleReturn & pending SaleReturnItem
+            // Do NOT immediately increment stock back to inventory.
+            // Items remain in the Returns queue until sent/returned to the supplier, which restores stock.
+            $returnedItems = [];
+            $refundAmount = 0;
+
+            foreach ($oldMap as $key => $old) {
+                $newQty = isset($newMap[$key]) ? $newMap[$key]['quantity'] : 0;
+                if ($newQty < $old['quantity']) {
+                    $removedQty = $old['quantity'] - $newQty;
+                    $lineSubtotal = round($removedQty * $old['unit_price'], 2);
+                    $refundAmount += $lineSubtotal;
+
+                    $supplierId = $old['supplier_id'];
+                    if (!$supplierId && $old['product']) {
+                        $supplierId = $old['product']->supplier_id;
+                    }
+
+                    $returnedItems[] = [
+                        'product_id'         => $old['product_id'],
+                        'supplier_id'        => $supplierId,
+                        'product_variant_id' => $old['product_variant_id'],
+                        'variant_name'       => $old['variant_name'],
+                        'quantity'           => $removedQty,
+                        'unit_price'         => $old['unit_price'],
+                        'subtotal'           => $lineSubtotal,
+                        'status'             => 'pending',
+                        'notes'              => "Removed during edit of Invoice #{$sale->invoice_no}",
+                    ];
                 }
             }
 
-            $sale->saleItems()->delete();
-            StockMovement::where('reference_type', 'sale')->where('reference_id', $sale->id)->delete();
+            if (!empty($returnedItems)) {
+                $saleReturn = SaleReturn::create([
+                    'vendor_id'     => $sale->vendor_id,
+                    'sale_id'       => $sale->id,
+                    'reason'        => 'Item(s) removed during invoice edit',
+                    'refund_amount' => $refundAmount,
+                    'refund_method' => 'cash',
+                    'created_by'    => auth()->id(),
+                ]);
 
-            $items    = $request->items;
-            $subtotal = collect($items)->sum(fn($i) => $i['quantity'] * $i['unit_price']);
+                foreach ($returnedItems as $retItem) {
+                    $retItem['sale_return_id'] = $saleReturn->id;
+                    SaleReturnItem::create($retItem);
+                }
+            }
+
+            // 2. Identify new or increased items -> decrement stock & log out movement
+            foreach ($newMap as $key => $new) {
+                $oldQty = isset($oldMap[$key]) ? $oldMap[$key]['quantity'] : 0;
+                if ($new['quantity'] > $oldQty) {
+                    $addedQty = $new['quantity'] - $oldQty;
+                    Product::withoutGlobalScopes()->where('id', $new['product_id'])
+                        ->decrement('stock_qty', $addedQty);
+
+                    if (!empty($new['product_variant_id'])) {
+                        ProductVariant::where('id', $new['product_variant_id'])
+                            ->decrement('stock_qty', $addedQty);
+                    }
+
+                    StockMovement::create([
+                        'vendor_id'      => $sale->vendor_id,
+                        'product_id'     => $new['product_id'],
+                        'type'           => 'out',
+                        'quantity'       => $addedQty,
+                        'reference_type' => 'sale',
+                        'reference_id'   => $sale->id,
+                        'note'           => 'Added during invoice edit: ' . $sale->invoice_no,
+                    ]);
+                }
+            }
+
+            // 3. Clear old sale items and write current sale items
+            $sale->saleItems()->delete();
+
+            $subtotal = collect($newItems)->sum(fn($i) => $i['quantity'] * $i['unit_price']);
             $discount = $request->discount ?? 0;
             $tax      = $request->tax ?? 0;
-            $total    = $subtotal - $discount + $tax;
+            $total    = max(0, $subtotal - $discount + $tax);
             $paid     = $request->paid_amount;
             $due      = max(0, $total - $paid);
             $status   = $due <= 0 ? 'paid' : ($paid > 0 ? 'partial' : 'pending');
@@ -318,35 +422,24 @@ class SaleController extends Controller
                 'payment_method' => $request->payment_method ?? $sale->payment_method,
             ]);
 
-            foreach ($items as $item) {
+            foreach ($newItems as $item) {
                 $variantName = $item['variant_name'] ?? null;
                 if (!empty($item['variant_id'])) {
                     $variant = ProductVariant::find($item['variant_id']);
                     $variantName = $variant?->variant_name ?? $variantName;
-                    $variant?->decrement('stock_qty', $item['quantity']);
                 }
+
+                $prod = Product::withoutGlobalScopes()->find($item['product_id']);
 
                 SaleItem::create([
                     'sale_id'            => $sale->id,
                     'product_id'         => $item['product_id'],
+                    'supplier_id'        => $prod?->supplier_id,
                     'product_variant_id' => $item['variant_id'] ?? null,
                     'variant_name'       => $variantName,
                     'quantity'           => $item['quantity'],
                     'unit_price'         => $item['unit_price'],
                     'subtotal'           => $item['quantity'] * $item['unit_price'],
-                ]);
-
-                Product::withoutGlobalScopes()->where('id', $item['product_id'])
-                    ->decrement('stock_qty', $item['quantity']);
-
-                StockMovement::create([
-                    'vendor_id'      => $sale->vendor_id,
-                    'product_id'     => $item['product_id'],
-                    'type'           => 'out',
-                    'quantity'       => $item['quantity'],
-                    'reference_type' => 'sale',
-                    'reference_id'   => $sale->id,
-                    'note'           => 'Invoice edit: ' . $sale->invoice_no,
                 ]);
             }
         });
@@ -363,10 +456,24 @@ class SaleController extends Controller
             'order_status' => ['required', Rule::in(OrderStatus::pluck('key'))],
         ]);
 
-        $sale->update(['order_status' => $request->order_status]);
+        $updateData = ['order_status' => $request->order_status];
+        if (in_array(strtolower($request->order_status), ['delivered', 'completed', 'complete'])) {
+            $updateData['payment_status'] = 'paid';
+            $updateData['paid_amount']    = $sale->total;
+            $updateData['due_amount']     = 0;
+        }
+
+        $sale->update($updateData);
+        $freshSale = $sale->fresh();
 
         if ($request->wantsJson()) {
-            return response()->json(['success' => true, 'order_status' => $sale->order_status]);
+            return response()->json([
+                'success'        => true,
+                'order_status'   => $freshSale->order_status,
+                'payment_status' => $freshSale->payment_status,
+                'paid_amount'    => (float) $freshSale->paid_amount,
+                'due_amount'     => (float) $freshSale->due_amount,
+            ]);
         }
 
         return back()->with('success', 'Order status updated.');
