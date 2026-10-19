@@ -8,10 +8,17 @@
     $globalDue     = collect($branchSummary)->sum('due');
     $globalPaid    = $globalRevenue - $globalDue;
     $colors = ['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec4899','#06b6d4','#84cc16'];
+    $pageCustomerPhones = $sales->map(function($s) {
+        $p = $s->customer?->phone ?? $s->reseller?->phone ?? $s->supplier?->phone ?? '';
+        $clean = preg_replace('/[^\d]/', '', (string)$p);
+        if (str_starts_with($clean, '880')) $clean = substr($clean, 2);
+        if (strlen($clean) > 11) $clean = substr($clean, -11);
+        return strlen($clean) >= 10 ? $clean : null;
+    })->filter()->unique()->values()->all();
 @endphp
 
 @section('content')
-<div x-data="salesAdminPage()">
+<div x-data="salesAdminPage(@js($pageCustomerPhones))">
 
 {{-- ══ STAT CARDS ══ --}}
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
@@ -30,10 +37,13 @@
         <p class="text-2xl font-bold text-emerald-600 mt-1">{{ $currency }}{{ number_format($globalPaid,0) }}</p>
         <p class="text-[11px] text-slate-400 mt-0.5">{{ $globalRevenue > 0 ? round(($globalPaid/$globalRevenue)*100) : 0 }}% collected</p>
     </div>
+    @php
+        $globalDelivered = \App\Models\Sale::whereIn('order_status', ['delivered', 'completed'])->count();
+    @endphp
     <div class="bg-white rounded-2xl border border-slate-100 shadow-sm px-4 py-3.5">
-        <p class="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Total Due</p>
-        <p class="text-2xl font-bold text-red-500 mt-1">{{ $currency }}{{ number_format($globalDue,0) }}</p>
-        <p class="text-[11px] text-slate-400 mt-0.5">outstanding</p>
+        <p class="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Delivered (Paid)</p>
+        <p class="text-2xl font-bold text-emerald-600 mt-1">{{ number_format($globalDelivered) }}</p>
+        <p class="text-[11px] text-slate-400 mt-0.5">auto-paid upon delivery</p>
     </div>
 </div>
 
@@ -51,7 +61,6 @@
                 <p class="text-[10.5px] text-slate-400 mt-0.5">
                     <span class="font-bold text-slate-600">{{ number_format($s['orders']) }}</span> orders
                     &nbsp;·&nbsp;<span class="font-bold text-emerald-600">{{ $currency }}{{ number_format($s['revenue'],0) }}</span>
-                    @if($s['due']>0)&nbsp;·&nbsp;<span class="text-red-500">{{ $currency }}{{ number_format($s['due'],0) }} due</span>@endif
                 </p>
             </div>
         </a>
@@ -110,11 +119,13 @@
             <option value="{{ $v->id }}" {{ request('vendor_id')==$v->id ? 'selected':'' }}>{{ $v->name }}</option>
             @endforeach
         </select>
-        <select name="status" class="border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <select name="order_status" class="border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
             <option value="">All Status</option>
-            <option value="paid"    {{ request('status')=='paid'    ? 'selected':'' }}>Paid</option>
-            <option value="partial" {{ request('status')=='partial' ? 'selected':'' }}>Partial</option>
-            <option value="pending" {{ request('status')=='pending' ? 'selected':'' }}>Pending</option>
+            @foreach($orderStatuses as $os)
+            <option value="{{ $os->key }}" {{ (request('order_status') == $os->key || request('status') == $os->key) ? 'selected' : '' }}>
+                {{ $os->label }}
+            </option>
+            @endforeach
         </select>
         <input type="date" name="from" value="{{ request('from') }}"
                class="border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
@@ -122,6 +133,14 @@
                class="border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
         <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors">Filter</button>
         <a href="{{ route('admin.all-sales') }}" class="border border-slate-200 text-slate-600 hover:bg-slate-50 px-4 py-2 rounded-xl text-sm transition-colors">Reset</a>
+        <button type="button"
+                @click="syncCourierStatuses()"
+                :disabled="syncingCourier"
+                title="কুরিয়ারে পাঠানো অর্ডারগুলোর লাইভ স্ট্যাটাস চেক ও অটো-ক্যানসেল সিঙ্ক করুন"
+                class="inline-flex items-center gap-1.5 border border-emerald-300 text-emerald-700 bg-emerald-50/80 hover:bg-emerald-100 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all shadow-2xs cursor-pointer">
+            <i class="fas fa-arrows-rotate text-emerald-600 text-xs" :class="{ 'fa-spin': syncingCourier }"></i>
+            <span x-text="syncingCourier ? 'সিঙ্ক হচ্ছে...' : 'কুরিয়ার স্ট্যাটাস সিঙ্ক'"></span>
+        </button>
         <span class="ml-auto text-[12px] text-slate-400">{{ $sales->total() }} records</span>
     </div>
 </form>
@@ -136,23 +155,20 @@
         <table class="w-full text-xs sm:text-sm">
             <thead class="bg-slate-50 border-b border-slate-100">
                 <tr>
-                    <th class="px-2 py-2.5 text-center w-7">
+                    <th class="px-1.5 py-2 text-center w-7">
                         <input type="checkbox" @change="toggleSelectAll($event)" :checked="isAllSelected()" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-3.5 h-3.5 cursor-pointer" title="Select All on page">
                     </th>
-                    <th class="px-1.5 py-2.5 text-center text-[10.5px] font-semibold text-slate-400 uppercase w-7">#</th>
-                    <th class="px-2.5 py-2.5 text-left text-[10.5px] font-semibold text-slate-400 uppercase hidden xl:table-cell">Date</th>
-                    <th class="px-2.5 py-2.5 text-left text-[10.5px] font-semibold text-slate-400 uppercase">Invoice</th>
-                    <th class="px-2.5 py-2.5 text-left text-[10.5px] font-semibold text-slate-400 uppercase">Sale Type / Source</th>
-                    <th class="px-2.5 py-2.5 text-left text-[10.5px] font-semibold text-slate-400 uppercase hidden md:table-cell">Branch</th>
-                    <th class="px-2.5 py-2.5 text-left text-[10.5px] font-semibold text-slate-400 uppercase">Customer</th>
-                    <th class="px-2.5 py-2.5 text-left text-[10.5px] font-semibold text-slate-400 uppercase">Products</th>
-                    <th class="px-2.5 py-2.5 text-right text-[10.5px] font-semibold text-slate-400 uppercase">Total</th>
-                    <th class="px-2 py-2.5 text-right text-[10.5px] font-semibold text-slate-400 uppercase hidden 2xl:table-cell">Paid</th>
-                    <th class="px-2 py-2.5 text-right text-[10.5px] font-semibold text-slate-400 uppercase hidden 2xl:table-cell">Due</th>
-                    <th class="px-2 py-2.5 text-center text-[10.5px] font-semibold text-slate-400 uppercase">Payment</th>
-                    <th class="px-2.5 py-2.5 text-center text-[10.5px] font-semibold text-slate-400 uppercase">Order Status</th>
-                    <th class="px-2.5 py-2.5 text-center text-[10.5px] font-semibold text-slate-400 uppercase">Courier</th>
-                    <th class="px-2.5 py-2.5 text-center text-[10.5px] font-semibold text-slate-400 uppercase">Actions</th>
+                    <th class="px-1 py-2 text-center text-[10px] font-semibold text-slate-400 uppercase w-6">#</th>
+                    <th class="px-2 py-2 text-center text-[10px] font-semibold text-slate-400 uppercase">Courier</th>
+                    <th class="px-2 py-2 text-left text-[10px] font-semibold text-slate-400 uppercase">Invoice</th>
+                    <th class="px-2 py-2 text-left text-[10px] font-semibold text-slate-400 uppercase">Source / Type</th>
+                    <th class="px-2 py-2 text-left text-[10px] font-semibold text-slate-400 uppercase hidden md:table-cell">Branch</th>
+                    <th class="px-2 py-2 text-left text-[10px] font-semibold text-slate-400 uppercase">Customer</th>
+                    <th class="px-2 py-2 text-left text-[10px] font-semibold text-slate-400 uppercase">Products</th>
+                    <th class="px-2 py-2 text-right text-[10px] font-semibold text-slate-400 uppercase">Total</th>
+                    <th class="px-1.5 py-2 text-center text-[10px] font-semibold text-slate-400 uppercase">Payment</th>
+                    <th class="px-2 py-2 text-center text-[10px] font-semibold text-slate-400 uppercase">Order Status</th>
+                    <th class="px-2 py-2 text-center text-[10px] font-semibold text-slate-400 uppercase">Actions</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-slate-50">
@@ -169,232 +185,18 @@
                     $isWeb = ($sale->channel === 'web');
                     $isPos = ($sale->channel === 'pos') || (!$isWeb && !$isReseller && !$isSupplier);
                 @endphp
-                <tr class="hover:bg-slate-50/60 transition-colors" :class="selectedIds.includes({{ $sale->id }}) ? 'bg-blue-50/40' : ''">
-                    <td class="px-2 py-2 text-center" @click.stop>
+                <tr x-data="{
+                    orderStatus: '{{ $sale->order_status }}',
+                    isPaid: {{ (in_array(strtolower((string)$sale->order_status), ['delivered', 'completed', 'complete']) || $sale->payment_status === 'paid') ? 'true' : 'false' }},
+                }"
+                class="hover:bg-slate-50/60 transition-colors" :class="selectedIds.includes({{ $sale->id }}) ? 'bg-blue-50/40' : ''">
+                    <td class="px-1.5 py-1.5 text-center" @click.stop>
                         <input type="checkbox" :value="{{ $sale->id }}" x-model.number="selectedIds" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-3.5 h-3.5 cursor-pointer">
                     </td>
-                    <td class="px-1.5 py-2 text-center text-slate-400 text-[11px]">{{ $sales->firstItem() + $loop->index }}</td>
-                    <td class="px-2.5 py-2 hidden xl:table-cell">
-                        <p class="text-[11px] text-slate-600 whitespace-nowrap">{{ $sale->created_at->format('d M Y') }}</p>
-                        <p class="text-[10px] text-slate-400">{{ $sale->created_at->format('h:i A') }}</p>
-                    </td>
-                    <td class="px-2.5 py-2">
-                        <div class="flex items-center gap-1.5 flex-wrap">
-                            <a href="{{ route('branch.sales.show', [$sale->vendor_id, $sale]) }}"
-                               class="w-6 h-6 rounded-md bg-blue-50 hover:bg-blue-600 text-blue-600 hover:text-white border border-blue-200/80 flex items-center justify-center flex-shrink-0 transition-all hover:scale-105 shadow-2xs"
-                               title="View Sale">
-                                <i class="fas fa-eye text-[10px]"></i>
-                            </a>
-                            <a href="{{ route('branch.sales.show', [$sale->vendor_id, $sale]) }}"
-                               class="font-semibold text-slate-800 hover:text-blue-600 text-[12.5px] font-mono transition-colors">
-                                {{ $sale->invoice_no }}
-                            </a>
-                            @if($isSupplier)
-                            <span class="inline-flex items-center gap-1 text-[9px] font-black px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-900 border border-amber-300">
-                                <i class="fas fa-store text-[8px] text-amber-600"></i> SUP
-                            </span>
-                            @elseif($isReseller)
-                            <span class="inline-flex items-center gap-1 text-[9px] font-black px-1.5 py-0.5 rounded-md bg-purple-100 text-purple-900 border border-purple-300">
-                                <i class="fas fa-handshake text-[8px] text-purple-600"></i> RES
-                            </span>
-                            @elseif($isWeb)
-                            <span class="inline-flex items-center gap-1 text-[9px] font-black px-1.5 py-0.5 rounded-md bg-blue-100 text-blue-900 border border-blue-300">
-                                <i class="fas fa-globe text-[8px] text-blue-600"></i> WEB
-                            </span>
-                            @else
-                            <span class="inline-flex items-center gap-1 text-[9px] font-black px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-900 border border-emerald-300">
-                                <i class="fas fa-cash-register text-[8px] text-emerald-600"></i> POS
-                            </span>
-                            @endif
-                        </div>
-                        @if($sale->payment_method)
-                        <div class="mt-0.5">
-                            <span class="text-[10px] text-slate-400 capitalize">{{ str_replace('_',' ',$sale->payment_method) }}</span>
-                        </div>
-                        @endif
-                    </td>
+                    <td class="px-1 py-1.5 text-center text-slate-400 text-[10.5px]">{{ $sales->firstItem() + $loop->index }}</td>
 
-                    {{-- Sale Type / Source (Channel) --}}
-                    <td class="px-2.5 py-2">
-                        @if($isSupplier)
-                            <div class="space-y-1">
-                                <span class="inline-flex items-center gap-1 text-[9.5px] font-black px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-950 border border-amber-300 shadow-2xs">
-                                    <i class="fas fa-store text-[8px] text-amber-600"></i> Supplier
-                                </span>
-                                @if($supplierObj)
-                                    <div class="text-[10.5px] font-bold text-amber-900 truncate max-w-[120px]" title="{{ $supplierObj->display_name }}">
-                                        {{ $supplierObj->display_name }}
-                                    </div>
-                                @endif
-                                @if($isWeb)
-                                    <div><span class="inline-flex items-center text-[8.5px] px-1 py-0.2 rounded bg-blue-50 text-blue-700 border border-blue-200 font-medium">via Web</span></div>
-                                @endif
-                            </div>
-                        @elseif($isReseller)
-                            <div class="space-y-1">
-                                <span class="inline-flex items-center gap-1 text-[9.5px] font-black px-1.5 py-0.5 rounded-md bg-purple-100 text-purple-950 border border-purple-300 shadow-2xs">
-                                    <i class="fas fa-handshake text-[8px] text-purple-600"></i> Reseller
-                                </span>
-                                @if($sale->reseller)
-                                    <div class="text-[10.5px] font-bold text-purple-900 truncate max-w-[120px]" title="{{ $sale->reseller->name }}">
-                                        {{ $sale->reseller->name }}
-                                    </div>
-                                    @if($sale->reseller_profit > 0)
-                                        <div class="text-[9px] text-purple-700 font-semibold">Profit: ৳{{ number_format($sale->reseller_profit, 2) }}</div>
-                                    @endif
-                                @endif
-                            </div>
-                        @elseif($isWeb)
-                            <div class="space-y-1">
-                                <span class="inline-flex items-center gap-1 text-[9.5px] font-black px-1.5 py-0.5 rounded-md bg-blue-100 text-blue-950 border border-blue-300 shadow-2xs">
-                                    <i class="fas fa-globe text-[8px] text-blue-600"></i> Website
-                                </span>
-                                <div class="text-[10px] font-medium text-slate-500">Storefront</div>
-                            </div>
-                        @else
-                            <div class="space-y-1">
-                                <span class="inline-flex items-center gap-1 text-[9.5px] font-black px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-950 border border-emerald-300 shadow-2xs">
-                                    <i class="fas fa-cash-register text-[8px] text-emerald-600"></i> POS
-                                </span>
-                                <div class="text-[10px] font-medium text-slate-500">Counter</div>
-                            </div>
-                        @endif
-                    </td>
-
-                    <td class="px-2.5 py-2 hidden md:table-cell">
-                        <span class="bg-blue-50 text-blue-700 text-[10px] font-semibold px-2 py-0.5 rounded-full">
-                            {{ $sale->vendor->name ?? '—' }}
-                        </span>
-                    </td>
-                    <td class="px-2.5 py-2">
-                        @php
-                            $cPhone = $sale->customer?->phone ?? $sale->reseller?->phone ?? $sale->supplier?->phone;
-                            $cName  = $sale->customer?->name ?? ($sale->reseller ? 'Reseller: '.$sale->reseller->name : ($sale->supplier ? 'Supplier: '.$sale->supplier->name : 'Walk-in'));
-                            $cWa    = $sale->customer?->whatsapp_number ?? ($cPhone ? preg_replace('/[^\d]/', '', $cPhone) : null);
-                        @endphp
-                        <p class="text-[12.5px] text-slate-700 font-medium">{{ $cName }}</p>
-                        @if($cPhone)
-                        <p class="text-[11px] text-slate-400 flex items-center gap-1.5 mt-0.5">
-                            <span><i class="fas fa-phone text-[9px] mr-0.5"></i>{{ $cPhone }}</span>
-                            <button type="button"
-                                    @click.stop="openEpbxCallModal({ id: {{ $sale->id }}, invoice: '{{ $sale->invoice_no }}', customer: @js($cName), phone: '{{ $cPhone }}', amount: '{{ round($sale->total ?? 0) }}' })"
-                                    title="MicroSIP / Zoiper Direct Call (096XX Cloud PBX)"
-                                    class="w-5 h-5 rounded bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white border border-emerald-200/80 flex items-center justify-center flex-shrink-0 transition-all hover:scale-110 shadow-2xs cursor-pointer">
-                                <i class="fas fa-phone-volume text-[9px] pointer-events-none"></i>
-                            </button>
-                            @if($cWa)
-                            <a href="https://wa.me/{{ $cWa }}" target="_blank" rel="noopener" title="Chat on WhatsApp"
-                               class="w-5 h-5 rounded bg-emerald-50 text-emerald-600 hover:bg-emerald-100 flex items-center justify-center flex-shrink-0 transition-colors">
-                                <i class="fab fa-whatsapp text-[11px]"></i>
-                            </a>
-                            @endif
-                            <button type="button"
-                                    @click.stop="openBdCheck('{{ $cPhone }}', @js($cName))"
-                                    title="Check BD Courier Status"
-                                    class="w-5 h-5 rounded bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white border border-indigo-200/70 flex items-center justify-center flex-shrink-0 transition-all hover:scale-110 shadow-xs cursor-pointer">
-                                <i class="fas fa-truck-fast text-[9px] pointer-events-none"></i>
-                            </button>
-                        </p>
-                        @endif
-                    </td>
-
-                    {{-- Products --}}
-                    <td class="px-2.5 py-2">
-                        <div class="space-y-1 max-w-[200px]">
-                            @foreach($sale->saleItems as $item)
-                            @php
-                                $img = $item->product?->first_image_url;
-                            @endphp
-                            <div class="flex items-center gap-1.5">
-                                @if($img)
-                                    <img src="{{ $img }}" alt="{{ $item->product?->name }}"
-                                         class="w-7 h-7 rounded-md object-cover border border-slate-200 flex-shrink-0 shadow-2xs">
-                                @else
-                                    <div class="w-7 h-7 rounded-md bg-slate-100 border border-slate-200 flex items-center justify-center flex-shrink-0 text-slate-400">
-                                        <i class="fas fa-box text-[10px] text-slate-300"></i>
-                                    </div>
-                                @endif
-                                <div class="min-w-0 flex-1">
-                                    <p class="font-semibold text-slate-800 text-[11px] leading-tight truncate" title="{{ $item->product?->name }}">
-                                        {{ $item->product?->name ?? 'Product' }}
-                                    </p>
-                                    <div class="flex items-center gap-1 mt-0.5">
-                                        @if($item->variant_name)
-                                            <span class="text-[8.5px] font-medium text-purple-700 bg-purple-50 border border-purple-100 px-1 py-0.2 rounded truncate max-w-[90px]" title="{{ $item->variant_name }}">
-                                                {{ $item->variant_name }}
-                                            </span>
-                                        @endif
-                                        <span class="text-[9.5px] font-bold text-slate-500 bg-slate-100 px-1 py-0.2 rounded">
-                                            ×{{ $item->quantity }}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                            @endforeach
-                        </div>
-                    </td>
-
-                    <td class="px-2.5 py-2 text-right font-bold text-slate-800 whitespace-nowrap">{{ $currency }}{{ number_format($sale->total,0) }}</td>
-                    <td class="px-2 py-2 text-right text-emerald-600 text-[11.5px] hidden 2xl:table-cell whitespace-nowrap">{{ $currency }}{{ number_format($sale->paid_amount,0) }}</td>
-                    <td class="px-2 py-2 text-right hidden 2xl:table-cell whitespace-nowrap">
-                        @if($sale->due_amount > 0)
-                        <span class="font-semibold text-red-500 text-[11.5px]">{{ $currency }}{{ number_format($sale->due_amount,0) }}</span>
-                        @else
-                        <span class="text-slate-300">—</span>
-                        @endif
-                    </td>
-                    <td class="px-2 py-2 text-center">
-                        <span class="px-1.5 py-0.5 rounded-full text-[10px] font-semibold {{ $stBg }}">
-                            {{ ucfirst($sale->payment_status) }}
-                        </span>
-                    </td>
-                    {{-- Order Status Dropdown --}}
-                    <td class="px-2.5 py-2 text-center">
-                        <div x-data="{
-                            status: '{{ $sale->order_status }}',
-                            async change(s) {
-                                const csrf = document.querySelector('meta[name=csrf-token]')?.content || document.querySelector('[name=csrf-token]')?.content;
-                                const res = await fetch('{{ route('admin.all-sales.status', $sale) }}', {
-                                    method: 'POST',
-                                    headers: {
-                                        'X-CSRF-TOKEN': csrf,
-                                        'Accept': 'application/json',
-                                        'Content-Type': 'application/x-www-form-urlencoded'
-                                    },
-                                    body: new URLSearchParams({order_status: s})
-                                });
-                                if (res.ok) {
-                                    this.status = s;
-                                    showToast('Order status updated!', 'success');
-                                } else {
-                                    showToast('Failed to update status.', 'error');
-                                }
-                                openStatusRow = null;
-                            }
-                        }"
-                             @click.outside="if (openStatusRow === {{ $sale->id }}) openStatusRow = null"
-                             class="relative inline-block text-left">
-                            <button type="button" @click.stop="openStatusRow = (openStatusRow === {{ $sale->id }} ? null : {{ $sale->id }})"
-                                    class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold transition-all cursor-pointer hover:opacity-80 shadow-2xs border"
-                                    :class="statusColors[status] || 'bg-slate-100 text-slate-600 border-slate-200'">
-                                <span x-text="statusLabels[status] || status"></span>
-                                <i class="fas fa-chevron-down text-[8px]"></i>
-                            </button>
-                            <div x-show="openStatusRow === {{ $sale->id }}" x-cloak
-                                 class="absolute right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl z-30 w-44 overflow-hidden py-1 text-left">
-                                @foreach($orderStatuses as $s)
-                                <button type="button" @click="change('{{ $s->key }}')"
-                                        class="w-full text-left px-3 py-2 text-xs transition-colors hover:bg-slate-50 flex items-center justify-between"
-                                        :class="status === '{{ $s->key }}' ? 'text-indigo-600 font-bold bg-indigo-50' : 'text-slate-600'">
-                                    <span>{{ $s->label }}</span>
-                                    <span x-show="status === '{{ $s->key }}'"><i class="fas fa-check text-[10px]"></i></span>
-                                </button>
-                                @endforeach
-                            </div>
-                        </div>
-                    </td>
-                    {{-- Courier --}}
-                    <td class="px-2.5 py-2 text-center" id="courier-cell-{{ $sale->id }}">
+                    {{-- ── Courier Column (In place of Date at front) ── --}}
+                    <td class="px-2 py-1.5 text-center" id="courier-cell-{{ $sale->id }}">
                         @if($sale->isSentToCourier())
                             @php
                                 $cColor = match($sale->courier_name) {
@@ -410,54 +212,381 @@
                                     default     => 'fas fa-truck',
                                 };
                             @endphp
-                            <div class="flex flex-col items-center gap-1">
-                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-{{ $cColor }}-50 text-{{ $cColor }}-700 border border-{{ $cColor }}-200 shadow-2xs">
-                                    <i class="{{ $cIcon }} text-[9px]"></i>
+                            <div class="flex flex-col items-center gap-0.5">
+                                <span class="inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[9.5px] font-bold bg-{{ $cColor }}-50 text-{{ $cColor }}-700 border border-{{ $cColor }}-200 shadow-2xs">
+                                    <i class="{{ $cIcon }} text-[8.5px]"></i>
                                     {{ $sale->courier_display_name }}
                                 </span>
-                                <div class="flex items-center gap-1 text-[11px] font-mono text-slate-700">
-                                    <span title="Tracking: {{ $sale->courier_tracking_code }}">{{ Str::limit($sale->courier_tracking_code, 13) }}</span>
+                                <div class="flex items-center gap-1 text-[10.5px] font-mono text-slate-700">
+                                    <span title="Tracking: {{ $sale->courier_tracking_code }}">{{ Str::limit($sale->courier_tracking_code, 12) }}</span>
                                     <button type="button" @click="copyText('{{ $sale->courier_tracking_code }}')" title="Copy Tracking Code"
                                             class="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer">
-                                        <i class="fas fa-copy text-[10px]"></i>
+                                        <i class="fas fa-copy text-[9.5px]"></i>
                                     </button>
                                 </div>
                                 @if($sale->courier_status)
-                                <span class="text-[9.5px] px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 font-medium capitalize" id="cstatus-{{ $sale->id }}">
+                                <span class="text-[9px] px-1 py-0.2 rounded font-medium capitalize {{ in_array(strtolower($sale->courier_status), ['cancelled', 'return', 'returned', 'failed', 'delivery_failed']) ? 'bg-rose-100 text-rose-700 font-bold' : 'bg-slate-100 text-slate-600' }}" id="cstatus-{{ $sale->id }}">
                                     {{ str_replace('_', ' ', $sale->courier_status) }}
+                                </span>
+                                @else
+                                <span class="text-[9px] px-1 py-0.2 rounded bg-slate-100 text-slate-400 font-medium capitalize" id="cstatus-{{ $sale->id }}">
+                                    pending
+                                </span>
+                                @endif
+                                <button type="button" 
+                                        @click="checkCourierStatus({{ $sale->id }})" 
+                                        :disabled="checkingCourier === {{ $sale->id }}"
+                                        title="কুরিয়ার লাইভ স্ট্যাটাস চেক করুন (কুরিয়ার বাতিল করলে ওয়েবসাইট অটো Cancelled হবে)"
+                                        class="inline-flex items-center gap-1 text-[8.5px] text-blue-600 hover:text-blue-800 font-bold px-1.5 py-0.5 rounded bg-blue-50 hover:bg-blue-100 border border-blue-200 transition-all cursor-pointer mt-0.5">
+                                    <i class="fas fa-arrows-rotate text-[7.5px]" :class="{ 'fa-spin': checkingCourier === {{ $sale->id }} }"></i>
+                                    <span>Sync</span>
+                                </button>
+                                @if($sale->courier_sent_at)
+                                <span class="text-[8.5px] text-slate-400 font-mono" title="Sent: {{ $sale->courier_sent_at->format('d M Y, h:i A') }}">
+                                    {{ $sale->courier_sent_at->format('d M, h:i A') }}
                                 </span>
                                 @endif
                             </div>
                         @else
-                            <span class="text-[11px] text-slate-300">—</span>
+                            @php
+                                $rName = $sale->customer?->name ?? ($sale->reseller ? $sale->reseller->name : ($sale->supplier ? $sale->supplier->name : 'Walk-in Customer'));
+                                $rPhone = $sale->customer?->phone ?? $sale->reseller?->phone ?? $sale->supplier?->phone ?? '';
+                                $rAddr = $sale->customer?->address ?: trim(($sale->thana ? $sale->thana . ', ' : '') . ($sale->district ?? ''));
+
+                                // Product Price + Shipping Charge auto calculation for COD
+                                $prodPrice = max(0, (float)($sale->subtotal ?? 0) - (float)($sale->discount ?? 0));
+                                if ($prodPrice <= 0 && (float)$sale->total > 0) {
+                                    $prodPrice = max(0, (float)$sale->total - (float)($sale->delivery_charge ?? 0));
+                                }
+                                $shipCharge = (float)($sale->delivery_charge ?? 0);
+                                $calculatedCod = round($prodPrice + $shipCharge, 2);
+                            @endphp
+                            @if(($activeCouriers ?? collect())->isEmpty())
+                                <span class="text-[10px] text-slate-300" title="No active courier. Configure in Admin > Courier Settings">—</span>
+                            @elseif(($activeCouriers ?? collect())->count() === 1)
+                                @php $singleCourier = ($activeCouriers ?? collect())->first(); @endphp
+                                <button type="button"
+                                        @click="openCourierModal({
+                                            saleId: {{ $sale->id }},
+                                            invoice: '{{ $sale->invoice_no }}',
+                                            courierCode: '{{ $singleCourier->code }}',
+                                            courierName: '{{ $singleCourier->name }}',
+                                            recipientName: @js($rName),
+                                            recipientPhone: @js($rPhone),
+                                            recipientAddress: @js($rAddr),
+                                            district: @js($sale->district ?? ''),
+                                            thana: @js($sale->thana ?? ''),
+                                            productPrice: {{ $prodPrice }},
+                                            shippingCharge: {{ $shipCharge }},
+                                            codAmount: {{ $calculatedCod }},
+                                            note: @js($sale->note ?? '')
+                                        })"
+                                        class="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-lg border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 transition-all hover:scale-105 shadow-2xs cursor-pointer whitespace-nowrap">
+                                    <i class="fas fa-paper-plane text-[8.5px]"></i>
+                                    <span>Send to {{ $singleCourier->name }}</span>
+                                </button>
+                            @else
+                                <button type="button"
+                                        @click="openCourierModal({
+                                            saleId: {{ $sale->id }},
+                                            invoice: '{{ $sale->invoice_no }}',
+                                            courierCode: '{{ ($activeCouriers ?? collect())->first()->code }}',
+                                            courierName: '{{ ($activeCouriers ?? collect())->first()->name }}',
+                                            recipientName: @js($rName),
+                                            recipientPhone: @js($rPhone),
+                                            recipientAddress: @js($rAddr),
+                                            district: @js($sale->district ?? ''),
+                                            thana: @js($sale->thana ?? ''),
+                                            productPrice: {{ $prodPrice }},
+                                            shippingCharge: {{ $shipCharge }},
+                                            codAmount: {{ $calculatedCod }},
+                                            note: @js($sale->note ?? '')
+                                        })"
+                                        class="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-all hover:scale-105 shadow-2xs cursor-pointer whitespace-nowrap">
+                                    <i class="fas fa-truck-fast text-[8.5px]"></i>
+                                    <span>Send to Courier</span>
+                                </button>
+                            @endif
                         @endif
                     </td>
-                    <td class="px-4 py-3">
+
+                    {{-- ── Invoice Column (With Date & Time underneath) ── --}}
+                    <td class="px-2 py-1.5">
+                        <div class="flex items-center gap-1.5">
+                            <a href="{{ route('branch.sales.show', [$sale->vendor_id, $sale]) }}"
+                               class="w-5 h-5 rounded-md bg-blue-50 hover:bg-blue-600 text-blue-600 hover:text-white border border-blue-200/80 flex items-center justify-center flex-shrink-0 transition-all hover:scale-105 shadow-2xs"
+                               title="View Sale">
+                                <i class="fas fa-eye text-[8.5px]"></i>
+                            </a>
+                            <a href="{{ route('branch.sales.show', [$sale->vendor_id, $sale]) }}"
+                                class="font-bold text-slate-800 hover:text-blue-600 text-[12px] font-mono tracking-tight transition-colors">
+                                {{ $sale->invoice_no }}
+                            </a>
+                        </div>
+
+                        {{-- Date & Time under Invoice --}}
+                        <div class="text-[10px] text-slate-400 font-medium mt-0.5 flex items-center gap-1 flex-wrap">
+                            <span class="inline-flex items-center gap-0.5 text-slate-500">
+                                <i class="far fa-calendar-alt text-[8.5px] text-slate-400"></i>
+                                <span>{{ $sale->created_at->format('d M Y') }}</span>
+                            </span>
+                            <span class="text-slate-300">&bull;</span>
+                            <span class="text-slate-400 text-[9.5px] font-mono">{{ $sale->created_at->format('h:i A') }}</span>
+                        </div>
+                    </td>
+
+                    {{-- ── Sale Type / Source (Channel & Partner) ── --}}
+                    <td class="px-2 py-1.5">
+                        @if($isSupplier)
+                            <div class="space-y-0.5">
+                                <span class="inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-amber-50 text-amber-700 border border-amber-200/80 shadow-2xs">
+                                    <i class="fas fa-store text-[8px] text-amber-500"></i> Supplier
+                                </span>
+                                @if($supplierObj)
+                                    <p class="text-[10.5px] font-semibold text-slate-800 truncate max-w-[120px] leading-tight" title="{{ $supplierObj->display_name }}">
+                                        {{ $supplierObj->display_name }}
+                                    </p>
+                                @endif
+                            </div>
+                        @elseif($isReseller)
+                            <div class="space-y-0.5">
+                                <span class="inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-purple-50 text-purple-700 border border-purple-200/80 shadow-2xs">
+                                    <i class="fas fa-handshake text-[8px] text-purple-500"></i> Reseller
+                                </span>
+                                @if($sale->reseller)
+                                    <p class="text-[10.5px] font-semibold text-slate-800 truncate max-w-[120px] leading-tight" title="{{ $sale->reseller->name }}">
+                                        {{ $sale->reseller->name }}
+                                    </p>
+                                    @if($sale->reseller_profit > 0)
+                                        <p class="text-[8.5px] text-emerald-600 font-bold leading-none">
+                                            Profit: ৳{{ number_format($sale->reseller_profit, 2) }}
+                                        </p>
+                                    @endif
+                                @endif
+                            </div>
+                        @elseif($isWeb)
+                            <div class="space-y-0.5">
+                                <span class="inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-200/80 shadow-2xs">
+                                    <i class="fas fa-globe text-[8px] text-blue-500"></i> Website
+                                </span>
+                                <p class="text-[9.5px] text-slate-400 font-medium">Storefront</p>
+                            </div>
+                        @else
+                            <div class="space-y-0.5">
+                                <span class="inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200/80 shadow-2xs">
+                                    <i class="fas fa-cash-register text-[8px] text-emerald-500"></i> POS
+                                </span>
+                                <p class="text-[9.5px] text-slate-400 font-medium">Counter</p>
+                            </div>
+                        @endif
+                    </td>
+
+                    <td class="px-2 py-1.5 hidden md:table-cell">
+                        <span class="inline-flex items-center gap-1 bg-slate-100 text-slate-700 text-[9.5px] font-semibold px-2 py-0.5 rounded-md border border-slate-200/80 whitespace-nowrap">
+                            <i class="fas fa-building text-[8px] text-slate-400"></i>
+                            {{ $sale->vendor->name ?? '—' }}
+                        </span>
+                    </td>
+                    <td class="px-2 py-1.5">
+                        @php
+                            $cPhone = $sale->customer?->phone ?? $sale->reseller?->phone ?? $sale->supplier?->phone;
+                            $cName  = $sale->customer?->name ?? ($sale->reseller ? 'Reseller: '.$sale->reseller->name : ($sale->supplier ? 'Supplier: '.$sale->supplier->name : 'Walk-in'));
+                            $cWa    = $sale->customer?->whatsapp_number ?? ($cPhone ? preg_replace('/[^\d]/', '', (string)$cPhone) : null);
+                            $cleanPhone = '';
+                            if ($cPhone) {
+                                $cleanPhone = preg_replace('/[^\d]/', '', (string)$cPhone);
+                                if (str_starts_with($cleanPhone, '880')) $cleanPhone = substr($cleanPhone, 2);
+                                if (strlen($cleanPhone) > 11) $cleanPhone = substr($cleanPhone, -11);
+                            }
+                        @endphp
+                        <p class="text-[12px] text-slate-800 font-semibold leading-tight truncate max-w-[150px]" title="{{ $cName }}">{{ $cName }}</p>
+                        @if($cPhone)
+                        <div class="flex items-center gap-1.5 mt-0.5">
+                            <span class="text-[11px] font-mono text-slate-700 font-medium">{{ $cPhone }}</span>
+                            <button type="button"
+                                    @click.stop="openEpbxCallModal({ id: {{ $sale->id }}, invoice: '{{ $sale->invoice_no }}', customer: @js($cName), phone: '{{ $cPhone }}', amount: '{{ round($sale->total ?? 0) }}' })"
+                                    title="Direct Call (Cloud PBX / MicroSIP)"
+                                    class="w-4.5 h-4.5 rounded bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white border border-emerald-200/80 flex items-center justify-center flex-shrink-0 transition-all hover:scale-110 shadow-2xs cursor-pointer">
+                                <i class="fas fa-phone text-[8.5px] pointer-events-none"></i>
+                            </button>
+                            @if($cWa)
+                            <a href="https://wa.me/{{ $cWa }}" target="_blank" rel="noopener" title="Chat on WhatsApp"
+                               class="w-4.5 h-4.5 rounded bg-emerald-50 text-emerald-600 hover:bg-emerald-100 flex items-center justify-center flex-shrink-0 transition-colors">
+                                <i class="fab fa-whatsapp text-[10px]"></i>
+                            </a>
+                            @endif
+                        </div>
+
+                        {{-- Repeat Order indicator if multiple orders exist for this phone number --}}
+                        @php
+                            $phoneOrderCount = $repeatOrderCounts[$cleanPhone] ?? 0;
+                        @endphp
+                        @if($phoneOrderCount > 1)
+                        <div class="mt-1">
+                            <a href="{{ route('admin.all-sales') }}?search={{ $cleanPhone }}"
+                               title="Repeat Customer: {{ $phoneOrderCount }} total orders found for this phone number. Click to filter all orders."
+                               class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9.5px] font-bold bg-amber-100 text-amber-800 border border-amber-300 shadow-2xs hover:bg-amber-200 transition-colors">
+                                <i class="fas fa-arrows-rotate text-[8px] text-amber-600"></i>
+                                <span>Repeat Order ({{ $phoneOrderCount }})</span>
+                            </a>
+                        </div>
+                        @endif
+
+                        {{-- BD Courier Fraud Check Percentage directly under phone number --}}
+                        <div class="mt-1">
+                            <template x-if="fraudLoading && !fraudChecks['{{ $cleanPhone }}']">
+                                <span class="inline-flex items-center gap-1 text-[9px] text-slate-400 bg-slate-50 border border-slate-200/60 rounded px-1.5 py-0.2 animate-pulse">
+                                    <i class="fas fa-circle-notch fa-spin text-[8px] text-indigo-400"></i>
+                                    <span>Fraud checking...</span>
+                                </span>
+                            </template>
+                            <template x-if="fraudChecks['{{ $cleanPhone }}']">
+                                <button type="button"
+                                        @click.stop="openBdCheck('{{ $cPhone }}', @js($cName))"
+                                        :title="'Cancelled: ' + (fraudChecks['{{ $cleanPhone }}'].cancelled_parcel ?? 0) + ' (' + (fraudChecks['{{ $cleanPhone }}'].cancel_ratio ?? 0) + '%) | Delivered: ' + (fraudChecks['{{ $cleanPhone }}'].success_parcel ?? 0) + ' (' + (fraudChecks['{{ $cleanPhone }}'].delivery_ratio ?? 0) + '%) - Click for full report'"
+                                        class="inline-flex items-center rounded-full overflow-hidden border border-slate-300/80 shadow-2xs hover:scale-105 transition-all cursor-pointer text-[10px] font-bold leading-tight">
+                                    {{-- Red segment: Cancel orders & % --}}
+                                    <span class="inline-flex items-center gap-0.5 bg-rose-600 text-white px-2 py-0.5">
+                                        <span x-text="fraudChecks['{{ $cleanPhone }}'].cancelled_parcel ?? 0"></span>
+                                        <span class="text-[8.5px] opacity-90 font-medium" x-text="'(' + (fraudChecks['{{ $cleanPhone }}'].cancel_ratio ?? 0) + '%)'"></span>
+                                    </span>
+                                    {{-- Green segment: Delivered orders & % --}}
+                                    <span class="inline-flex items-center gap-0.5 bg-emerald-600 text-white px-2 py-0.5">
+                                        <span x-text="fraudChecks['{{ $cleanPhone }}'].success_parcel ?? 0"></span>
+                                        <span class="text-[8.5px] opacity-90 font-medium" x-text="'(' + (fraudChecks['{{ $cleanPhone }}'].delivery_ratio ?? 0) + '%)'"></span>
+                                    </span>
+                                </button>
+                            </template>
+                            <template x-if="!fraudLoading && !fraudChecks['{{ $cleanPhone }}']">
+                                <button type="button"
+                                        @click.stop="openBdCheck('{{ $cPhone }}', @js($cName))"
+                                        title="Click to check BD Courier"
+                                        class="inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[9px] font-medium bg-slate-100 text-slate-500 border border-slate-200 hover:bg-slate-200 transition-colors cursor-pointer">
+                                    <i class="fas fa-shield-halved text-[8px]"></i>
+                                    <span>Check Fraud</span>
+                                </button>
+                            </template>
+                        </div>
+                        @endif
+                    </td>
+
+                    {{-- Products --}}
+                    <td class="px-2 py-1.5">
+                        <div class="space-y-1 max-w-[190px]">
+                            @foreach($sale->saleItems as $item)
+                            @php
+                                $img = $item->product?->first_image_url;
+                            @endphp
+                            <div class="flex items-center gap-1.5">
+                                @if($img)
+                                    <img src="{{ $img }}" alt="{{ $item->product?->name }}"
+                                         class="w-6 h-6 rounded object-cover border border-slate-200 flex-shrink-0 shadow-2xs">
+                                @else
+                                    <div class="w-6 h-6 rounded bg-slate-100 border border-slate-200 flex items-center justify-center flex-shrink-0 text-slate-400">
+                                        <i class="fas fa-box text-[9px] text-slate-300"></i>
+                                    </div>
+                                @endif
+                                <div class="min-w-0 flex-1">
+                                    <p class="font-semibold text-slate-800 text-[10.5px] leading-tight truncate" title="{{ $item->product?->name }}">
+                                        {{ $item->product?->name ?? 'Product' }}
+                                    </p>
+                                    <div class="flex items-center gap-1 mt-0.5">
+                                        @if($item->variant_name)
+                                            <span class="text-[8px] font-medium text-purple-700 bg-purple-50 border border-purple-100 px-1 py-0.1 rounded truncate max-w-[80px]" title="{{ $item->variant_name }}">
+                                                {{ $item->variant_name }}
+                                            </span>
+                                        @endif
+                                        <span class="text-[9px] font-bold text-slate-500 bg-slate-100 px-1 py-0.1 rounded">
+                                            ×{{ $item->quantity }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            @endforeach
+                        </div>
+                    </td>
+
+                    <td class="px-2 py-1.5 text-right font-bold text-slate-800 text-[11.5px] whitespace-nowrap">{{ $currency }}{{ number_format($sale->total,0) }}</td>
+                    <td class="px-1.5 py-1.5 text-center whitespace-nowrap">
+                        <span x-show="orderStatus === 'delivered' || orderStatus === 'completed' || isPaid"
+                              class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700">
+                            <i class="fas fa-check-circle text-[9px]"></i> Paid
+                        </span>
+                        <span x-show="orderStatus !== 'delivered' && orderStatus !== 'completed' && !isPaid"
+                              class="inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-500">
+                            Unpaid
+                        </span>
+                    </td>
+                    {{-- Order Status Dropdown --}}
+                    <td class="px-2 py-1.5 text-center">
+                        <div x-data="{
+                            status: '{{ $sale->order_status }}',
+                            async change(s) {
+                                const csrf = document.querySelector('meta[name=csrf-token]')?.content || document.querySelector('[name=csrf-token]')?.content;
+                                const res = await fetch('{{ route('admin.all-sales.status', $sale) }}', {
+                                    method: 'POST',
+                                    headers: {
+                                        'X-CSRF-TOKEN': csrf,
+                                        'Accept': 'application/json',
+                                        'Content-Type': 'application/x-www-form-urlencoded'
+                                    },
+                                    body: new URLSearchParams({order_status: s})
+                                });
+                                if (res.ok) {
+                                    this.status = s;
+                                    orderStatus = s;
+                                    if (s === 'delivered' || s === 'completed') {
+                                        isPaid = true;
+                                    }
+                                    showToast('Order status updated!', 'success');
+                                } else {
+                                    showToast('Failed to update status.', 'error');
+                                }
+                                openStatusRow = null;
+                            }
+                        }"
+                             @order-status-updated-{{ $sale->id }}.window="status = $event.detail; orderStatus = $event.detail; if ($event.detail === 'delivered' || $event.detail === 'completed') isPaid = true;"
+                             @click.outside="if (openStatusRow === {{ $sale->id }}) openStatusRow = null"
+                             class="relative inline-block text-left">
+                            <button type="button" @click.stop="openStatusRow = (openStatusRow === {{ $sale->id }} ? null : {{ $sale->id }})"
+                                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold transition-all cursor-pointer hover:opacity-80 shadow-2xs border"
+                                    :class="statusColors[status] || 'bg-slate-100 text-slate-600 border-slate-200'">
+                                <span x-text="statusLabels[status] || status"></span>
+                                <i class="fas fa-chevron-down text-[7.5px]"></i>
+                            </button>
+                            <div x-show="openStatusRow === {{ $sale->id }}" x-cloak
+                                 class="absolute right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl z-30 w-44 overflow-hidden py-1 text-left">
+                                @foreach($orderStatuses as $s)
+                                <button type="button" @click="change('{{ $s->key }}')"
+                                        class="w-full text-left px-3 py-2 text-xs transition-colors hover:bg-slate-50 flex items-center justify-between"
+                                        :class="status === '{{ $s->key }}' ? 'text-indigo-600 font-bold bg-indigo-50' : 'text-slate-600'">
+                                    <span>{{ $s->label }}</span>
+                                    <span x-show="status === '{{ $s->key }}'"><i class="fas fa-check text-[10px]"></i></span>
+                                </button>
+                                @endforeach
+                            </div>
+                        </div>
+                    </td>
+
+                    <td class="px-2 py-1.5">
                         <div class="flex items-center justify-center gap-1">
                             {{-- Print --}}
                             <a href="{{ route('branch.sales.show', [$sale->vendor_id, $sale]) }}?auto_print=1" target="_blank"
-                               class="w-7 h-7 rounded-lg bg-purple-100 hover:bg-purple-200 text-purple-700 flex items-center justify-center transition-colors" title="Print">
-                                <i class="fas fa-print text-[11px]"></i>
+                               class="w-6 h-6 rounded-md bg-purple-100 hover:bg-purple-200 text-purple-700 flex items-center justify-center transition-colors" title="Print">
+                                <i class="fas fa-print text-[10px]"></i>
                             </a>
                             {{-- Edit --}}
                             <a href="{{ route('branch.sales.edit', [$sale->vendor_id, $sale]) }}"
-                               class="w-7 h-7 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-700 flex items-center justify-center transition-colors" title="Edit">
-                                <i class="fas fa-pen text-[11px]"></i>
+                                class="w-6 h-6 rounded-md bg-amber-100 hover:bg-amber-200 text-amber-700 flex items-center justify-center transition-colors" title="Edit">
+                                <i class="fas fa-pen text-[10px]"></i>
                             </a>
-                            {{-- Pay --}}
-                            @if($sale->due_amount > 0)
-                            <button @click="openPay({{ $sale->id }}, {{ $sale->vendor_id }}, {{ $sale->due_amount }})"
-                                    class="w-7 h-7 rounded-lg bg-emerald-100 hover:bg-emerald-200 text-emerald-700 flex items-center justify-center transition-colors" title="Add Payment">
-                                <i class="fas fa-money-bill-wave text-[11px]"></i>
-                            </button>
-                            @endif
                             {{-- Note --}}
                             <button type="button"
                                     @click.stop="openNotes({{ $sale->id }}, '{{ $sale->invoice_no }}', @js($sale->customer?->name ?? 'Walk-in'))"
-                                    class="relative w-7 h-7 rounded-lg border flex items-center justify-center transition-colors cursor-pointer {{ $sale->notes_count > 0 ? 'bg-amber-100 border-amber-300 text-amber-700 hover:bg-amber-200 shadow-2xs' : 'bg-slate-100 hover:bg-slate-200 text-slate-600 border-slate-200' }}" title="Order Notes">
-                                <i class="fas fa-sticky-note text-[11px] pointer-events-none"></i>
+                                    class="relative w-6 h-6 rounded-md border flex items-center justify-center transition-colors cursor-pointer {{ $sale->notes_count > 0 ? 'bg-amber-100 border-amber-300 text-amber-700 hover:bg-amber-200 shadow-2xs' : 'bg-slate-100 hover:bg-slate-200 text-slate-600 border-slate-200' }}" title="Order Notes">
+                                <i class="fas fa-sticky-note text-[10px] pointer-events-none"></i>
                                 <span id="note-badge-{{ $sale->id }}"
-                                      class="absolute -top-1 -right-1 min-w-[14px] h-[14px] px-0.5 rounded-full bg-amber-500 text-white text-[8.5px] font-bold flex items-center justify-center leading-none {{ $sale->notes_count > 0 ? '' : 'hidden' }}">
+                                      class="absolute -top-1 -right-1 min-w-[13px] h-[13px] px-0.5 rounded-full bg-amber-500 text-white text-[8px] font-bold flex items-center justify-center leading-none {{ $sale->notes_count > 0 ? '' : 'hidden' }}">
                                     {{ $sale->notes_count ?? 0 }}
                                 </span>
                             </button>
@@ -466,7 +595,7 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="15" class="px-4 py-16 text-center text-slate-400">
+                    <td colspan="12" class="px-4 py-16 text-center text-slate-400">
                         <i class="fas fa-receipt text-slate-200 text-4xl mb-3 block"></i>
                         <p class="text-slate-400 text-sm">No sales found</p>
                     </td>
@@ -478,50 +607,6 @@
     @if($sales->hasPages())
     <div class="px-4 py-3 border-t border-slate-100">{{ $sales->links() }}</div>
     @endif
-</div>
-
-{{-- ══ PAY MODAL ══ --}}
-<div x-show="payOpen" x-cloak
-     class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
-     @keydown.escape.window="payOpen = false">
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm" @click.outside="payOpen = false">
-        <div class="px-5 py-4 border-b border-slate-100 flex items-center gap-3">
-            <div class="w-9 h-9 rounded-xl bg-emerald-100 flex items-center justify-center">
-                <i class="fas fa-money-bill-wave text-emerald-600 text-sm"></i>
-            </div>
-            <div>
-                <h3 class="text-[14px] font-bold text-slate-800">Add Payment</h3>
-                <p class="text-[11.5px] text-slate-400" x-text="'Max due: {{ $currency }}' + payMax.toLocaleString()"></p>
-            </div>
-        </div>
-        <form :action="payUrl" method="POST" class="p-5 space-y-4">
-            @csrf
-            <div>
-                <label class="block text-xs font-semibold text-slate-600 mb-1.5">Amount <span class="text-red-500">*</span></label>
-                <input type="number" name="amount" x-model="payAmount" step="0.01" min="0.01" :max="payMax" required
-                       class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400">
-            </div>
-            <div>
-                <label class="block text-xs font-semibold text-slate-600 mb-1.5">Payment Method</label>
-                <select name="payment_method" x-model="payMethod"
-                        class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400">
-                    @foreach($paymentMethods as $key => $label)
-                    <option value="{{ $key }}">{{ $label }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div class="flex gap-3 pt-1">
-                <button type="button" @click="payOpen = false"
-                        class="flex-1 border border-slate-200 text-slate-600 py-2.5 rounded-xl text-sm font-semibold hover:bg-slate-50 transition-colors">
-                    Cancel
-                </button>
-                <button type="submit"
-                        class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl text-sm font-bold transition-colors">
-                    Confirm Payment
-                </button>
-            </div>
-        </form>
-    </div>
 </div>
 
 
@@ -819,6 +904,118 @@
     </div>
 </div>
 
+{{-- ── Send to Courier Modal ────────────────────────────────────── --}}
+<div x-show="courierModal" x-cloak
+     class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+     @keydown.escape.window="courierModal = false">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[95vh] flex flex-col overflow-hidden" @click.outside="courierModal = false">
+        {{-- Header --}}
+        <div class="flex items-center justify-between p-5 border-b border-slate-100 bg-gradient-to-r from-blue-50/70 to-indigo-50/70">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-md shadow-blue-200 flex-shrink-0">
+                    <i class="fas fa-truck-fast text-base"></i>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h3 class="font-bold text-slate-800 text-[15px]">Send Order to Courier</h3>
+                        <span class="font-mono text-xs bg-white text-blue-700 font-semibold px-2 py-0.5 rounded-md border border-blue-200" x-text="'#' + courierForm.invoice"></span>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-0.5">Create parcel and confirm courier booking</p>
+                </div>
+            </div>
+            <button @click="courierModal = false" class="text-slate-400 hover:text-slate-600 w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/80 transition-colors">
+                <i class="fas fa-times text-sm"></i>
+            </button>
+        </div>
+
+        {{-- Body Form --}}
+        <form @submit.prevent="submitCourierDispatch()" class="p-5 space-y-3.5 overflow-y-auto flex-1">
+            @if(($activeCouriers ?? collect())->count() > 1)
+            <div>
+                <label class="block text-[11px] font-semibold text-slate-500 mb-1.5 uppercase tracking-wider">Select Courier Service</label>
+                <div class="grid grid-cols-{{ min(($activeCouriers ?? collect())->count(), 3) }} gap-2">
+                    @foreach($activeCouriers as $c)
+                    <label class="cursor-pointer border rounded-xl p-2.5 flex items-center gap-2 transition-all"
+                           :class="courierForm.courierCode === '{{ $c->code }}' ? 'border-blue-500 bg-blue-50/50 text-blue-900 ring-2 ring-blue-200' : 'border-slate-200 text-slate-600 hover:bg-slate-50'">
+                        <input type="radio" name="courier_code" value="{{ $c->code }}" x-model="courierForm.courierCode" class="sr-only">
+                        <i class="{{ $c->icon }} text-sm text-blue-600"></i>
+                        <span class="text-xs font-semibold">{{ $c->name }}</span>
+                    </label>
+                    @endforeach
+                </div>
+            </div>
+            @endif
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-500 mb-1 uppercase tracking-wider">Recipient Name *</label>
+                    <input type="text" x-model="courierForm.recipientName" required
+                           class="w-full text-xs rounded-xl border border-slate-200 px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-500 mb-1 uppercase tracking-wider">Phone Number *</label>
+                    <input type="text" x-model="courierForm.recipientPhone" required
+                           class="w-full text-xs rounded-xl border border-slate-200 px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-[11px] font-semibold text-slate-500 mb-1 uppercase tracking-wider">Delivery Address *</label>
+                <textarea x-model="courierForm.recipientAddress" rows="2" required
+                          class="w-full text-xs rounded-xl border border-slate-200 px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          placeholder="House, Road, Area, Thana, District"></textarea>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">COD Collection Amount (৳) *</label>
+                        <span class="text-[10px] text-emerald-700 font-bold bg-emerald-50 border border-emerald-200 px-1.5 py-0.2 rounded" x-show="courierForm.productPrice || courierForm.shippingCharge">
+                            প্রোডাক্ট ৳<span x-text="courierForm.productPrice"></span> + শিপিং ৳<span x-text="courierForm.shippingCharge"></span>
+                        </span>
+                    </div>
+                    <div class="relative">
+                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">৳</span>
+                        <input type="number" step="any" min="0" x-model="courierForm.codAmount" required
+                               class="w-full text-xs rounded-xl border border-slate-200 pl-7 pr-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 font-bold">
+                    </div>
+                    <p class="text-[10px] text-slate-400 mt-0.5">প্রোডাক্ট প্রাইজ ও শিপিং চার্জ যোগ হয়ে অটো ক্যালকুলেট হয়েছে</p>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-500 mb-1 uppercase tracking-wider">Delivery Area / City</label>
+                    <input type="text" x-model="courierForm.deliveryArea"
+                           class="w-full text-xs rounded-xl border border-slate-200 px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                           placeholder="e.g. Dhaka, Chittagong...">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-[11px] font-semibold text-slate-500 mb-1 uppercase tracking-wider">Instruction / Note (Optional)</label>
+                <input type="text" x-model="courierForm.note"
+                       class="w-full text-xs rounded-xl border border-slate-200 px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                       placeholder="e.g. Handle with care / Call before delivery">
+            </div>
+
+            <div x-show="courierError" x-cloak class="p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-start gap-2">
+                <i class="fas fa-circle-exclamation text-red-500 mt-0.5"></i>
+                <span x-text="courierError" class="flex-1"></span>
+            </div>
+
+            <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-2.5">
+                <button type="button" @click="courierModal = false" :disabled="courierSending"
+                        class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors">
+                    Cancel
+                </button>
+                <button type="submit" :disabled="courierSending"
+                        class="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-xs font-semibold px-5 py-2.5 rounded-xl shadow-xs transition-all flex items-center gap-2 cursor-pointer">
+                    <i class="fas fa-paper-plane text-[10px]" :class="{ 'fa-spin fa-spinner': courierSending }"></i>
+                    <span x-text="courierSending ? 'Booking Order...' : 'Confirm & Book Parcel'"></span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 {{-- ══ FLOATING BULK ACTIONS BAR ══ --}}
 <div x-show="selectedIds.length > 0" x-cloak
      x-transition:enter="transition ease-out duration-200"
@@ -857,7 +1054,7 @@
 
 @push('scripts')
 <script>
-function salesAdminPage() {
+function salesAdminPage(initialPhones = []) {
     return {
         openEpbxCallModal(data) {
             if (typeof window.openEpbxCallModal === 'function') {
@@ -868,10 +1065,310 @@ function salesAdminPage() {
         },
 
         pageSaleIds: @json($sales->pluck('id')->values()),
+        pagePhones: initialPhones || [],
+        fraudChecks: {},
+        fraudLoading: false,
+
+        init() {
+            if (this.pagePhones && this.pagePhones.length > 0) {
+                this.loadFraudChecks();
+            }
+        },
+
+        async loadFraudChecks() {
+            if (!this.pagePhones || this.pagePhones.length === 0) return;
+            this.fraudLoading = true;
+            try {
+                const csrf = document.querySelector('meta[name="csrf-token"]')?.content || document.querySelector('[name=csrf-token]')?.content;
+                const res = await fetch('{{ route('admin.bd-courier-check.batch') }}', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': csrf,
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ phones: this.pagePhones })
+                });
+                const data = await res.json();
+                if (res.ok && data.success && data.results) {
+                    this.fraudChecks = data.results;
+                }
+            } catch (e) {
+                console.error('Failed to load fraud checks:', e);
+            } finally {
+                this.fraudLoading = false;
+            }
+        },
+
+        fraudBadgeClass(info) {
+            if (!info) return 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200';
+            switch (info.color) {
+                case 'emerald':
+                    return 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100';
+                case 'sky':
+                    return 'bg-sky-50 text-sky-700 border-sky-200 hover:bg-sky-100';
+                case 'amber':
+                    return 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100';
+                case 'red':
+                    return 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100';
+                default:
+                    return 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200';
+            }
+        },
+
+        fraudBadgeIcon(info) {
+            if (!info) return 'fas fa-shield-halved text-slate-400';
+            switch (info.color) {
+                case 'emerald':
+                    return 'fas fa-shield-check text-emerald-600';
+                case 'sky':
+                    return 'fas fa-shield-halved text-sky-600';
+                case 'amber':
+                    return 'fas fa-triangle-exclamation text-amber-500';
+                case 'red':
+                    return 'fas fa-circle-exclamation text-red-500';
+                default:
+                    return 'fas fa-shield-halved text-slate-400';
+            }
+        },
+
+        fraudBadgeText(info) {
+            if (!info) return 'No Data';
+            return info.label || (info.success_ratio + '%');
+        },
+
+        fraudCheckTitle(info) {
+            if (!info) return 'Click to check courier delivery history';
+            return `Success Rate: ${info.success_ratio}% | Total Parcels: ${info.total_parcel} | Delivered: ${info.success_parcel} | Cancelled: ${info.cancelled_parcel} (Click for full report)`;
+        },
+
         selectedIds: [],
         openStatusRow: null,
         statusLabels: @json($orderStatuses->pluck('label', 'key')),
         statusColors: @json($orderStatuses->mapWithKeys(fn($s) => [$s->key => "bg-{$s->color}-100 text-{$s->color}-700 border border-{$s->color}-200"])),
+
+        courierModal: false,
+        courierSending: false,
+        courierError: null,
+        courierForm: {
+            saleId: null,
+            invoice: '',
+            courierCode: '{{ ($activeCouriers ?? collect())->first()?->code ?? "" }}',
+            courierName: '',
+            recipientName: '',
+            recipientPhone: '',
+            recipientAddress: '',
+            deliveryArea: '',
+            productPrice: 0,
+            shippingCharge: 0,
+            codAmount: 0,
+            note: ''
+        },
+
+        openCourierModal(data) {
+            this.courierError = null;
+            const prodPrice = Number(data.productPrice || 0);
+            const shipCharge = Number(data.shippingCharge || 0);
+            const calculatedCod = Number(data.codAmount !== undefined ? data.codAmount : (prodPrice + shipCharge));
+
+            this.courierForm = {
+                saleId: data.saleId,
+                invoice: data.invoice,
+                courierCode: data.courierCode || '{{ ($activeCouriers ?? collect())->first()?->code ?? "" }}',
+                courierName: data.courierName || '',
+                recipientName: data.recipientName || '',
+                recipientPhone: data.recipientPhone || '',
+                recipientAddress: data.recipientAddress || [data.thana, data.district].filter(Boolean).join(', '),
+                deliveryArea: data.district || data.thana || 'Dhaka',
+                productPrice: prodPrice,
+                shippingCharge: shipCharge,
+                codAmount: calculatedCod,
+                note: data.note || ''
+            };
+            this.courierModal = true;
+        },
+
+        async submitCourierDispatch() {
+            this.courierSending = true;
+            this.courierError = null;
+
+            try {
+                const csrf = document.querySelector('meta[name="csrf-token"]')?.content || document.querySelector('[name=csrf-token]')?.content;
+                const res = await fetch(`/admin/courier/orders/${this.courierForm.saleId}/send`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': csrf,
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({
+                        courier_code: this.courierForm.courierCode,
+                        recipient_name: this.courierForm.recipientName,
+                        recipient_phone: this.courierForm.recipientPhone,
+                        recipient_address: this.courierForm.recipientAddress,
+                        delivery_area: this.courierForm.deliveryArea,
+                        cod_amount: this.courierForm.codAmount,
+                        note: this.courierForm.note
+                    })
+                });
+
+                let data;
+                try {
+                    data = await res.json();
+                } catch (parseErr) {
+                    throw new Error(`Server response error (${res.status} ${res.statusText})`);
+                }
+
+                if (res.ok && data.success) {
+                    this.courierModal = false;
+                    if (typeof showToast === 'function') {
+                        showToast(data.message, 'success');
+                    } else {
+                        alert(data.message);
+                    }
+
+                    const cell = document.getElementById('courier-cell-' + this.courierForm.saleId);
+                    if (cell) {
+                        const cColor = data.courier_code === 'steadfast' ? 'teal' : (data.courier_code === 'pathao' ? 'rose' : (data.courier_code === 'redx' ? 'indigo' : 'blue'));
+                        const cIcon = data.courier_code === 'steadfast' ? 'fas fa-shipping-fast' : (data.courier_code === 'pathao' ? 'fas fa-motorcycle' : 'fas fa-truck-fast');
+                        cell.innerHTML = `
+                            <div class="flex flex-col items-center gap-0.5">
+                                <span class="inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[9.5px] font-bold bg-${cColor}-50 text-${cColor}-700 border border-${cColor}-200 shadow-2xs">
+                                    <i class="${cIcon} text-[8.5px]"></i>
+                                    ${data.courier_name}
+                                </span>
+                                <div class="flex items-center gap-1 text-[10.5px] font-mono text-slate-700">
+                                    <span>${data.tracking_code}</span>
+                                    <button type="button" onclick="navigator.clipboard.writeText('${data.tracking_code}'); if(typeof showToast==='function'){showToast('Tracking copied!', 'info');}else{alert('Tracking copied!');}" title="Copy Tracking Code"
+                                            class="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer">
+                                        <i class="fas fa-copy text-[9.5px]"></i>
+                                    </button>
+                                </div>
+                                <span class="text-[9px] px-1 py-0.2 rounded bg-slate-100 text-slate-600 font-medium capitalize" id="cstatus-${this.courierForm.saleId}">
+                                    ${(data.status || 'pending').replace(/_/g, ' ')}
+                                </span>
+                                <button type="button" 
+                                        onclick="window.dispatchEvent(new CustomEvent('check-courier', { detail: ${this.courierForm.saleId} }))" 
+                                        title="Sync Status"
+                                        class="inline-flex items-center gap-1 text-[8.5px] text-blue-600 hover:text-blue-800 font-bold px-1.5 py-0.5 rounded bg-blue-50 hover:bg-blue-100 border border-blue-200 transition-all cursor-pointer mt-0.5">
+                                    <i class="fas fa-arrows-rotate text-[7.5px]"></i>
+                                    <span>Sync</span>
+                                </button>
+                            </div>
+                        `;
+                    }
+                } else {
+                    this.courierError = data.message || 'Failed to dispatch order to courier.';
+                }
+            } catch (err) {
+                this.courierError = err.message || 'Server error: Connection failed.';
+            } finally {
+                this.courierSending = false;
+            }
+        },
+
+        checkingCourier: null,
+        syncingCourier: false,
+
+        async checkCourierStatus(saleId) {
+            this.checkingCourier = saleId;
+            try {
+                const res = await fetch(`/admin/all-sales/${saleId}/courier-status`, {
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                const data = await res.json();
+                if (data.success) {
+                    const statusEl = document.getElementById('cstatus-' + saleId);
+                    if (statusEl && data.courier_status) {
+                        statusEl.textContent = data.courier_status.replace(/_/g, ' ');
+                        if (data.is_cancelled) {
+                            statusEl.className = 'text-[9px] px-1 py-0.2 rounded bg-rose-100 text-rose-700 font-bold capitalize';
+                        } else if (data.is_delivered) {
+                            statusEl.className = 'text-[9px] px-1 py-0.2 rounded bg-emerald-100 text-emerald-700 font-bold capitalize';
+                        }
+                    }
+
+                    if (data.order_status) {
+                        window.dispatchEvent(new CustomEvent('order-status-updated-' + saleId, { detail: data.order_status }));
+                    }
+
+                    if (data.is_cancelled) {
+                        if (typeof showToast === 'function') {
+                            showToast(`অর্ডারটি কুরিয়ার থেকে বাতিল হয়েছে! ওয়েবসাইট অর্ডার স্ট্যাটাস অটোমেটিক 'Cancelled' করা হয়েছে।`, 'warning');
+                        } else {
+                            alert(`অর্ডারটি কুরিয়ার থেকে বাতিল হয়েছে! ওয়েবসাইট অর্ডার স্ট্যাটাস অটোমেটিক 'Cancelled' করা হয়েছে।`);
+                        }
+                    } else {
+                        if (typeof showToast === 'function') {
+                            showToast(data.message || `কুরিয়ার স্ট্যাটাস: ${data.courier_status}`, 'info');
+                        }
+                    }
+                } else {
+                    if (typeof showToast === 'function') {
+                        showToast(data.message || 'কুরিয়ার স্ট্যাটাস চেক ব্যর্থ হয়েছে।', 'error');
+                    } else {
+                        alert(data.message || 'কুরিয়ার স্ট্যাটাস চেক ব্যর্থ হয়েছে।');
+                    }
+                }
+            } catch (err) {
+                if (typeof showToast === 'function') {
+                    showToast('কুরিয়ার সার্ভারে সংযোগ সমস্যা হয়েছে।', 'error');
+                }
+            } finally {
+                this.checkingCourier = null;
+            }
+        },
+
+        async syncCourierStatuses() {
+            this.syncingCourier = true;
+            try {
+                const csrf = document.querySelector('meta[name="csrf-token"]')?.content || document.querySelector('[name=csrf-token]')?.content;
+                const res = await fetch('{{ route('admin.all-sales.courier-sync-batch') }}', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': csrf,
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({ sale_ids: this.pageSaleIds || [] })
+                });
+
+                const data = await res.json();
+                if (data.success) {
+                    if (data.updates && data.updates.length) {
+                        data.updates.forEach(u => {
+                            const statusEl = document.getElementById('cstatus-' + u.sale_id);
+                            if (statusEl && u.courier_status) {
+                                statusEl.textContent = u.courier_status.replace(/_/g, ' ');
+                                if (u.is_cancelled) {
+                                    statusEl.className = 'text-[9px] px-1 py-0.2 rounded bg-rose-100 text-rose-700 font-bold capitalize';
+                                }
+                            }
+                            if (u.order_status) {
+                                window.dispatchEvent(new CustomEvent('order-status-updated-' + u.sale_id, { detail: u.order_status }));
+                            }
+                        });
+                    }
+
+                    if (typeof showToast === 'function') {
+                        showToast(data.message, data.cancelled > 0 ? 'warning' : 'success');
+                    } else {
+                        alert(data.message);
+                    }
+                } else {
+                    alert(data.message || 'সিঙ্ক ব্যর্থ হয়েছে।');
+                }
+            } catch (err) {
+                alert('সার্ভার সংযোগ সমস্যা।');
+            } finally {
+                this.syncingCourier = false;
+            }
+        },
 
         toggleSelectAll(e) {
             if (e.target.checked) {
@@ -891,18 +1388,13 @@ function salesAdminPage() {
             window.open(url, '_blank');
         },
 
-        payOpen: false, payMax: 0, payAmount: 0, payMethod: 'cash', payUrl: '',
-        openPay(id, vendor, due) {
-            this.payMax    = due;
-            this.payAmount = due;
-            this.payMethod = 'cash';
-            this.payUrl    = `/branch/${vendor}/sales/${id}/add-payment`;
-            this.payOpen   = true;
-        },
-
         copyText(text) {
             navigator.clipboard.writeText(text).then(() => {
-                alert('Tracking code copied: ' + text);
+                if (typeof showToast === 'function') {
+                    showToast('Tracking code copied: ' + text, 'info');
+                } else {
+                    alert('Tracking code copied: ' + text);
+                }
             });
         },
 
@@ -915,7 +1407,6 @@ function salesAdminPage() {
 
         openBdCheck(phone, name) {
             this.notesModal = false;
-            this.payOpen    = false;
             this.bdPhone    = phone || '';
             this.bdName     = name || '';
             this.bdResult   = null;
@@ -982,6 +1473,35 @@ function salesAdminPage() {
                 const data = await res.json();
                 if (res.ok && data.success) {
                     this.bdResult = data;
+                    if (data.summary && data.phone) {
+                        const s = data.summary;
+                        const total = Number(s.total_parcel || 0);
+                        const ratio = Number(s.success_ratio || 0);
+                        const delCount = Number(s.success_parcel || 0);
+                        const canCount = Number(s.cancelled_parcel || 0);
+                        const delRatio = total > 0 ? Math.round((delCount / total) * 100) : Math.round(ratio);
+                        const canRatio = total > 0 ? Math.round((canCount / total) * 100) : (delRatio > 0 ? Math.max(0, 100 - delRatio) : 0);
+
+                        let color = 'slate';
+                        let label = '0% New';
+                        if (total > 0 || ratio > 0) {
+                            if (delRatio >= 80) { color = 'emerald'; label = delRatio + '% Safe'; }
+                            else if (delRatio >= 60) { color = 'sky'; label = delRatio + '% Good'; }
+                            else if (delRatio >= 40) { color = 'amber'; label = delRatio + '% Medium'; }
+                            else { color = 'red'; label = delRatio + '% Risky'; }
+                        }
+                        this.fraudChecks[data.phone] = {
+                            phone: data.phone,
+                            total_parcel: total,
+                            success_parcel: delCount,
+                            cancelled_parcel: canCount,
+                            success_ratio: ratio,
+                            delivery_ratio: delRatio,
+                            cancel_ratio: canRatio,
+                            color: color,
+                            label: label
+                        };
+                    }
                 } else {
                     this.bdError = data.error || 'Failed to fetch courier details.';
                 }
@@ -1003,7 +1523,6 @@ function salesAdminPage() {
 
         openNotes(saleId, invoiceNo, customerName) {
             this.bdModal        = false;
-            this.payOpen        = false;
             this.activeSaleId   = saleId;
             this.activeInvoice  = invoiceNo;
             this.activeCustomer = customerName;
