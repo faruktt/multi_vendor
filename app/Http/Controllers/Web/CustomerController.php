@@ -34,8 +34,8 @@ class CustomerController extends Controller
         $totals = [
             'customers' => $branch->customers()->count(),
             'orders'    => Sale::withoutGlobalScopes()->where('vendor_id', $branch->id)->whereNotNull('customer_id')->count(),
-            'revenue'   => Sale::withoutGlobalScopes()->where('vendor_id', $branch->id)->whereNotNull('customer_id')->sum('total'),
-            'due'       => Sale::withoutGlobalScopes()->where('vendor_id', $branch->id)->whereNotNull('customer_id')->sum('due_amount'),
+            'revenue'   => Sale::withoutGlobalScopes()->where('vendor_id', $branch->id)->whereNotNull('customer_id')->completedOrPos()->sum('total'),
+            'due'       => Sale::withoutGlobalScopes()->where('vendor_id', $branch->id)->whereNotNull('customer_id')->completedOrPos()->sum('due_amount'),
         ];
 
         return view('customers.index', compact('branch', 'customers', 'totals'));
@@ -119,15 +119,16 @@ class CustomerController extends Controller
             ->limit(5)
             ->get();
 
+        $eligibleSales = $sales->filter(fn($s) => $s->isEligibleForRevenue());
         $stats = [
             'total_orders' => $sales->count(),
-            'total_spent'  => round($sales->sum('total'), 2),
-            'total_paid'   => round($sales->sum('paid_amount'), 2),
-            'total_due'    => round($sales->sum('due_amount'), 2),
-            'avg_order'    => $sales->count() > 0 ? round($sales->sum('total') / $sales->count(), 2) : 0,
+            'total_spent'  => round($eligibleSales->sum('total'), 2),
+            'total_paid'   => round($eligibleSales->sum('paid_amount'), 2),
+            'total_due'    => round($eligibleSales->sum('due_amount'), 2),
+            'avg_order'    => $eligibleSales->count() > 0 ? round($eligibleSales->sum('total') / $eligibleSales->count(), 2) : 0,
         ];
 
-        $paymentBreakdown = $sales->groupBy('payment_method')
+        $paymentBreakdown = $eligibleSales->groupBy('payment_method')
             ->map(fn($g) => ['count' => $g->count(), 'total' => $g->sum('total')])
             ->sortByDesc('total');
 

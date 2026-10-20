@@ -24,7 +24,7 @@ class CustomerAccountController extends Controller
             ->where('customer_id', $customer->id);
 
         $totalOrders   = (clone $ordersQuery)->count();
-        $totalSpent    = (float) (clone $ordersQuery)->where('order_status', '!=', 'cancelled')->sum('total');
+        $totalSpent    = (float) (clone $ordersQuery)->completedOrPos()->sum('total');
         $pendingOrders = (clone $ordersQuery)->where('order_status', 'pending')->count();
         $deliveredOrders = (clone $ordersQuery)->where('order_status', 'delivered')->count();
 
