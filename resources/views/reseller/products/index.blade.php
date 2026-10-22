@@ -62,14 +62,14 @@
                             </div>
 
                             {{-- Card Art / Image --}}
-                            <div class="card-art relative h-[220px] bg-gray-50 border-b border-gray-100">
-                                <a href="{{ route('reseller.products.show', $product->id) }}" class="absolute inset-0 flex items-center justify-center">
+                            <div class="card-art relative h-[175px] bg-gray-50 border-b border-gray-100">
+                                <a href="{{ route('reseller.products.show', $product->id) }}" class="absolute inset-0 flex items-center justify-center p-2">
                                     @if($out)
                                     <div class="absolute top-0 left-0 right-0 bg-red-500 text-white text-center text-[9px] font-extrabold tracking-wide py-1 z-10">OUT OF STOCK</div>
                                     @endif
                                     @if($product->first_image_url)
                                     <img src="{{ $product->first_image_url }}" alt="{{ $product->name }}"
-                                         class="w-full h-full object-cover {{ $out ? 'opacity-50' : '' }}">
+                                         class="max-w-full max-h-full w-auto h-auto object-contain transition-transform duration-300 hover:scale-105 {{ $out ? 'opacity-50' : '' }}">
                                     @else
                                     <i class="fas fa-box text-gray-300 text-3xl {{ $out ? 'opacity-50' : '' }}"></i>
                                     @endif
@@ -138,12 +138,12 @@
                             </div>
 
                             {{-- Product Title & Pricing (Matching Image 1:1) --}}
-                            <div class="pt-6 px-3 pb-3 flex flex-col gap-1.5 flex-1">
-                                <a href="{{ route('reseller.products.show', $product->id) }}" class="text-[12.5px] font-medium leading-tight text-gray-800 line-clamp-2 min-h-[32px] hover:text-[#2E7D34]">{{ $product->name }}</a>
+                            <div class="pt-5 px-2.5 pb-2.5 flex flex-col gap-1 flex-1">
+                                <a href="{{ route('reseller.products.show', $product->id) }}" class="text-[12px] font-medium leading-tight text-gray-800 line-clamp-2 min-h-[30px] hover:text-[#2E7D34]">{{ $product->name }}</a>
                                 <div>
-                                    <div class="flex items-baseline gap-1.5">
-                                        <span class="text-[16px] font-black text-rose-600">৳ {{ number_format($displayFlash, 0) }}</span>
-                                        <span class="text-[11.5px] text-gray-400 line-through">৳ {{ number_format($displayReg, 0) }}</span>
+                                    <div class="flex items-baseline gap-1.5 flex-wrap">
+                                        <span class="text-[14.5px] font-black text-rose-600">৳ {{ number_format($displayFlash, 0) }}</span>
+                                        <span class="text-[11px] text-gray-400 line-through">৳ {{ number_format($displayReg, 0) }}</span>
                                     </div>
                                 </div>
                             </div>
@@ -190,8 +190,8 @@
         </div>
     </div>
 
-    {{-- Products Grid --}}
-    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+    {{-- Products Grid (6 cards per row on desktop) --}}
+    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5 sm:gap-3">
         @forelse($products as $product)
             @php
                 $out                  = $product->stock_qty <= 0;
@@ -214,14 +214,14 @@
                 @endif
 
                 {{-- Image Area --}}
-                <div class="card-art relative h-[220px] bg-gray-50 border-b border-gray-100">
-                    <a href="{{ route('reseller.products.show', $product->id) }}" class="absolute inset-0 flex items-center justify-center">
+                <div class="card-art relative h-[175px] bg-gray-50 border-b border-gray-100">
+                    <a href="{{ route('reseller.products.show', $product->id) }}" class="absolute inset-0 flex items-center justify-center p-2">
                         @if($out)
                         <div class="absolute top-0 left-0 right-0 bg-red-500 text-white text-center text-[9px] font-extrabold tracking-wide py-1 z-10">OUT OF STOCK</div>
                         @endif
                         @if($product->first_image_url)
                         <img src="{{ $product->first_image_url }}" alt="{{ $product->name }}"
-                             class="w-full h-full object-cover {{ $out ? 'opacity-50' : '' }}">
+                             class="max-w-full max-h-full w-auto h-auto object-contain transition-transform duration-300 hover:scale-105 {{ $out ? 'opacity-50' : '' }}">
                         @else
                         <i class="fas fa-box text-gray-300 text-3xl {{ $out ? 'opacity-50' : '' }}"></i>
                         @endif
@@ -290,21 +290,21 @@
                 </div>
 
                 {{-- Product Info --}}
-                <div class="pt-6 px-3 pb-3 flex flex-col gap-1.5 flex-1">
-                    <a href="{{ route('reseller.products.show', $product->id) }}" class="text-[12.5px] font-medium leading-tight text-gray-800 line-clamp-2 min-h-[32px] hover:text-[#2E7D34] transition-colors">
+                <div class="pt-5 px-2.5 pb-2.5 flex flex-col gap-1 flex-1">
+                    <a href="{{ route('reseller.products.show', $product->id) }}" class="text-[12px] font-medium leading-tight text-gray-800 line-clamp-2 min-h-[30px] hover:text-[#2E7D34] transition-colors">
                         {{ $product->name }}
                     </a>
                     <div>
                         @if($isOnFlash)
                         <div class="flex items-baseline gap-1.5 flex-wrap">
-                            <span class="text-[16px] font-black text-rose-600">৳ {{ number_format($effectivePrice, 0) }}</span>
-                            <span class="text-[11.5px] text-gray-400 line-through">৳ {{ number_format($regularResellerPrice, 0) }}</span>
+                            <span class="text-[14.5px] font-black text-rose-600">৳ {{ number_format($effectivePrice, 0) }}</span>
+                            <span class="text-[11px] text-gray-400 line-through">৳ {{ number_format($regularResellerPrice, 0) }}</span>
                         </div>
                         @else
-                        <div class="text-[15px] font-extrabold text-gray-900">
+                        <div class="text-[14px] font-extrabold text-gray-900">
                             ৳ {{ number_format($effectivePrice, 0) }}
                             @if($hasDiscount)
-                            <span class="text-[11.5px] text-gray-400 font-normal line-through ml-1"></span>
+                            <span class="text-[11px] text-gray-400 font-normal line-through ml-1"></span>
                             @endif
                         </div>
                         @endif

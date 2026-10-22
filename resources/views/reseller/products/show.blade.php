@@ -41,6 +41,10 @@
                 {{ $product->category->name }}
             </a>
         @endif
+        @if($product->subCategory)
+            <span>/</span>
+            <span class="text-slate-600 font-medium">{{ $product->subCategory->name }}</span>
+        @endif
         <span>/</span>
         <span class="text-slate-800 truncate font-bold max-w-[200px] sm:max-w-md">{{ $product->name }}</span>
     </nav>
@@ -51,10 +55,10 @@
 
             {{-- Image & Gallery (Left Column) --}}
             <div class="lg:col-span-5 space-y-4">
-                <div class="relative aspect-square rounded-2xl bg-slate-50 border border-slate-200/80 overflow-hidden flex items-center justify-center group">
+                <div class="relative aspect-square rounded-2xl bg-slate-50 border border-slate-200/80 overflow-hidden flex items-center justify-center group p-3">
                     <template x-if="images.length > 0">
                         <img :src="images[activeImageIndex]" :alt="`{{ $product->name }}`"
-                             class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105">
+                             class="max-w-full max-h-full w-auto h-auto object-contain transition-transform duration-300 group-hover:scale-105">
                     </template>
                     <template x-if="images.length === 0">
                         <div class="flex flex-col items-center justify-center text-slate-300 gap-2">
@@ -70,9 +74,7 @@
                                 ⚡ FLASH SALE -{{ $product->reseller_discount_percentage }}%
                             </span>
                         @elseif($product->reseller_price && $product->reseller_price < $product->price)
-                            <span class="bg-indigo-600 text-white text-[11px] font-black px-2.5 py-1 rounded-lg shadow-sm">
-                                RESELLER PRICE
-                            </span>
+
                         @endif
                         @if($product->stock_qty <= 0)
                             <span class="bg-red-600 text-white text-[11px] font-black px-2.5 py-1 rounded-lg shadow-sm">
@@ -103,7 +105,7 @@
                             <button type="button" @click="activeImageIndex = idx"
                                     class="w-16 h-16 rounded-xl overflow-hidden border-2 flex-shrink-0 transition-all"
                                     :class="activeImageIndex === idx ? 'border-indigo-600 ring-2 ring-indigo-200' : 'border-slate-200 opacity-70 hover:opacity-100'">
-                                <img :src="img" class="w-full h-full object-cover">
+                                <img :src="img" class="w-full h-full object-contain p-1">
                             </button>
                         </template>
                     </div>
@@ -160,6 +162,12 @@
                                 {{ $product->category->name }}
                             </span>
                         @endif
+                        @if($product->subCategory)
+                            <span class="text-xs font-semibold text-slate-600 bg-slate-100 px-3 py-1 rounded-full border border-slate-200 flex items-center gap-1">
+                                <i class="fas fa-angle-right text-[10px] text-slate-400"></i>
+                                {{ $product->subCategory->name }}
+                            </span>
+                        @endif
                         @if($product->barcode || $product->sku)
                             <span class="text-xs font-mono font-medium text-slate-500 bg-slate-100 px-2.5 py-1 rounded-md">
                                 SKU: {{ $product->sku ?? $product->barcode }}
@@ -198,23 +206,12 @@
                             </span>
                             <span class="text-[11px] text-slate-400 font-medium">Retail: ৳{{ number_format($retailPrice, 0) }}</span>
                             @else
-                            
+
                             @endif
                         </div>
                     </div>
 
-                    {{-- Profit Potential Banner --}}
-                    @if($hasMargin)
-                        <div class="bg-emerald-50 border border-emerald-200/80 rounded-xl p-3 flex items-center justify-between text-emerald-800">
-                            <div class="flex items-center gap-2">
-                                <i class="fas fa-chart-line text-emerald-600 text-base"></i>
-                                <span class="text-xs font-bold">Estimated Profit Margin:</span>
-                            </div>
-                            <span class="text-xs font-black bg-emerald-600 text-white px-2.5 py-0.5 rounded-lg">
-                                +৳{{ number_format($estProfit, 2) }} ({{ round(($estProfit / $retailPrice) * 100) }}%)
-                            </span>
-                        </div>
-                    @endif
+
                 </div>
 
                 {{-- Variant Selector --}}
@@ -227,9 +224,12 @@
                             @foreach($product->variants as $v)
                                 <button type="button" @click="selectVariant({{ $v->id }})"
                                         class="px-4 py-2.5 rounded-xl text-xs font-bold border transition-all text-left flex items-center gap-2"
-                                        :class="selectedVariantId === {{ $v->id }}
-                                            ? 'border-indigo-600 bg-indigo-600 text-white shadow-md shadow-indigo-100'
-                                            : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'">
+                                        :class="[
+                                            selectedVariantId === {{ $v->id }}
+                                                ? 'border-indigo-600 bg-indigo-600 text-white shadow-md shadow-indigo-100'
+                                                : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300',
+                                            {{ $v->stock_qty <= 0 ? "'opacity-60 line-through text-slate-400'" : "''" }}
+                                        ]">
                                     <span>{{ $v->variant_name }}</span>
                                     <span class="text-[11px] opacity-80">(Stock: {{ $v->stock_qty }})</span>
                                 </button>
@@ -259,7 +259,7 @@
                             <button type="button" @click="qty = Math.min(currentStock, qty + 1)"
                                     class="w-10 h-10 rounded-lg bg-white shadow-sm text-slate-600 hover:bg-slate-100 text-base font-bold flex items-center justify-center transition-colors">
                                 +
-                            </button>
+                            </button> 
                         </div>
 
                         <div class="text-xs text-slate-500">
@@ -420,7 +420,7 @@ function resellerProductShow(variants, baseStock, baseResellerPrice, baseRetailP
         images: images || [],
         activeImageIndex: 0,
         variants: variants || [],
-        selectedVariantId: variants.length > 0 ? variants[0].id : null,
+        selectedVariantId: (variants.find(v => (v.stock || 0) > 0) || variants[0] || {}).id || null,
         baseStock: baseStock,
         baseResellerPrice: baseResellerPrice,
         baseRetailPrice: baseRetailPrice,

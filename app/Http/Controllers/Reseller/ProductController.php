@@ -83,7 +83,7 @@ class ProductController extends Controller
             ->whereNull('supplier_id')
             ->where('vendor_id', $website->id)
             ->where('status', 'active')
-            ->with(['category', 'variants', 'vendor', 'activeResellerFlashSale'])
+            ->with(['category', 'subCategory', 'variants', 'vendor', 'activeResellerFlashSale'])
             ->findOrFail($id);
 
         $related = Product::withoutGlobalScopes()
