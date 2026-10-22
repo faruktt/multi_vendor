@@ -394,6 +394,8 @@
     </main>
 </div>
 
+@include('reseller.partials.coupon-popup')
+
 @stack('scripts')
 </body>
 </html>

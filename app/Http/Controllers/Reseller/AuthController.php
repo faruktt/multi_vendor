@@ -104,6 +104,7 @@ class AuthController extends Controller
         }
 
         $request->session()->regenerate();
+        session()->flash('reseller_just_logged_in', true);
         return redirect()->route('reseller.dashboard');
     }
 
