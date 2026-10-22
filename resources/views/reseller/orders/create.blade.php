@@ -144,9 +144,9 @@
                             <div class="p-3 rounded-xl bg-slate-50 border border-slate-100">
                                 {{-- Product Info --}}
                                 <div class="flex items-center gap-3">
-                                    <div class="w-10 h-10 rounded-lg overflow-hidden bg-white border border-slate-200/80 flex-shrink-0">
+                                    <div class="w-10 h-10 rounded-lg overflow-hidden bg-white border border-slate-200/80 flex-shrink-0 flex items-center justify-center p-0.5">
                                         @if($line['image_url'])
-                                            <img src="{{ $line['image_url'] }}" class="w-full h-full object-cover">
+                                            <img src="{{ $line['image_url'] }}" alt="{{ $line['product']->name }}" class="max-w-full max-h-full w-auto h-auto object-contain">
                                         @else
                                             <div class="w-full h-full flex items-center justify-center text-slate-300"><i class="fas fa-image text-xs"></i></div>
                                         @endif
@@ -229,14 +229,19 @@
                             <span class="font-bold text-slate-700">৳<span x-text="baseCost.toFixed(2)"></span></span>
                         </div>
 
-                        <div class="flex justify-between items-center text-sm">
-                            <span class="text-slate-500 font-medium">Customer Subtotal</span>
-                            <span class="font-bold text-slate-700">৳<span x-text="customerSubtotal.toFixed(2)"></span></span>
+                        <div x-show="discount > 0" class="flex justify-between items-center text-sm text-emerald-600 font-semibold">
+                            <span>Reseller Coupon Discount (<span x-text="appliedCoupon"></span>)</span>
+                            <span>-৳<span x-text="discount.toFixed(2)"></span></span>
                         </div>
 
-                        <div x-show="discount > 0" class="flex justify-between items-center text-sm text-emerald-600 font-semibold">
-                            <span>Coupon Discount (<span x-text="appliedCoupon"></span>)</span>
-                            <span>-৳<span x-text="discount.toFixed(2)"></span></span>
+                        <div x-show="discount > 0" class="flex justify-between items-center text-xs text-indigo-600 pb-1 border-b border-dashed border-slate-200">
+                            <span class="font-medium">Your Net Wholesale Cost</span>
+                            <span class="font-bold">৳<span x-text="netWholesaleCost.toFixed(2)"></span></span>
+                        </div>
+
+                        <div class="flex justify-between items-center text-sm pt-1">
+                            <span class="text-slate-500 font-medium">Customer Subtotal</span>
+                            <span class="font-bold text-slate-700">৳<span x-text="customerSubtotal.toFixed(2)"></span></span>
                         </div>
 
                         <div class="flex justify-between items-center text-sm">
@@ -249,7 +254,7 @@
                         <div class="flex justify-between items-center border-t border-slate-100 pt-2">
                             <div>
                                 <span class="font-bold text-slate-800 text-sm block">Total Charged to Customer</span>
-                                <span class="text-[10px] text-slate-400 font-medium">(Subtotal + Delivery Charge = COD Amount)</span>
+                                <span class="text-[10px] text-slate-400 font-medium">(Customer Subtotal + Delivery Charge = COD Amount)</span>
                             </div>
                             <span class="text-xl font-black text-indigo-700">৳<span x-text="total.toFixed(2)"></span></span>
                         </div>
@@ -439,12 +444,16 @@ function checkoutSummary() {
             return this.items.reduce((acc, item) => acc + (item.unitCost * item.qty), 0);
         },
 
+        get netWholesaleCost() {
+            return Math.max(0, this.baseCost - this.discount);
+        },
+
         get total() {
-            return Math.max(0, this.customerSubtotal - this.discount) + this.deliveryCharge;
+            return this.customerSubtotal + this.deliveryCharge;
         },
 
         get profit() {
-            return Math.max(0, (this.customerSubtotal - this.baseCost) + this.discount);
+            return Math.max(0, this.customerSubtotal - this.netWholesaleCost);
         },
 
         applyCoupon(silent = false) {

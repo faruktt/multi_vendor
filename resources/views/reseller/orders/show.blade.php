@@ -115,7 +115,9 @@
                         <td class="px-5 py-3">
                             <div class="flex items-center gap-3">
                                 @if($rImg)
-                                    <img src="{{ $rImg }}" alt="{{ $item->product?->name }}" class="w-10 h-10 rounded-lg object-cover border border-slate-200 flex-shrink-0">
+                                    <div class="w-10 h-10 rounded-lg bg-white border border-slate-200 flex-shrink-0 flex items-center justify-center p-0.5 overflow-hidden">
+                                        <img src="{{ $rImg }}" alt="{{ $item->product?->name }}" class="max-w-full max-h-full w-auto h-auto object-contain">
+                                    </div>
                                 @else
                                     <div class="w-10 h-10 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center flex-shrink-0 text-slate-400">
                                         <i class="fas fa-box text-sm"></i>
@@ -142,8 +144,11 @@
     <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
         <div class="space-y-2 text-sm">
             <div class="flex justify-between"><span class="text-slate-500">Customer Subtotal</span><span class="font-semibold">৳{{ number_format($order->subtotal, 2) }}</span></div>
-            @if($order->discount > 0)
-            <div class="flex justify-between text-emerald-600 font-medium"><span>Coupon Discount</span><span>-৳{{ number_format($order->discount, 2) }}</span></div>
+            @if($order->coupon_code && $order->reseller_coupon_discount > 0)
+            <div class="flex justify-between text-emerald-600 font-medium text-xs">
+                <span>Reseller Coupon Savings ({{ $order->coupon_code }})</span>
+                <span>+৳{{ number_format($order->reseller_coupon_discount, 2) }}</span>
+            </div>
             @endif
             @if($order->delivery_charge > 0)
             <div class="flex justify-between"><span class="text-slate-500">Delivery Charge</span><span class="font-semibold">৳{{ number_format($order->delivery_charge, 2) }}</span></div>

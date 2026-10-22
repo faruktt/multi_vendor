@@ -221,7 +221,9 @@ class OrderController extends Controller
                 $vendorDeliveryCharge = $isFirstVendor ? $deliveryCharge : 0;
                 $isFirstVendor = false;
 
-                $vendorTotal = max(0, $vendorCustomerSubtotal - $vendorDiscount) + $vendorDeliveryCharge;
+                // Customer is charged full customer selling subtotal + delivery charge (COD Amount)
+                // The reseller coupon reduces the reseller's wholesale cost and adds to reseller_profit
+                $vendorTotal = $vendorCustomerSubtotal + $vendorDeliveryCharge;
 
                 // Create or update customer record for this vendor
                 $customerData = [
@@ -246,7 +248,7 @@ class OrderController extends Controller
                     'coupon_code'     => $appliedCoupon?->code,
                     'invoice_no'      => Sale::generateInvoiceNo('RES'),
                     'subtotal'        => $vendorCustomerSubtotal,
-                    'discount'        => $vendorDiscount,
+                    'discount'        => 0, // Customer pays full selling price set by reseller
                     'tax'             => 0,
                     'district'        => $request->district,
                     'thana'           => $request->thana,
@@ -274,6 +276,7 @@ class OrderController extends Controller
                         'reseller_id'     => $reseller->id,
                         'discount_amount' => $vendorDiscount,
                     ]);
+                    $appliedCoupon->increment('used_count');
                 }
 
                 foreach ($vendorLines as $line) {

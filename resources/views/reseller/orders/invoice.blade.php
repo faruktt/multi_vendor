@@ -351,6 +351,12 @@
                             <span>Reseller Wholesale Cost:</span>
                             <span class="font-bold text-slate-800">৳{{ number_format(max(0, $order->subtotal - $order->reseller_profit), 2) }}</span>
                         </div>
+                        @if($order->coupon_code && $order->reseller_coupon_discount > 0)
+                        <div class="flex justify-between text-emerald-700">
+                            <span>Coupon Savings ({{ $order->coupon_code }}):</span>
+                            <span class="font-bold">+৳{{ number_format($order->reseller_coupon_discount, 2) }}</span>
+                        </div>
+                        @endif
                         <div class="flex justify-between text-emerald-700 bg-emerald-100/70 px-2 py-1 rounded font-bold">
                             <span>Your Profit:</span>
                             <span>৳{{ number_format($order->reseller_profit, 2) }}</span>
