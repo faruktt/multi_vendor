@@ -163,7 +163,7 @@ class Reseller extends Authenticatable
 
     public function getTotalSalesAmountAttribute(): float
     {
-        return (float) $this->sales()->withoutGlobalScopes()->sum('total');
+        return (float) $this->sales()->withoutGlobalScopes()->whereIn('order_status', ['completed', 'complete'])->sum('total');
     }
 
     public function getPendingProfitAttribute(): float
