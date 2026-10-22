@@ -14,16 +14,17 @@ class DashboardController extends Controller
         $reseller = auth('reseller')->user();
         $now      = Carbon::now();
 
-        $orderQ = fn() => Sale::withoutGlobalScopes()->where('reseller_id', $reseller->id);
+        $orderQ          = fn() => Sale::withoutGlobalScopes()->where('reseller_id', $reseller->id);
+        $completedOrderQ = fn() => Sale::withoutGlobalScopes()->where('reseller_id', $reseller->id)->whereIn('order_status', ['completed', 'complete']);
 
         // ── Stats ──────────────────────────────────────────────────
         $totalOrders   = $orderQ()->count();
-        $totalAmount   = round($orderQ()->sum('total'), 2);
-        $totalPaid     = round($orderQ()->sum('paid_amount'), 2);
-        $totalDue      = round($orderQ()->sum('due_amount'), 2);
+        $totalAmount   = round($completedOrderQ()->sum('total'), 2);
+        $totalPaid     = round($completedOrderQ()->sum('paid_amount'), 2);
+        $totalDue      = round($completedOrderQ()->sum('due_amount'), 2);
 
         $thisMonthOrders = $orderQ()->whereMonth('created_at', $now->month)->whereYear('created_at', $now->year)->count();
-        $thisMonthAmount = round($orderQ()->whereMonth('created_at', $now->month)->whereYear('created_at', $now->year)->sum('total'), 2);
+        $thisMonthAmount = round($completedOrderQ()->whereMonth('created_at', $now->month)->whereYear('created_at', $now->year)->sum('total'), 2);
 
         // ── Recent orders ──────────────────────────────────────────
         $recentOrders = $orderQ()->with(['saleItems.product'])->latest()->take(10)->get();
@@ -33,7 +34,7 @@ class DashboardController extends Controller
         for ($m = 5; $m >= 0; $m--) {
             $mon = $now->copy()->subMonths($m);
             $chartLabels[]  = $mon->format('M Y');
-            $chartRevenue[] = round($orderQ()->whereMonth('created_at', $mon->month)->whereYear('created_at', $mon->year)->sum('total'), 0);
+            $chartRevenue[] = round($completedOrderQ()->whereMonth('created_at', $mon->month)->whereYear('created_at', $mon->year)->sum('total'), 0);
             $chartOrders[]  = $orderQ()->whereMonth('created_at', $mon->month)->whereYear('created_at', $mon->year)->count();
         }
 
