@@ -56,7 +56,7 @@ class ResellerManagementController extends Controller
             $completedSales = Sale::withoutGlobalScopes()->where('reseller_id', $selectedReseller->id)->whereIn('order_status', ['completed', 'complete']);
 
             $totalOrders        = $resellerSales->count();
-            $totalSales         = (float) $resellerSales->sum('total');
+            $totalSales         = (float) $completedSales->sum('total');
             $totalProfit        = (float) $completedSales->sum('reseller_profit');
             $totalReturnCharges = (float) Sale::withoutGlobalScopes()->where('reseller_id', $selectedReseller->id)->whereIn('order_status', ['return', 'returned'])->sum('delivery_charge');
             $totalWithdrawn     = (float) ResellerWithdrawal::where('reseller_id', $selectedReseller->id)->where('status', 'approved')->sum('amount');
@@ -78,7 +78,7 @@ class ResellerManagementController extends Controller
 
         // Global / All Resellers Aggregated Stats
         $globalOrdersCount   = Sale::withoutGlobalScopes()->where('channel', 'reseller')->count();
-        $globalSalesTotal    = (float) Sale::withoutGlobalScopes()->where('channel', 'reseller')->sum('total');
+        $globalSalesTotal    = (float) Sale::withoutGlobalScopes()->where('channel', 'reseller')->whereIn('order_status', ['completed', 'complete'])->sum('total');
         $globalProfitTotal   = (float) Sale::withoutGlobalScopes()->where('channel', 'reseller')->whereIn('order_status', ['completed', 'complete'])->sum('reseller_profit');
         $globalReturnCharges = (float) Sale::withoutGlobalScopes()->where('channel', 'reseller')->whereIn('order_status', ['return', 'returned'])->sum('delivery_charge');
         $globalWithdrawn     = (float) ResellerWithdrawal::where('status', 'approved')->sum('amount');
@@ -170,8 +170,8 @@ class ResellerManagementController extends Controller
         $toC   = Carbon::parse($to)->endOfDay();
 
         $resellers = Reseller::withCount(['orders'])
-            ->withSum('orders as total_amount', 'total')
-            ->withSum('orders as total_due', 'due_amount')
+            ->withSum(['orders as total_amount' => fn($q) => $q->whereIn('order_status', ['completed', 'complete'])], 'total')
+            ->withSum(['orders as total_due' => fn($q) => $q->whereIn('order_status', ['completed', 'complete'])], 'due_amount')
             ->get()
             ->map(function ($r) use ($fromC, $toC) {
                 $r->period_orders = Sale::withoutGlobalScopes()
@@ -180,6 +180,7 @@ class ResellerManagementController extends Controller
                     ->count();
                 $r->period_amount = round(Sale::withoutGlobalScopes()
                     ->where('reseller_id', $r->id)
+                    ->whereIn('order_status', ['completed', 'complete'])
                     ->whereBetween('created_at', [$fromC, $toC])
                     ->sum('total'), 2);
                 $r->period_profit = round(Sale::withoutGlobalScopes()
@@ -192,7 +193,7 @@ class ResellerManagementController extends Controller
             ->sortByDesc('period_amount');
 
         $totalOrders = Sale::withoutGlobalScopes()->where('channel', 'reseller')->whereBetween('created_at', [$fromC, $toC])->count();
-        $totalAmount = round(Sale::withoutGlobalScopes()->where('channel', 'reseller')->whereBetween('created_at', [$fromC, $toC])->sum('total'), 2);
+        $totalAmount = round(Sale::withoutGlobalScopes()->where('channel', 'reseller')->whereIn('order_status', ['completed', 'complete'])->whereBetween('created_at', [$fromC, $toC])->sum('total'), 2);
         $totalProfit = round(Sale::withoutGlobalScopes()->where('channel', 'reseller')->whereIn('order_status', ['completed', 'complete'])->whereBetween('created_at', [$fromC, $toC])->sum('reseller_profit'), 2);
         $totalWithdrawn = round(ResellerWithdrawal::where('status', 'approved')->whereBetween('created_at', [$fromC, $toC])->sum('amount'), 2);
 
