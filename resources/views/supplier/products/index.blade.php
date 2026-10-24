@@ -128,7 +128,13 @@
 
                         {{-- Category --}}
                         <td class="px-4 py-3.5 text-slate-600 font-medium">
-                            {{ $product->category?->name ?: 'General' }}
+                            <div>{{ $product->category?->name ?: 'General' }}</div>
+                            @if($product->subCategory)
+                                <div class="text-[11px] text-slate-400 flex items-center gap-1 mt-0.5">
+                                    <i class="fas fa-turn-up rotate-90 text-[9px] text-slate-300"></i>
+                                    <span>{{ $product->subCategory->name }}</span>
+                                </div>
+                            @endif
                         </td>
 
                         {{-- Price --}}

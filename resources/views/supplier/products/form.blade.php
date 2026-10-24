@@ -41,13 +41,13 @@
                                    class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all">
                         </div>
 
-                        {{-- Category & Unit --}}
+                        {{-- Category & Subcategory --}}
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-xs font-bold text-slate-700 mb-1.5">
                                     Category <span class="text-rose-500">*</span>
                                 </label>
-                                <select name="category_id" required
+                                <select name="category_id" required x-model="selectedCategoryId" @change="onCategoryChange()"
                                         class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all">
                                     <option value="">Select a Category</option>
                                     @foreach($categories as $cat)
@@ -58,6 +58,23 @@
                                 </select>
                             </div>
 
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1.5">
+                                    Subcategory <span class="text-slate-400 font-normal">(Optional)</span>
+                                </label>
+                                <select name="sub_category_id" x-model="selectedSubCategoryId"
+                                        :disabled="availableSubcategories.length === 0"
+                                        class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all disabled:opacity-50 disabled:bg-slate-100">
+                                    <option value="" x-text="availableSubcategories.length === 0 ? (selectedCategoryId ? 'No subcategory' : 'Select category first') : 'Select subcategory'"></option>
+                                    <template x-for="sub in availableSubcategories" :key="sub.id">
+                                        <option :value="sub.id" :selected="String(sub.id) === String(selectedSubCategoryId)" x-text="sub.name"></option>
+                                    </template>
+                                </select>
+                            </div>
+                        </div>
+
+                        {{-- Unit & Barcode --}}
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div x-data="unitField('{{ old('unit', $product->unit ?? 'pcs') }}')">
                                 <label class="block text-xs font-bold text-slate-700 mb-1.5">Unit</label>
                                 @php
@@ -85,16 +102,16 @@
                                        placeholder="Type custom unit..."
                                        class="mt-2 w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
                             </div>
-                        </div>
 
-                        {{-- Barcode --}}
-                        <div>
-                            <label class="block text-xs font-bold text-slate-700 mb-1.5">
-                                Custom Barcode <span class="text-slate-400 font-normal">(Leave blank to auto-generate)</span>
-                            </label>
-                            <input type="text" name="barcode" value="{{ old('barcode', $product->barcode ?? '') }}"
-                                   placeholder="e.g. 890123456789"
-                                   class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all">
+                            {{-- Barcode --}}
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1.5">
+                                    Custom Barcode <span class="text-slate-400 font-normal">(Leave blank to auto-generate)</span>
+                                </label>
+                                <input type="text" name="barcode" value="{{ old('barcode', $product->barcode ?? '') }}"
+                                       placeholder="e.g. 890123456789"
+                                       class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all">
+                            </div>
                         </div>
 
                         {{-- Short Description --}}
@@ -360,7 +377,7 @@
                         {{-- Existing Saved Images (edit mode) --}}
                         <template x-for="(img, idx) in savedImages" :key="'saved-'+idx">
                             <div class="relative aspect-square rounded-xl overflow-hidden border border-slate-200 group bg-slate-100">
-                                <img :src="'{{ asset('uploads/products/') }}/' + img" class="w-full h-full object-cover">
+                                <img :src="img.includes('/') ? ('{{ asset('uploads') }}/' + img) : ('{{ asset('uploads/products') }}/' + img)" class="w-full h-full object-cover">
                                 {{-- Main badge --}}
                                 <span x-show="idx === 0"
                                       class="absolute bottom-1 left-1 text-[9px] bg-emerald-600 text-white px-2 py-0.5 rounded-full font-bold shadow">
@@ -531,6 +548,23 @@ function unitField(initial) {
 
 function supplierProductForm() {
     return {
+        categories: @json($categories),
+        selectedCategoryId: '{{ old('category_id', $product->category_id ?? '') }}',
+        selectedSubCategoryId: '{{ old('sub_category_id', $product->sub_category_id ?? '') }}',
+
+        get availableSubcategories() {
+            if (!this.selectedCategoryId) return [];
+            const cat = this.categories.find(c => String(c.id) === String(this.selectedCategoryId));
+            return (cat && cat.children) ? cat.children : [];
+        },
+
+        onCategoryChange() {
+            const valid = this.availableSubcategories.some(s => String(s.id) === String(this.selectedSubCategoryId));
+            if (!valid) {
+                this.selectedSubCategoryId = '';
+            }
+        },
+
         variants: @json(isset($product) ? $product->variants : []),
         price:     {{ old('price', $product->price ?? 0) }},
         costPrice: {{ old('cost_price', $product->cost_price ?? 0) }},

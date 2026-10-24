@@ -23,7 +23,7 @@ class ProductController extends Controller
 
         $query = Product::withoutGlobalScopes()
             ->where('supplier_id', $supplier->id)
-            ->with(['category', 'variants.color', 'variants.size'])
+            ->with(['category', 'subCategory', 'variants.color', 'variants.size'])
             ->withSum('saleItems as sold_qty', 'quantity')
             ->latest();
 
@@ -72,6 +72,8 @@ class ProductController extends Controller
 
         $categories = Category::withoutGlobalScopes()
             ->where('vendor_id', $onlineStore->id)
+            ->whereNull('parent_id')
+            ->with(['children' => fn($q) => $q->orderBy('name')])
             ->orderBy('name')
             ->get();
 
@@ -90,6 +92,7 @@ class ProductController extends Controller
         $request->validate([
             'name'               => 'required|string|max:255',
             'category_id'        => 'required|exists:categories,id',
+            'sub_category_id'    => 'nullable|exists:categories,id',
             'price'              => 'required|numeric|min:0',
             'cost_price'         => 'nullable|numeric|min:0',
             'reseller_price'     => 'nullable|numeric|min:0',
@@ -116,6 +119,7 @@ class ProductController extends Controller
                 'vendor_id'             => $onlineStore->id,
                 'supplier_id'           => $supplier->id,
                 'category_id'           => $request->category_id,
+                'sub_category_id'       => $request->sub_category_id ?: null,
                 'name'                  => $request->name,
                 'sku'                   => $sku,
                 'barcode'               => $barcode,
@@ -193,13 +197,19 @@ class ProductController extends Controller
         $onlineStore = Vendor::onlineStore();
         $categories = Category::withoutGlobalScopes()
             ->where('vendor_id', $onlineStore->id)
+            ->whereNull('parent_id')
+            ->with(['children' => fn($q) => $q->orderBy('name')])
             ->orderBy('name')
             ->get();
 
         $colors = Color::orderBy('sort_order')->orderBy('name')->get();
         $sizes  = Size::orderBy('sort_order')->orderBy('name')->get();
 
-        $product->load(['variants.color', 'variants.size']);
+        $product->load(['variants.color', 'variants.size', 'category', 'subCategory']);
+        if ($product->category && $product->category->parent_id && !$product->sub_category_id) {
+            $product->sub_category_id = $product->category_id;
+            $product->category_id = $product->category->parent_id;
+        }
 
         return view('supplier.products.form', compact('product', 'categories', 'colors', 'sizes', 'supplier'));
     }
@@ -213,6 +223,7 @@ class ProductController extends Controller
         $request->validate([
             'name'               => 'required|string|max:255',
             'category_id'        => 'required|exists:categories,id',
+            'sub_category_id'    => 'nullable|exists:categories,id',
             'price'              => 'required|numeric|min:0',
             'cost_price'         => 'nullable|numeric|min:0',
             'reseller_price'     => 'nullable|numeric|min:0',
@@ -245,6 +256,7 @@ class ProductController extends Controller
         DB::transaction(function () use ($request, $product, $allImages, $variants, $hasVariants) {
             $product->update([
                 'category_id'        => $request->category_id,
+                'sub_category_id'    => $request->sub_category_id ?: null,
                 'name'               => $request->name,
                 'barcode'            => $request->barcode ?: $product->barcode,
                 'images'             => $allImages,
