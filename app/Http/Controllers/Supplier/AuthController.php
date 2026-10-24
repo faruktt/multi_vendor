@@ -46,6 +46,7 @@ class AuthController extends Controller
 
         $data = [
             'vendor_id'    => $onlineVendor->id,
+            'type'         => 'marketplace',
             'name'         => $request->name,
             'company_name' => $request->company_name ?: $request->name,
             'email'        => strtolower(trim($request->email)),
