@@ -12,6 +12,7 @@ class Supplier extends Authenticatable
 
     protected $fillable = [
         'vendor_id',
+        'type',
         'name',
         'company_name',
         'phone',
@@ -31,6 +32,26 @@ class Supplier extends Authenticatable
         'bank_info',
         'bkash_number',
     ];
+
+    public function scopeMarketplace($query)
+    {
+        return $query->where('type', 'marketplace');
+    }
+
+    public function scopePurchase($query)
+    {
+        return $query->where('type', 'purchase');
+    }
+
+    public function isMarketplace(): bool
+    {
+        return $this->type === 'marketplace';
+    }
+
+    public function isPurchase(): bool
+    {
+        return $this->type === 'purchase';
+    }
 
     protected $hidden = [
         'password',
@@ -107,7 +128,24 @@ class Supplier extends Authenticatable
             return $path;
         }
 
-        return asset('uploads/' . ltrim($path, '/'));
+        $clean = ltrim($path, '/');
+        if (str_starts_with($clean, 'uploads/')) {
+            return asset($clean);
+        }
+
+        if (str_starts_with($clean, 'storage/')) {
+            return asset($clean);
+        }
+
+        if (file_exists(public_path('uploads/' . $clean))) {
+            return asset('uploads/' . $clean);
+        }
+
+        if (file_exists(public_path($clean))) {
+            return asset($clean);
+        }
+
+        return asset('uploads/' . $clean);
     }
 
     public function getLogoUrlAttribute(): ?string
@@ -147,18 +185,47 @@ class Supplier extends Authenticatable
 
     public function totalSales(): float
     {
-        return (float) $this->saleItems()->sum('subtotal');
+        return (float) $this->saleItems()
+            ->whereHas('sale', fn($q) => $q->withoutGlobalScopes()->where(function ($sq) {
+                $sq->where('channel', 'pos')->orWhereIn('order_status', ['completed', 'complete']);
+            }))
+            ->sum('subtotal');
+    }
+
+    public function completedSales(): float
+    {
+        return (float) $this->saleItems()
+            ->whereHas('sale', fn($q) => $q->withoutGlobalScopes()->whereIn('order_status', ['completed', 'complete']))
+            ->sum('subtotal');
     }
 
     public function totalAdminCommission(): float
     {
-        return (float) $this->saleItems()->sum('admin_commission_amount');
+        return (float) $this->saleItems()
+            ->whereHas('sale', fn($q) => $q->withoutGlobalScopes()->whereIn('order_status', ['completed', 'complete']))
+            ->sum('admin_commission_amount');
     }
 
+    /**
+     * Completed Net Earnings:
+     * Only sales where order_status is 'completed' or 'complete'.
+     * Profit is credited and withdrawable only when the order is complete.
+     */
     public function totalNetEarnings(): float
     {
         return (float) $this->saleItems()
-            ->whereHas('sale', fn($q) => $q->whereNotIn('order_status', ['cancelled', 'returned']))
+            ->whereHas('sale', fn($q) => $q->withoutGlobalScopes()->whereIn('order_status', ['completed', 'complete']))
+            ->sum('supplier_earning');
+    }
+
+    /**
+     * Pending Profit:
+     * Earnings from in-progress/active orders that are placed but not yet completed.
+     */
+    public function pendingEarnings(): float
+    {
+        return (float) $this->saleItems()
+            ->whereHas('sale', fn($q) => $q->withoutGlobalScopes()->whereNotIn('order_status', ['completed', 'complete', 'cancelled', 'returned', 'return']))
             ->sum('supplier_earning');
     }
 
