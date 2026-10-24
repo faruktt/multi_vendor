@@ -51,9 +51,10 @@ class OrderController extends Controller
             ->whereHas('saleItems', fn($q) => $q->where('supplier_id', $supplier->id))
             ->count();
 
-        $totalGrossSales      = (float) \App\Models\SaleItem::where('supplier_id', $supplier->id)->sum('subtotal');
-        $totalAdminCommission = (float) \App\Models\SaleItem::where('supplier_id', $supplier->id)->sum('admin_commission_amount');
-        $totalNetEarnings     = (float) \App\Models\SaleItem::where('supplier_id', $supplier->id)->sum('supplier_earning');
+        $totalGrossSales      = (float) $supplier->totalSales();
+        $totalAdminCommission = (float) $supplier->totalAdminCommission();
+        $totalNetEarnings     = (float) $supplier->totalNetEarnings();
+        $pendingEarnings      = (float) $supplier->pendingEarnings();
 
         return view('supplier.orders.index', compact(
             'orders',
@@ -61,7 +62,8 @@ class OrderController extends Controller
             'totalOrdersCount',
             'totalGrossSales',
             'totalAdminCommission',
-            'totalNetEarnings'
+            'totalNetEarnings',
+            'pendingEarnings'
         ));
     }
 

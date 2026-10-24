@@ -18,6 +18,7 @@ class WithdrawalController extends Controller
         $totalSales          = $supplier->totalSales();
         $totalCommission     = $supplier->totalAdminCommission();
         $totalEarned         = $supplier->totalNetEarnings();
+        $pendingEarnings     = $supplier->pendingEarnings();
         $totalWithdrawn      = $supplier->totalWithdrawnAmount();
         $pendingPayout       = $supplier->pendingWithdrawnAmount();
         $availableBalance    = $supplier->availableBalance();
@@ -33,6 +34,7 @@ class WithdrawalController extends Controller
             'totalSales',
             'totalCommission',
             'totalEarned',
+            'pendingEarnings',
             'totalWithdrawn',
             'pendingPayout',
             'availableBalance',

@@ -97,8 +97,13 @@
             <div class="mt-3">
                 <div class="text-2xl font-black text-slate-800">৳{{ number_format($totalEarned, 2) }}</div>
                 <div class="text-xs text-slate-500 mt-1 flex items-center gap-1">
-                    <span class="text-emerald-600 font-semibold">After platform fee</span> ({{ $supplier->commission_percentage ?? 5.00 }}%)
+                    <span class="text-emerald-600 font-semibold">Completed Orders</span> (Fee: {{ $supplier->commission_percentage ?? 5.00 }}%)
                 </div>
+                @if(($pendingEarnings ?? 0) > 0)
+                    <div class="text-[11px] text-amber-600 font-semibold mt-1">
+                        Pending (In Progress): ৳{{ number_format($pendingEarnings, 2) }}
+                    </div>
+                @endif
             </div>
         </div>
 

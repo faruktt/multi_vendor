@@ -36,7 +36,9 @@
             <div>
                 <div class="text-xs font-bold text-emerald-800 uppercase tracking-wider">Your Net Earnings</div>
                 <div class="text-2xl font-black text-emerald-700">৳{{ number_format($totalNetEarnings, 2) }}</div>
-                <div class="text-[11px] text-emerald-600 font-bold mt-0.5">Net receivable balance</div>
+                <div class="text-[11px] text-emerald-600 font-bold mt-0.5">
+                    Completed &bull; Pending: ৳{{ number_format($pendingEarnings ?? 0, 2) }}
+                </div>
             </div>
         </div>
     </div>
@@ -191,8 +193,17 @@
                         </td>
 
                         {{-- Net Earnings --}}
-                        <td class="px-4 py-3.5 text-right font-black text-emerald-700 whitespace-nowrap">
-                            ৳{{ number_format($netEarnings, 2) }}
+                        <td class="px-4 py-3.5 text-right font-black whitespace-nowrap">
+                            @if(in_array($order->order_status, ['completed', 'complete']))
+                                <span class="text-emerald-700">৳{{ number_format($netEarnings, 2) }}</span>
+                                <div class="text-[9px] font-bold text-emerald-600 uppercase">Completed</div>
+                            @elseif(in_array($order->order_status, ['cancelled', 'returned', 'return']))
+                                <span class="text-slate-400 line-through">৳{{ number_format($netEarnings, 2) }}</span>
+                                <div class="text-[9px] font-semibold text-rose-500 uppercase">{{ $order->order_status }}</div>
+                            @else
+                                <span class="text-amber-600">৳{{ number_format($netEarnings, 2) }}</span>
+                                <div class="text-[9px] font-bold text-amber-500 uppercase">Pending</div>
+                            @endif
                         </td>
 
                         {{-- Status --}}
