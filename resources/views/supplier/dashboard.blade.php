@@ -56,6 +56,12 @@
                 <div class="text-xs text-slate-500 mt-1 flex items-center gap-1">
                     Gross: ৳{{ number_format($totalSalesAmount, 2) }} (Fee: -৳{{ number_format($totalAdminCommission, 2) }})
                 </div>
+                @if(($pendingEarnings ?? 0) > 0)
+                    <div class="text-[11px] text-amber-600 font-semibold mt-1 flex items-center gap-1">
+                        <i class="fas fa-clock text-[10px]"></i>
+                        <span>Pending Orders: ৳{{ number_format($pendingEarnings, 2) }}</span>
+                    </div>
+                @endif
             </div>
         </div>
 

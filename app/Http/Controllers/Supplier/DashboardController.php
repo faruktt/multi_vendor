@@ -30,14 +30,20 @@ class DashboardController extends Controller
             ->count();
 
         // Sales / Order items stats
-        $saleItemsQuery = SaleItem::where('supplier_id', $supplier->id);
-
-        $totalItemsSold       = (int) $saleItemsQuery->sum('quantity');
-        $totalSalesAmount     = (float) $saleItemsQuery->sum('subtotal');
-        $totalAdminCommission = (float) $saleItemsQuery->sum('admin_commission_amount');
-        $totalNetEarnings     = (float) $saleItemsQuery->sum('supplier_earning');
+        $totalItemsSold       = (int) SaleItem::where('supplier_id', $supplier->id)
+            ->whereHas('sale', fn($q) => $q->withoutGlobalScopes()->where(function ($sq) {
+                $sq->where('channel', 'pos')->orWhereIn('order_status', ['completed', 'complete']);
+            }))
+            ->sum('quantity');
+        $totalSalesAmount     = (float) $supplier->totalSales();
+        $totalAdminCommission = (float) $supplier->totalAdminCommission();
+        $totalNetEarnings     = (float) $supplier->totalNetEarnings();
+        $pendingEarnings      = (float) $supplier->pendingEarnings();
 
         $thisMonthAmount = (float) SaleItem::where('supplier_id', $supplier->id)
+            ->whereHas('sale', fn($q) => $q->withoutGlobalScopes()->where(function ($sq) {
+                $sq->where('channel', 'pos')->orWhereIn('order_status', ['completed', 'complete']);
+            }))
             ->whereMonth('created_at', now()->month)
             ->whereYear('created_at', now()->year)
             ->sum('subtotal');
@@ -80,6 +86,7 @@ class DashboardController extends Controller
             'totalSalesAmount',
             'totalAdminCommission',
             'totalNetEarnings',
+            'pendingEarnings',
             'totalWithdrawn',
             'pendingPayout',
             'availableBalance',
