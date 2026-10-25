@@ -96,7 +96,7 @@
             <div>
                 <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Supplier Net Payable</div>
                 <div class="text-xl font-black text-slate-800 mt-0.5">৳{{ number_format($totalPlatformSupplierPayable, 2) }}</div>
-                <div class="text-[10px] text-slate-500">Due/Payout to suppliers</div>
+                <div class="text-[10px] text-slate-500">Completed &bull; Pending: ৳{{ number_format($totalPlatformPendingEarnings ?? 0, 2) }}</div>
             </div>
         </div>
     </div>
@@ -157,11 +157,11 @@
                                     @if($supplier->image_url)
                                         <img src="{{ $supplier->image_url }}" alt="{{ $supplier->display_name }}"
                                              class="w-full h-full object-cover cursor-pointer"
-                                             @click="previewImage('{{ $supplier->image_url }}', '{{ addslashes($supplier->display_name) }} (Profile Photo)')">
+                                             @click="previewImage(@js($supplier->image_url), @js($supplier->display_name . ' (Profile Photo)'))">
                                     @elseif($supplier->logo_url)
                                         <img src="{{ $supplier->logo_url }}" alt="{{ $supplier->display_name }}"
                                              class="w-full h-full object-cover cursor-pointer"
-                                             @click="previewImage('{{ $supplier->logo_url }}', '{{ addslashes($supplier->display_name) }} (Logo)')">
+                                             @click="previewImage(@js($supplier->logo_url), @js($supplier->display_name . ' (Logo)'))">
                                     @else
                                         {{ strtoupper(substr($supplier->display_name, 0, 1)) }}
                                     @endif
@@ -196,13 +196,13 @@
                                 <div class="flex items-center gap-1">
                                     <span class="text-slate-400 font-semibold">NID:</span>
                                     @if($supplier->nid_front_url)
-                                        <button type="button" @click="previewImage('{{ $supplier->nid_front_url }}', '{{ addslashes($supplier->display_name) }} - NID Front')"
+                                        <button type="button" @click="previewImage(@js($supplier->nid_front_url), @js($supplier->display_name . ' - NID Front'))"
                                                 class="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 font-bold border border-emerald-200 hover:bg-emerald-100 cursor-pointer">
                                             Front
                                         </button>
                                     @endif
                                     @if($supplier->nid_back_url)
-                                        <button type="button" @click="previewImage('{{ $supplier->nid_back_url }}', '{{ addslashes($supplier->display_name) }} - NID Back')"
+                                        <button type="button" @click="previewImage(@js($supplier->nid_back_url), @js($supplier->display_name . ' - NID Back'))"
                                                 class="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 font-bold border border-emerald-200 hover:bg-emerald-100 cursor-pointer">
                                             Back
                                         </button>
@@ -215,13 +215,13 @@
                                 <div class="flex items-center gap-1">
                                     <span class="text-slate-400 font-semibold">G-NID:</span>
                                     @if($supplier->guardian_nid_front_url)
-                                        <button type="button" @click="previewImage('{{ $supplier->guardian_nid_front_url }}', '{{ addslashes($supplier->display_name) }} - Guardian NID Front')"
+                                        <button type="button" @click="previewImage(@js($supplier->guardian_nid_front_url), @js($supplier->display_name . ' - Guardian NID Front'))"
                                                 class="px-1.5 py-0.5 rounded bg-teal-50 text-teal-700 font-bold border border-teal-200 hover:bg-teal-100 cursor-pointer">
                                             Front
                                         </button>
                                     @endif
                                     @if($supplier->guardian_nid_back_url)
-                                        <button type="button" @click="previewImage('{{ $supplier->guardian_nid_back_url }}', '{{ addslashes($supplier->display_name) }} - Guardian NID Back')"
+                                        <button type="button" @click="previewImage(@js($supplier->guardian_nid_back_url), @js($supplier->display_name . ' - Guardian NID Back'))"
                                                 class="px-1.5 py-0.5 rounded bg-teal-50 text-teal-700 font-bold border border-teal-200 hover:bg-teal-100 cursor-pointer">
                                             Back
                                         </button>
@@ -276,6 +276,11 @@
                             <div class="text-[10px] text-emerald-600 font-bold mt-0.5">
                                 Avail: ৳{{ number_format($supplier->availableBalance(), 2) }}
                             </div>
+                            @if(($supplier->pending_supplier_earnings ?? 0) > 0)
+                                <div class="text-[10px] text-amber-600 font-semibold mt-0.5" title="Pending from in-progress orders">
+                                    Pending: ৳{{ number_format($supplier->pending_supplier_earnings, 2) }}
+                                </div>
+                            @endif
                         </td>
 
                         {{-- Status Badge --}}
@@ -529,6 +534,8 @@
                 </form>
             </div>
         </div>
+    </div>
+
     {{-- ── Image Lightbox Preview Modal ── --}}
     <div x-show="previewModalOpen" x-cloak
          class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"

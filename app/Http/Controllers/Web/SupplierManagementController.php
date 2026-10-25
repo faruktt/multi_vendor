@@ -18,12 +18,13 @@ class SupplierManagementController extends Controller
     /** List all suppliers with approval status, filters and stats */
     public function index(Request $request)
     {
-        $query = Supplier::query()
+        $query = Supplier::marketplace()
             ->withCount(['products' => fn($q) => $q->withoutGlobalScopes()])
-            ->withCount(['saleItems'])
-            ->withSum('saleItems as total_sales_amount', 'subtotal')
-            ->withSum('saleItems as total_commission_earned', 'admin_commission_amount')
-            ->withSum('saleItems as total_supplier_earnings', 'supplier_earning')
+            ->withCount(['saleItems' => fn($q) => $q->whereHas('sale', fn($sq) => $sq->withoutGlobalScopes()->whereNotIn('order_status', ['cancelled', 'returned', 'return']))])
+            ->withSum(['saleItems as total_sales_amount' => fn($q) => $q->whereHas('sale', fn($sq) => $sq->withoutGlobalScopes()->whereNotIn('order_status', ['cancelled', 'returned', 'return']))], 'subtotal')
+            ->withSum(['saleItems as total_commission_earned' => fn($q) => $q->whereHas('sale', fn($sq) => $sq->withoutGlobalScopes()->whereIn('order_status', ['completed', 'complete']))], 'admin_commission_amount')
+            ->withSum(['saleItems as total_supplier_earnings' => fn($q) => $q->whereHas('sale', fn($sq) => $sq->withoutGlobalScopes()->whereIn('order_status', ['completed', 'complete']))], 'supplier_earning')
+            ->withSum(['saleItems as pending_supplier_earnings' => fn($q) => $q->whereHas('sale', fn($sq) => $sq->withoutGlobalScopes()->whereNotIn('order_status', ['completed', 'complete', 'cancelled', 'returned', 'return']))], 'supplier_earning')
             ->latest();
 
         if ($request->filled('status')) {
@@ -42,15 +43,24 @@ class SupplierManagementController extends Controller
 
         $suppliers = $query->paginate(20)->withQueryString();
 
-        $totalCount    = Supplier::count();
-        $pendingCount  = Supplier::where('status', 'pending')->count();
-        $activeCount   = Supplier::where('status', 'active')->count();
-        $inactiveCount = Supplier::where('status', 'inactive')->count();
+        $totalCount    = Supplier::marketplace()->count();
+        $pendingCount  = Supplier::marketplace()->where('status', 'pending')->count();
+        $activeCount   = Supplier::marketplace()->where('status', 'active')->count();
+        $inactiveCount = Supplier::marketplace()->where('status', 'inactive')->count();
 
-        // Platform-wide supplier commission totals
-        $totalPlatformSupplierSales    = (float) SaleItem::whereNotNull('supplier_id')->sum('subtotal');
-        $totalPlatformAdminCommission  = (float) SaleItem::whereNotNull('supplier_id')->sum('admin_commission_amount');
-        $totalPlatformSupplierPayable  = (float) SaleItem::whereNotNull('supplier_id')->sum('supplier_earning');
+        // Platform-wide supplier commission totals (only completed orders count as payable profit)
+        $totalPlatformSupplierSales    = (float) SaleItem::whereHas('supplier', fn($sq) => $sq->marketplace())
+            ->whereHas('sale', fn($q) => $q->withoutGlobalScopes()->whereNotIn('order_status', ['cancelled', 'returned', 'return']))
+            ->sum('subtotal');
+        $totalPlatformAdminCommission  = (float) SaleItem::whereHas('supplier', fn($sq) => $sq->marketplace())
+            ->whereHas('sale', fn($q) => $q->withoutGlobalScopes()->whereIn('order_status', ['completed', 'complete']))
+            ->sum('admin_commission_amount');
+        $totalPlatformSupplierPayable  = (float) SaleItem::whereHas('supplier', fn($sq) => $sq->marketplace())
+            ->whereHas('sale', fn($q) => $q->withoutGlobalScopes()->whereIn('order_status', ['completed', 'complete']))
+            ->sum('supplier_earning');
+        $totalPlatformPendingEarnings  = (float) SaleItem::whereHas('supplier', fn($sq) => $sq->marketplace())
+            ->whereHas('sale', fn($q) => $q->withoutGlobalScopes()->whereNotIn('order_status', ['completed', 'complete', 'cancelled', 'returned', 'return']))
+            ->sum('supplier_earning');
 
         return view('admin.suppliers.index', compact(
             'suppliers',
@@ -60,7 +70,8 @@ class SupplierManagementController extends Controller
             'inactiveCount',
             'totalPlatformSupplierSales',
             'totalPlatformAdminCommission',
-            'totalPlatformSupplierPayable'
+            'totalPlatformSupplierPayable',
+            'totalPlatformPendingEarnings'
         ));
     }
 
@@ -102,10 +113,13 @@ class SupplierManagementController extends Controller
 
         $saleItems = $query->paginate(30)->withQueryString();
 
-        $totalSalesAmount     = (float) $supplier->saleItems()->sum('subtotal');
-        $totalCommissionEarned = (float) $supplier->saleItems()->sum('admin_commission_amount');
-        $totalNetEarnings     = (float) $supplier->saleItems()->sum('supplier_earning');
-        $totalItemsSold       = (int) $supplier->saleItems()->sum('quantity');
+        $totalSalesAmount      = (float) $supplier->totalSales();
+        $totalCommissionEarned = (float) $supplier->totalAdminCommission();
+        $totalNetEarnings      = (float) $supplier->totalNetEarnings();
+        $pendingNetEarnings    = (float) $supplier->pendingEarnings();
+        $totalItemsSold        = (int) $supplier->saleItems()
+            ->whereHas('sale', fn($q) => $q->withoutGlobalScopes()->whereNotIn('order_status', ['cancelled', 'returned', 'return']))
+            ->sum('quantity');
 
         return view('admin.suppliers.commission-report', compact(
             'supplier',
@@ -113,6 +127,7 @@ class SupplierManagementController extends Controller
             'totalSalesAmount',
             'totalCommissionEarned',
             'totalNetEarnings',
+            'pendingNetEarnings',
             'totalItemsSold'
         ));
     }
@@ -213,7 +228,7 @@ class SupplierManagementController extends Controller
         ];
 
         $withdrawals = $query->latest()->paginate(20)->withQueryString();
-        $allSuppliers = Supplier::orderBy('name')->get();
+        $allSuppliers = Supplier::marketplace()->orderBy('name')->get();
 
         return view('admin.suppliers.withdrawals', compact('withdrawals', 'stats', 'allSuppliers'));
     }
