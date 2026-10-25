@@ -136,7 +136,9 @@
                 </span>
             </div>
             <div class="text-2xl font-black text-slate-900 mt-2">৳{{ number_format($totalNetEarnings, 2) }}</div>
-            <div class="text-[11px] text-slate-400 mt-1">Net payable to supplier</div>
+            <div class="text-[11px] text-slate-400 mt-1">
+                Completed &bull; Pending: ৳{{ number_format($pendingNetEarnings ?? 0, 2) }}
+            </div>
         </div>
     </div>
 
