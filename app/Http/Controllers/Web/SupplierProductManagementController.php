@@ -22,7 +22,7 @@ class SupplierProductManagementController extends Controller
         // Query supplier products without global vendor scopes
         $query = Product::withoutGlobalScopes()
             ->whereNotNull('supplier_id')
-            ->with(['supplier', 'category', 'variants.color', 'variants.size'])
+            ->with(['supplier', 'category', 'subCategory', 'variants.color', 'variants.size'])
             ->latest('id');
 
         // Apply tab filter
@@ -75,7 +75,7 @@ class SupplierProductManagementController extends Controller
             ->count();
 
         // Suppliers list for filter dropdown
-        $suppliers = Supplier::orderBy('name')->get(['id', 'name', 'company_name', 'phone', 'commission_percentage']);
+        $suppliers = Supplier::marketplace()->orderBy('name')->get(['id', 'name', 'company_name', 'phone', 'commission_percentage']);
 
         return view('admin.supplier-products.index', compact(
             'products',

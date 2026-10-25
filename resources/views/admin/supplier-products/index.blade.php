@@ -178,7 +178,12 @@
                                     <div class="flex items-center gap-2 mt-0.5 text-[11px] text-slate-500">
                                         <span class="font-mono bg-slate-100 px-1.5 py-0.5 rounded text-[10px]">{{ $product->sku ?: 'NO-SKU' }}</span>
                                         @if($product->category)
-                                            <span class="truncate">{{ $product->category->name }}</span>
+                                            <span class="truncate">
+                                                {{ $product->category->name }}
+                                                @if($product->subCategory)
+                                                    <span class="text-slate-400">/</span> {{ $product->subCategory->name }}
+                                                @endif
+                                            </span>
                                         @endif
                                     </div>
                                     @if($product->isApproved() && $product->status === 'active')
