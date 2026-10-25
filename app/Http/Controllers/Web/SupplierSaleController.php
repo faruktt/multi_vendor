@@ -72,7 +72,7 @@ class SupplierSaleController extends Controller
         $sales = $query->paginate(20)->withQueryString();
 
         // Suppliers list with dynamic order counts for filter
-        $suppliers = Supplier::orderBy('name')->get()->map(function ($supplier) {
+        $suppliers = Supplier::marketplace()->orderBy('name')->get()->map(function ($supplier) {
             $supplier->orders_count = Sale::withoutGlobalScopes()
                 ->where(function ($q) use ($supplier) {
                     $q->where('supplier_id', $supplier->id)
@@ -95,10 +95,11 @@ class SupplierSaleController extends Controller
 
         $kpis = [
             'total_orders'     => (clone $query)->count(),
-            'total_gross'      => (float) (clone $itemQuery)->sum('subtotal'),
-            'total_commission' => (float) (clone $itemQuery)->sum('admin_commission_amount'),
-            'total_net'        => (float) (clone $itemQuery)->sum('supplier_earning'),
-            'total_items'      => (int)   (clone $itemQuery)->sum('quantity'),
+            'total_gross'      => (float) (clone $itemQuery)->whereHas('sale', fn($q) => $q->withoutGlobalScopes()->where(fn($sq) => $sq->where('channel', 'pos')->orWhereIn('order_status', ['completed', 'complete'])))->sum('subtotal'),
+            'total_commission' => (float) (clone $itemQuery)->whereHas('sale', fn($q) => $q->withoutGlobalScopes()->whereIn('order_status', ['completed', 'complete']))->sum('admin_commission_amount'),
+            'total_net'        => (float) (clone $itemQuery)->whereHas('sale', fn($q) => $q->withoutGlobalScopes()->whereIn('order_status', ['completed', 'complete']))->sum('supplier_earning'),
+            'total_pending'    => (float) (clone $itemQuery)->whereHas('sale', fn($q) => $q->withoutGlobalScopes()->whereNotIn('order_status', ['completed', 'complete', 'cancelled', 'returned', 'return']))->sum('supplier_earning'),
+            'total_items'      => (int)   (clone $itemQuery)->whereHas('sale', fn($q) => $q->withoutGlobalScopes()->whereNotIn('order_status', ['cancelled', 'returned', 'return']))->sum('quantity'),
         ];
 
         $orderStatuses = OrderStatus::orderBy('sort_order')->get();
