@@ -58,17 +58,25 @@
                         {{-- Thumbnail --}}
                         <div class="w-11 h-11 rounded-xl overflow-hidden flex-shrink-0 flex items-center justify-center border border-slate-100"
                              style="background: linear-gradient(135deg,#f0f4ff,#e8f0fe)">
-                            @if(isset($product->image_url))
-                                <img src="{{ $product->image_url }}" alt="{{ $product->name }}" class="w-full h-full object-cover">
+                            @if($product->first_image_url ?? $product->image_url)
+                                <img src="{{ $product->first_image_url ?? $product->image_url }}" alt="{{ $product->name }}" class="w-full h-full object-cover">
                             @else
                                 <i class="fas fa-box text-blue-300 text-sm"></i>
                             @endif
                         </div>
                         <div>
                             <p class="font-semibold text-slate-800 text-[13px] leading-tight">{{ $product->name }}</p>
-                            <div class="flex items-center gap-2 mt-0.5">
+                            <div class="flex items-center gap-2 mt-0.5 flex-wrap">
                                 @if($product->sku)
                                 <span class="text-[10.5px] text-slate-400 font-mono">{{ $product->sku }}</span>
+                                @endif
+                                @if($product->category)
+                                <span class="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded-md font-medium">
+                                    {{ $product->category->name }}
+                                    @if($product->subCategory)
+                                        <span class="text-slate-400">/</span> {{ $product->subCategory->name }}
+                                    @endif
+                                </span>
                                 @endif
                                 @if($product->variants->count())
                                 <span class="text-[10px] bg-purple-100 text-purple-600 px-1.5 py-0.5 rounded-full font-medium">

@@ -32,11 +32,31 @@ class ProductController extends Controller
     {
         if (!$sourceCategory) return null;
 
-        return Category::withoutGlobalScopes()
+        $parentBranchCatId = null;
+        if ($sourceCategory->parent_id) {
+            $sourceParent = Category::withoutGlobalScopes()->find($sourceCategory->parent_id);
+            if ($sourceParent) {
+                $parentBranchCatId = $this->resolveBranchCategory($toBranch, $sourceParent);
+            }
+        }
+
+        $existing = Category::withoutGlobalScopes()
             ->where('vendor_id', $toBranch->id)
             ->where('name', $sourceCategory->name)
-            ->value('id')
-            ?? Category::create(['vendor_id' => $toBranch->id, 'name' => $sourceCategory->name])->id;
+            ->first();
+
+        if ($existing) {
+            if ($parentBranchCatId && $existing->parent_id !== $parentBranchCatId) {
+                $existing->update(['parent_id' => $parentBranchCatId]);
+            }
+            return $existing->id;
+        }
+
+        return Category::create([
+            'vendor_id' => $toBranch->id,
+            'name'      => $sourceCategory->name,
+            'parent_id' => $parentBranchCatId,
+        ])->id;
     }
 
     /** Active, non-warehouse branches — the only valid distribution/purchase targets. */
@@ -54,7 +74,7 @@ class ProductController extends Controller
     {
         $query = Product::withoutGlobalScopes()
             ->whereNull('source_product_id')
-            ->with(['category', 'variants', 'vendor'])
+            ->with(['category', 'subCategory', 'variants', 'vendor'])
             ->latest();
 
         if ($request->search) $query->where('name', 'like', '%' . $request->search . '%');
@@ -64,7 +84,7 @@ class ProductController extends Controller
         $products = $query->paginate(20)->withQueryString();
 
         $products->getCollection()->transform(function ($p) use ($branch) {
-            if ($p->image) $p->image_url = Storage::disk('uploads')->url($p->image);
+            $p->image_url = $p->first_image_url;
 
             // Every downstream clone (Warehouse's own stock row, and any branch it was
             // transferred to) shares this root row's id as source_product_id directly.
@@ -107,14 +127,12 @@ class ProductController extends Controller
     public function create(Vendor $branch)
     {
         $this->warehouseCategoryId($branch);
-        $allCategoryNames = Category::withoutGlobalScopes()->distinct()->pluck('name');
-        foreach ($allCategoryNames as $catName) {
-            Category::withoutGlobalScopes()->firstOrCreate([
-                'vendor_id' => $branch->id,
-                'name'      => $catName,
-            ]);
-        }
-        $categories = $branch->categories()->orderBy('name')->get();
+        $categories = Category::withoutGlobalScopes()
+            ->where('vendor_id', $branch->id)
+            ->whereNull('parent_id')
+            ->with(['children' => fn($q) => $q->orderBy('name')])
+            ->orderBy('name')
+            ->get();
         $toBranches = $this->distributableBranches();
         $colors     = Color::orderBy('sort_order')->orderBy('name')->get();
         $sizes      = Size::orderBy('sort_order')->orderBy('name')->get();
@@ -155,6 +173,7 @@ class ProductController extends Controller
         $request->validate([
             'name'          => 'required|string|max:255',
             'category_id'   => ['required', Rule::exists('categories', 'id')->where('vendor_id', $branch->id)],
+            'sub_category_id' => ['nullable', Rule::exists('categories', 'id')->where('vendor_id', $branch->id)],
             'price'         => 'required|numeric|min:0',
             'old_price'     => 'nullable|numeric|min:0',
             'cost_price'    => 'required|numeric|min:0',
@@ -183,6 +202,7 @@ class ProductController extends Controller
             $product = Product::create([
                 'vendor_id'          => $branch->id,
                 'category_id'        => $request->category_id,
+                'sub_category_id'    => $request->sub_category_id ?: null,
                 'name'               => $request->name,
                 'sku'                => 'SKU-' . strtoupper(Str::random(8)),
                 'barcode'            => $request->barcode,
@@ -237,14 +257,19 @@ class ProductController extends Controller
 
             // Distribute — every selected branch gets a 0-stock clone right away so the
             // product shows up in its catalog; real stock still only arrives via Purchase → Transfer.
-            $product->load('category');
+            $product->load(['category', 'subCategory']);
+            $subCategorySource = $product->sub_category_id ? Category::withoutGlobalScopes()->find($product->sub_category_id) : null;
+
             foreach ($branchIds as $toBranchId) {
                 $toBranch = Vendor::find($toBranchId);
                 if (!$toBranch) continue;
 
+                $branchSubCatId = $subCategorySource ? $this->resolveBranchCategory($toBranch, $subCategorySource) : null;
+
                 Product::create([
                     'vendor_id'          => $toBranch->id,
                     'category_id'        => $this->resolveBranchCategory($toBranch, $product->category),
+                    'sub_category_id'    => $branchSubCatId,
                     'source_product_id'  => $product->id,
                     'name'               => $product->name,
                     'sku'                => 'SKU-' . strtoupper(Str::random(8)),
@@ -275,13 +300,22 @@ class ProductController extends Controller
         // a branch before this became the only entry point — so categories come from whichever
         // vendor actually owns this product, not always the Warehouse's own list.
         $owner      = $product->vendor_id === $branch->id ? $branch : Vendor::find($product->vendor_id);
-        $categories = Category::withoutGlobalScopes()->where('vendor_id', $owner->id)->orderBy('name')->get();
+        $categories = Category::withoutGlobalScopes()
+            ->where('vendor_id', $owner->id)
+            ->whereNull('parent_id')
+            ->with(['children' => fn($q) => $q->orderBy('name')])
+            ->orderBy('name')
+            ->get();
         $toBranches = $this->distributableBranches();
         $colors     = Color::orderBy('sort_order')->orderBy('name')->get();
         $sizes      = Size::orderBy('sort_order')->orderBy('name')->get();
-        $product->load('variants');
+        $product->load(['variants', 'category', 'subCategory']);
+        if ($product->category && $product->category->parent_id && !$product->sub_category_id) {
+            $product->sub_category_id = $product->category_id;
+            $product->category_id = $product->category->parent_id;
+        }
         $product->setRelation('vendor', $owner);
-        if ($product->image) $product->image_url = Storage::disk('uploads')->url($product->image);
+        $product->image_url = $product->first_image_url;
 
         // Branches that already carry a clone of this product — shown as locked-checked
         // (removing distribution isn't supported here; that branch may already have stock/sales).
@@ -308,6 +342,7 @@ class ProductController extends Controller
         $request->validate([
             'name'           => 'required|string|max:255',
             'category_id'    => ['required', Rule::exists('categories', 'id')->where('vendor_id', $product->vendor_id)],
+            'sub_category_id'=> ['nullable', Rule::exists('categories', 'id')->where('vendor_id', $product->vendor_id)],
             'price'          => 'required|numeric|min:0',
             'old_price'      => 'nullable|numeric|min:0',
             'cost_price'     => 'required|numeric|min:0',
@@ -342,6 +377,7 @@ class ProductController extends Controller
 
         $product->update([
             'category_id'        => $request->category_id,
+            'sub_category_id'    => $request->sub_category_id ?: null,
             'name'               => $request->name,
             'price'              => $request->price,
             'old_price'          => $request->filled('old_price') ? $request->old_price : null,
@@ -412,15 +448,20 @@ class ProductController extends Controller
         $newBranchIds         = $requestedBranchIds->diff($alreadyDistributedTo);
         $removedBranchIds     = $alreadyDistributedTo->diff($requestedBranchIds);
 
+        $product->load(['category', 'subCategory']);
+        $subCategorySource = $product->sub_category_id ? Category::withoutGlobalScopes()->find($product->sub_category_id) : null;
+
         if ($newBranchIds->isNotEmpty()) {
-            $product->load('category');
             foreach ($newBranchIds as $toBranchId) {
                 $toBranch = Vendor::find($toBranchId);
                 if (!$toBranch) continue;
 
+                $branchSubCatId = $subCategorySource ? $this->resolveBranchCategory($toBranch, $subCategorySource) : null;
+
                 Product::create([
                     'vendor_id'          => $toBranch->id,
                     'category_id'        => $this->resolveBranchCategory($toBranch, $product->category),
+                    'sub_category_id'    => $branchSubCatId,
                     'source_product_id'  => $product->id,
                     'name'               => $product->name,
                     'sku'                => 'SKU-' . strtoupper(Str::random(8)),
@@ -441,12 +482,22 @@ class ProductController extends Controller
         }
 
         // Sync details to existing downstream clones
-        Product::withoutGlobalScopes()->where('source_product_id', $product->id)->update([
-            'short_description'  => $product->short_description,
-            'facebook_video_url' => $product->facebook_video_url,
-            'description'        => $product->description,
-            'old_price'          => $product->old_price,
-        ]);
+        foreach (Product::withoutGlobalScopes()->where('source_product_id', $product->id)->get() as $clone) {
+            $cloneBranch = Vendor::find($clone->vendor_id);
+            $cloneCatId = $cloneBranch ? $this->resolveBranchCategory($cloneBranch, $product->category) : null;
+            $cloneSubCatId = ($cloneBranch && $subCategorySource) ? $this->resolveBranchCategory($cloneBranch, $subCategorySource) : null;
+
+            $clone->update([
+                'category_id'        => $cloneCatId ?: $clone->category_id,
+                'sub_category_id'    => $cloneSubCatId,
+                'short_description'  => $product->short_description,
+                'facebook_video_url' => $product->facebook_video_url,
+                'description'        => $product->description,
+                'image'              => $product->image,
+                'images'             => $product->images,
+                'old_price'          => $product->old_price,
+            ]);
+        }
 
         $blockedRemovals = [];
         foreach ($removedBranchIds as $vendorId) {
@@ -458,7 +509,6 @@ class ProductController extends Controller
                 continue;
             }
 
-            if ($clone->image) Storage::disk('uploads')->delete($clone->image);
             $clone->delete();
         }
 
