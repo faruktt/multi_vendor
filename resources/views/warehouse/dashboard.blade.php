@@ -15,7 +15,7 @@
     </div>
     <div>
         <p class="font-bold text-[14.5px]">{{ $branch->name }}</p>
-        <p class="text-[12px] text-orange-50">Central warehouse — purchases products from suppliers and transfers stock to branches. No direct sales here.</p>
+        <p class="text-[12px] text-orange-50">Central warehouse — purchases products from vendors and transfers stock to branches. No direct sales here.</p>
     </div>
 </div>
 
@@ -67,7 +67,7 @@
             @endif
         </div>
         <p class="text-xl font-bold {{ $supplierDue > 0 ? 'text-red-500' : 'text-emerald-600' }}">{{ $currency }}{{ number_format($supplierDue, 0) }}</p>
-        <p class="text-[11px] text-slate-400 mt-0.5">Owed to Suppliers</p>
+        <p class="text-[11px] text-slate-400 mt-0.5">Owed to Vendors</p>
         <p class="text-[10.5px] text-slate-400 mt-1">{{ $currency }}{{ number_format($allPurchases, 0) }} purchased all-time</p>
     </div>
 
@@ -135,7 +135,7 @@
             @forelse($recentPurchases as $p)
             <div class="px-4 py-3 flex items-center justify-between gap-2">
                 <div class="min-w-0">
-                    <p class="text-[12.5px] font-semibold text-slate-800 truncate">{{ $p->supplier->name ?? 'No supplier' }}</p>
+                    <p class="text-[12.5px] font-semibold text-slate-800 truncate">{{ $p->supplier->name ?? 'No vendor' }}</p>
                     <p class="text-[11px] text-slate-400">{{ $p->created_at->format('d M Y') }} · {{ $p->invoice_no }}</p>
                 </div>
                 <span class="text-[12.5px] font-bold text-slate-800 flex-shrink-0">{{ $currency }}{{ number_format($p->total, 0) }}</span>
