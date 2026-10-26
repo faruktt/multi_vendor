@@ -10,11 +10,11 @@
 <form method="GET" class="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 mb-4 flex flex-wrap gap-2.5 items-center">
     <div class="relative flex-1 min-w-[180px]">
         <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
-        <input type="text" name="search" value="{{ request('search') }}" placeholder="Search invoice or supplier..."
+        <input type="text" name="search" value="{{ request('search') }}" placeholder="Search invoice or vendor..."
                class="w-full pl-8 pr-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50">
     </div>
     <select name="supplier_id" class="border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-600 bg-slate-50">
-        <option value="">All Suppliers</option>
+        <option value="">All Vendors</option>
         @foreach($suppliers as $s)
         <option value="{{ $s->id }}" {{ request('supplier_id') == $s->id ? 'selected' : '' }}>{{ $s->name }}</option>
         @endforeach
@@ -69,7 +69,7 @@
                 <th class="px-4 py-3 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wide w-8">#</th>
                 <th class="px-3 py-3 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wide hidden md:table-cell">Date</th>
                 <th class="px-3 py-3 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Invoice</th>
-                <th class="px-3 py-3 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wide hidden lg:table-cell">Supplier</th>
+                <th class="px-3 py-3 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wide hidden lg:table-cell">Vendor</th>
                 <th class="px-3 py-3 text-right text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Total</th>
                 <th class="px-3 py-3 text-right text-[11px] font-semibold text-slate-500 uppercase tracking-wide hidden md:table-cell">Due</th>
                 <th class="px-3 py-3 text-center text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Status</th>
@@ -117,7 +117,7 @@
                     <p class="text-[11px] text-slate-400 mt-0.5"><i class="fas fa-phone text-[9px] mr-0.5"></i> {{ $purchase->supplier->phone }}</p>
                     @endif
                     @else
-                    <span class="text-slate-400 text-xs italic">Walk-in / No Supplier</span>
+                    <span class="text-slate-400 text-xs italic">Walk-in / No Vendor</span>
                     @endif
                 </td>
 

@@ -26,13 +26,13 @@
 
                 {{-- Supplier searchable --}}
                 <div class="md:col-span-2" x-data="supplierDropdown('{{ old('supplier_id', $purchase->supplier_id ?? '') }}', '{{ old('supplier_id', $purchase->supplier_id ?? '') ? ($purchase->supplier->name ?? '') : '' }}')">
-                    <label class="block text-xs font-semibold text-slate-600 mb-1.5">Supplier</label>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1.5">Vendor</label>
                     <div class="relative">
                         <div class="flex items-center border border-slate-200 rounded-xl bg-slate-50 focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent overflow-hidden">
                             <i class="fas fa-truck text-slate-400 text-xs ml-3.5"></i>
                             <input type="text" x-model="search" @focus="open = true" @click="open = true"
                                    @keydown.escape="open = false" @input="open = true"
-                                   placeholder="Search supplier..."
+                                   placeholder="Search vendor..."
                                    class="flex-1 px-3 py-2.5 text-sm bg-transparent focus:outline-none">
                             <i x-show="selectedId" @click="clear()" class="fas fa-times text-slate-400 text-xs mr-3 cursor-pointer hover:text-red-500"></i>
                         </div>

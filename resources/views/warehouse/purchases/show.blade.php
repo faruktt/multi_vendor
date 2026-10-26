@@ -107,7 +107,7 @@
             <div class="w-7 h-7 rounded-lg bg-purple-100 flex items-center justify-center">
                 <i class="fas fa-truck text-purple-600 text-xs"></i>
             </div>
-            <span class="text-xs font-bold text-slate-600 uppercase tracking-wide">Supplier</span>
+            <span class="text-xs font-bold text-slate-600 uppercase tracking-wide">Vendor</span>
         </div>
         @if($purchase->supplier)
         <div class="space-y-2">
@@ -131,7 +131,7 @@
         @else
         <div class="flex flex-col items-center justify-center h-20 text-slate-300">
             <i class="fas fa-user-slash text-2xl mb-1"></i>
-            <p class="text-xs">No supplier linked</p>
+            <p class="text-xs">No vendor linked</p>
         </div>
         @endif
     </div>
@@ -339,7 +339,7 @@
                 <div class="w-9 h-9 rounded-xl bg-red-100 flex items-center justify-center">
                     <i class="fas fa-rotate-left text-red-500"></i>
                 </div>
-                <p class="font-bold text-slate-800">Return Items to Supplier</p>
+                <p class="font-bold text-slate-800">Return Items to Vendor</p>
             </div>
             <button @click="returnModal = false" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600">
                 <i class="fas fa-times"></i>
@@ -413,7 +413,7 @@
         <tr><td>Invoice</td><td style="text-align:right;font-weight:bold">{{ $purchase->invoice_no }}</td></tr>
         <tr><td>Date</td><td style="text-align:right">{{ $purchase->created_at->format('d/m/Y h:i A') }}</td></tr>
         @if($purchase->supplier)
-        <tr><td>Supplier</td><td style="text-align:right">{{ $purchase->supplier->name }}</td></tr>
+        <tr><td>Vendor</td><td style="text-align:right">{{ $purchase->supplier->name }}</td></tr>
         @if($purchase->supplier->phone)<tr><td>Phone</td><td style="text-align:right">{{ $purchase->supplier->phone }}</td></tr>@endif
         @endif
         <tr><td>Method</td><td style="text-align:right;text-transform:capitalize">{{ $purchase->payment_method }}</td></tr>

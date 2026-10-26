@@ -46,6 +46,7 @@ class PurchaseController extends Controller
                 'sku'                => 'SKU-' . strtoupper(Str::random(8)),
                 'description'        => $original->description,
                 'image'              => $original->image,
+                'images'             => $original->images,
                 'price'              => $original->price,
                 'cost_price'         => $original->cost_price,
                 'stock_qty'          => 0,
@@ -78,7 +79,7 @@ class PurchaseController extends Controller
         }
 
         $purchases = $query->paginate(20)->withQueryString();
-        $suppliers = $branch->suppliers()->orderBy('name')->get();
+        $suppliers = $branch->suppliers()->purchase()->orderBy('name')->get();
         $paymentMethods = PaymentMethod::options();
 
         return view('warehouse.purchases.index', compact('branch', 'purchases', 'suppliers', 'paymentMethods'));
@@ -86,7 +87,7 @@ class PurchaseController extends Controller
 
     public function create(Vendor $branch)
     {
-        $suppliers = $branch->suppliers()->orderBy('name')->get();
+        $suppliers = $branch->suppliers()->purchase()->orderBy('name')->get();
         $products  = Product::withoutGlobalScopes()
             ->whereNull('source_product_id')
             ->with(['variants', 'vendor', 'category'])
@@ -173,7 +174,7 @@ class PurchaseController extends Controller
     public function edit(Vendor $branch, Purchase $purchase)
     {
         $purchase->load('items.product');
-        $suppliers = $branch->suppliers()->orderBy('name')->get();
+        $suppliers = $branch->suppliers()->purchase()->orderBy('name')->get();
         $products  = Product::withoutGlobalScopes()
             ->whereNull('source_product_id')
             ->with(['variants', 'vendor', 'category'])
