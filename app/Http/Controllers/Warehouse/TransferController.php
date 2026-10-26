@@ -116,6 +116,7 @@ class TransferController extends Controller
                             'sku'                => 'SKU-' . strtoupper(Str::random(8)),
                             'description'        => $root->description,
                             'image'              => $root->image,
+                            'images'             => $root->images,
                             'price'              => $root->price,
                             'cost_price'         => $root->cost_price,
                             'stock_qty'          => 0,
