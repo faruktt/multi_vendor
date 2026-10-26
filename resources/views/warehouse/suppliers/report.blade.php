@@ -1,6 +1,6 @@
 @extends('layouts.app')
 @section('title', $supplier->name . ' — Report')
-@section('heading', 'Supplier Report')
+@section('heading', 'Vendor Report')
 
 @push('styles')
 <style>
@@ -64,7 +64,7 @@
                     </div>
                 </div>
                 <div class="text-right text-xs text-slate-400">
-                    <p>Supplier since</p>
+                    <p>Vendor since</p>
                     <p class="font-semibold text-slate-600 text-sm mt-0.5">{{ $supplier->created_at->format('d M Y') }}</p>
                 </div>
             </div>
@@ -289,7 +289,7 @@
             <tr>
                 <td colspan="9" class="px-4 py-12 text-center text-slate-400">
                     <i class="fas fa-shopping-cart text-3xl text-slate-300 mb-3 block"></i>
-                    <p>No purchases yet from this supplier</p>
+                    <p>No purchases yet from this vendor</p>
                 </td>
             </tr>
             @endforelse

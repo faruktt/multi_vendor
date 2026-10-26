@@ -1,6 +1,6 @@
 @extends('layouts.app')
-@section('title', 'Suppliers')
-@section('heading', 'Supplier Management')
+@section('title', 'Vendors')
+@section('heading', 'Vendor Management')
 
 @section('content')
 <div x-data="supplierPage()">
@@ -21,7 +21,7 @@
     @endif
     <button type="button" @click="addOpen = true"
             class="ml-auto bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-2 shadow-sm shadow-blue-200 transition-colors">
-        <i class="fas fa-plus"></i> Add Supplier
+        <i class="fas fa-plus"></i> Add Vendor
     </button>
 </form>
 
@@ -33,7 +33,7 @@
                 <i class="fas fa-industry text-blue-600 text-sm"></i>
             </div>
             <div>
-                <p class="text-xs text-slate-400 font-medium">Total Suppliers</p>
+                <p class="text-xs text-slate-400 font-medium">Total Vendors</p>
                 <p class="text-xl font-bold text-slate-800">{{ $totals['suppliers'] }}</p>
             </div>
         </div>
@@ -79,7 +79,7 @@
         <thead class="bg-slate-50 border-b border-slate-100">
             <tr>
                 <th class="px-4 py-3 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wide w-8">#</th>
-                <th class="px-3 py-3 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Supplier</th>
+                <th class="px-3 py-3 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Vendor</th>
                 <th class="px-3 py-3 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wide hidden lg:table-cell">Address</th>
                 <th class="px-3 py-3 text-center text-[11px] font-semibold text-slate-500 uppercase tracking-wide hidden md:table-cell">Orders</th>
                 <th class="px-3 py-3 text-right text-[11px] font-semibold text-slate-500 uppercase tracking-wide hidden md:table-cell">Total Spent</th>
@@ -170,10 +170,10 @@
                     <div class="w-20 h-20 rounded-2xl bg-slate-50 flex items-center justify-center mx-auto mb-4">
                         <i class="fas fa-industry text-3xl text-slate-300"></i>
                     </div>
-                    <p class="font-medium text-slate-500">No suppliers found</p>
+                    <p class="font-medium text-slate-500">No vendors found</p>
                     <button type="button" @click="addOpen = true"
                             class="mt-3 inline-flex items-center gap-1.5 text-blue-600 text-sm hover:underline">
-                        <i class="fas fa-plus text-xs"></i> Add first supplier
+                        <i class="fas fa-plus text-xs"></i> Add first vendor
                     </button>
                 </td>
             </tr>
@@ -185,7 +185,7 @@
     @endif
 </div>
 
-{{-- ══ ADD SUPPLIER MODAL ══════════════════════════════════════════ --}}
+{{-- ══ ADD VENDOR MODAL ════════════════════════════════════════════ --}}
 <div x-show="addOpen" x-cloak
      class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
      @keydown.escape.window="addOpen = false">
@@ -195,15 +195,15 @@
                 <i class="fas fa-industry text-blue-600 text-lg"></i>
             </div>
             <div>
-                <p class="font-bold text-slate-800 text-base">Add New Supplier</p>
-                <p class="text-xs text-slate-400 mt-0.5">Fill in supplier details</p>
+                <p class="font-bold text-slate-800 text-base">Add New Vendor</p>
+                <p class="text-xs text-slate-400 mt-0.5">Fill in vendor details</p>
             </div>
         </div>
         <form method="POST" action="{{ route('admin.warehouse.suppliers.store') }}" class="space-y-3">
             @csrf
             <div>
                 <label class="block text-xs font-semibold text-slate-600 mb-1.5">Name <span class="text-red-500">*</span></label>
-                <input type="text" name="name" required placeholder="Supplier company/person name"
+                <input type="text" name="name" required placeholder="Vendor company/person name"
                        class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50 focus:bg-white">
             </div>
             <div class="grid grid-cols-2 gap-3">
@@ -230,14 +230,14 @@
                 </button>
                 <button type="submit"
                         class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl text-sm font-bold">
-                    <i class="fas fa-plus text-xs mr-1"></i> Add Supplier
+                    <i class="fas fa-plus text-xs mr-1"></i> Add Vendor
                 </button>
             </div>
         </form>
     </div>
 </div>
 
-{{-- ══ EDIT SUPPLIER MODAL ═════════════════════════════════════════ --}}
+{{-- ══ EDIT VENDOR MODAL ══════════════════════════════════════════ --}}
 <div x-show="editOpen" x-cloak
      class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
      @keydown.escape.window="editOpen = false">
@@ -247,7 +247,7 @@
                 <i class="fas fa-pen text-amber-600 text-lg"></i>
             </div>
             <div>
-                <p class="font-bold text-slate-800 text-base">Edit Supplier</p>
+                <p class="font-bold text-slate-800 text-base">Edit Vendor</p>
                 <p class="text-xs text-slate-400 mt-0.5" x-text="editName"></p>
             </div>
         </div>
@@ -299,7 +299,7 @@
                 <i class="fas fa-trash-alt text-red-500 text-lg"></i>
             </div>
             <div>
-                <p class="font-bold text-slate-800">Delete Supplier?</p>
+                <p class="font-bold text-slate-800">Delete Vendor?</p>
                 <p class="text-sm text-slate-500 mt-0.5">Purchase history will remain.</p>
             </div>
         </div>

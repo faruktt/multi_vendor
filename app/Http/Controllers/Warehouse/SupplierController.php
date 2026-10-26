@@ -13,6 +13,7 @@ class SupplierController extends Controller
     public function index(Request $request, Vendor $branch)
     {
         $query = $branch->suppliers()
+            ->purchase()
             ->withCount('purchases')
             ->withSum('purchases', 'total')
             ->withSum('purchases', 'paid_amount')
@@ -30,7 +31,7 @@ class SupplierController extends Controller
         $suppliers = $query->paginate(20)->withQueryString();
 
         $totals = [
-            'suppliers' => $branch->suppliers()->count(),
+            'suppliers' => $branch->suppliers()->purchase()->count(),
             'orders'    => Purchase::withoutGlobalScopes()->where('vendor_id', $branch->id)->whereNotNull('supplier_id')->count(),
             'spent'     => Purchase::withoutGlobalScopes()->where('vendor_id', $branch->id)->whereNotNull('supplier_id')->sum('total'),
             'due'       => Purchase::withoutGlobalScopes()->where('vendor_id', $branch->id)->whereNotNull('supplier_id')->sum('due_amount'),
@@ -49,9 +50,12 @@ class SupplierController extends Controller
             'note'    => 'nullable|string|max:500',
         ]);
 
-        $branch->suppliers()->create($request->only('name', 'phone', 'email', 'address'));
+        $branch->suppliers()->create(array_merge(
+            $request->only('name', 'phone', 'email', 'address'),
+            ['type' => 'purchase', 'status' => 'active']
+        ));
 
-        return back()->with('success', 'Supplier added successfully.');
+        return back()->with('success', 'Vendor added successfully.');
     }
 
     public function update(Request $request, Vendor $branch, Supplier $supplier)
@@ -65,13 +69,13 @@ class SupplierController extends Controller
 
         $supplier->update($request->only('name', 'phone', 'email', 'address'));
 
-        return back()->with('success', 'Supplier updated successfully.');
+        return back()->with('success', 'Vendor updated successfully.');
     }
 
     public function destroy(Vendor $branch, Supplier $supplier)
     {
         $supplier->delete();
-        return back()->with('success', 'Supplier deleted.');
+        return back()->with('success', 'Vendor deleted.');
     }
 
     public function report(Vendor $branch, Supplier $supplier)
