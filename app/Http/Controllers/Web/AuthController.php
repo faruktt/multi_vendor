@@ -24,7 +24,12 @@ class AuthController extends Controller
             'password' => 'required',
         ]);
 
+        $ipSecurity = app(\App\Services\Security\IpSecurityService::class);
+
         if (!Auth::attempt($request->only('email', 'password'), $request->boolean('remember'))) {
+            // Track failed login attempt (triggers email alert if >= 2 failed attempts)
+            $ipSecurity->recordFailedAdminAttempt($request, $request->input('email'));
+
             throw ValidationException::withMessages([
                 'email' => 'Incorrect email or password.',
             ]);
@@ -33,6 +38,9 @@ class AuthController extends Controller
         $request->session()->regenerate();
 
         $user = auth()->user();
+
+        // Reset failed counter upon successful login
+        $ipSecurity->recordSuccessfulAdminAttempt($request, $user->email);
 
         \App\Services\ActivityLogger::logLogin($user);
 
