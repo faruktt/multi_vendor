@@ -301,6 +301,102 @@
                 </div>
             </div>
 
+            {{-- ── Tracking & Analytics (Facebook Pixel & Google Tag Manager) ── --}}
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-6" x-data="{ showAdvancedTracking: false }">
+                <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between gap-2.5">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
+                            <i class="fas fa-chart-line text-sm"></i>
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h2 class="text-[14px] font-semibold text-slate-800">Facebook Pixel &amp; Google Tag Manager (GTM)</h2>
+                                <span class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                    DataLayer Ready
+                                </span>
+                            </div>
+                            <p class="text-[11.5px] text-slate-400">Dynamic tracking &amp; e-commerce events (PageView, ViewContent, AddToCart, InitiateCheckout, Purchase)</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-6 space-y-5">
+                    {{-- Facebook Pixel --}}
+                    <div>
+                        <div class="flex items-center justify-between mb-1.5">
+                            <label class="block text-[12.5px] font-semibold text-slate-700 flex items-center gap-1.5">
+                                <i class="fab fa-facebook text-[#1877F2] text-sm"></i> Facebook Pixel ID বা Code
+                            </label>
+                            @if(!empty($settings['fb_pixel_id']))
+                                <span class="text-[10.5px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 flex items-center gap-1">
+                                    <i class="fas fa-check-circle text-[9px]"></i> Active: {{ $settings['fb_pixel_id'] }}
+                                </span>
+                            @else
+                                <span class="text-[10.5px] text-slate-400 font-medium">Not configured</span>
+                            @endif
+                        </div>
+                        <input type="text" name="fb_pixel_id" value="{{ old('fb_pixel_id', $settings['fb_pixel_id'] ?? '') }}"
+                               placeholder="e.g. 1234567890123456 or paste complete Meta Pixel code"
+                               class="w-full font-mono border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+                        <p class="text-[11px] text-slate-500 mt-1 leading-relaxed">
+                            এখানে আপনার ফেসবুক পিক্সেল আইডি (যেমন <code>1234567890123456</code>) অথবা ফেসবুক থেকে কপি করা সম্পূর্ণ স্ক্রিপ্ট কোড পেস্ট করুন। এটি স্বয়ংক্রিয়ভাবে ফ্রন্টএন্ডে পেজভিউ ও ইভেন্ট ট্র্যাকিং চালু করবে।
+                        </p>
+                    </div>
+
+                    {{-- Google Tag Manager (GTM) --}}
+                    <div>
+                        <div class="flex items-center justify-between mb-1.5">
+                            <label class="block text-[12.5px] font-semibold text-slate-700 flex items-center gap-1.5">
+                                <i class="fab fa-google text-[#4285F4] text-sm"></i> Google Tag Manager (GTM) Container ID বা Code
+                            </label>
+                            @if(!empty($settings['gtm_id']))
+                                <span class="text-[10.5px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-200 flex items-center gap-1">
+                                    <i class="fas fa-check-circle text-[9px]"></i> Active: {{ $settings['gtm_id'] }}
+                                </span>
+                            @else
+                                <span class="text-[10.5px] text-slate-400 font-medium">Not configured</span>
+                            @endif
+                        </div>
+                        <input type="text" name="gtm_id" value="{{ old('gtm_id', $settings['gtm_id'] ?? '') }}"
+                               placeholder="e.g. GTM-XXXXXXX or paste complete GTM container code"
+                               class="w-full font-mono border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+                        <p class="text-[11px] text-slate-500 mt-1 leading-relaxed">
+                            আপনার গুগল ট্যাগ ম্যানেজার কন্টেইনার আইডি (যেমন <code>GTM-XXXXXXX</code>) অথবা পুরো কোড পেস্ট করুন। ফ্রন্টএন্ডের প্রতিটি পেজে GTM হেড স্ক্রিপ্ট, বডি noscript এবং স্ট্যান্ডার্ড <code>dataLayer</code> (view_item, add_to_cart, begin_checkout, purchase) পুশ হয়ে যাবে।
+                        </p>
+                    </div>
+
+                    {{-- Advanced Custom Header/Body Code Toggle --}}
+                    <div class="pt-2 border-t border-slate-100">
+                        <button type="button" @click="showAdvancedTracking = !showAdvancedTracking"
+                                class="text-xs font-semibold text-slate-600 hover:text-blue-600 flex items-center gap-1.5 transition-colors">
+                            <i class="fas fa-code text-[11px]"></i>
+                            <span>Advanced Custom Head &amp; Body Scripts (Optional)</span>
+                            <i class="fas fa-chevron-down text-[10px] transition-transform duration-200" :class="showAdvancedTracking ? 'rotate-180' : ''"></i>
+                        </button>
+
+                        <div x-show="showAdvancedTracking" x-cloak class="mt-4 space-y-4">
+                            <div>
+                                <label class="block text-[12px] font-medium text-slate-600 mb-1">
+                                    Custom &lt;head&gt; Code
+                                </label>
+                                <textarea name="custom_head_code" rows="3"
+                                          placeholder="<!-- Additional custom tags, e.g. TikTok Pixel, Pinterest, clarity, domain verification -->"
+                                          class="w-full font-mono text-xs border border-slate-200 rounded-lg p-2.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition resize-y">{{ old('custom_head_code', $settings['custom_head_code'] ?? '') }}</textarea>
+                            </div>
+
+                            <div>
+                                <label class="block text-[12px] font-medium text-slate-600 mb-1">
+                                    Custom &lt;body&gt; Code
+                                </label>
+                                <textarea name="custom_body_code" rows="3"
+                                          placeholder="<!-- Additional custom body scripts or chat widgets -->"
+                                          class="w-full font-mono text-xs border border-slate-200 rounded-lg p-2.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition resize-y">{{ old('custom_body_code', $settings['custom_body_code'] ?? '') }}</textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             {{-- Submit --}}
             <div class="flex items-center justify-between">
                 <p class="text-[12px] text-slate-400">

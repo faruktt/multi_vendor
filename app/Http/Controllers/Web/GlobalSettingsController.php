@@ -60,9 +60,44 @@ class GlobalSettingsController extends Controller
             'twitter'         => 'nullable|string|max:255',
             'instagram'       => 'nullable|string|max:255',
             'tiktok'          => 'nullable|string|max:255',
+            'fb_pixel_id'     => 'nullable|string',
+            'gtm_id'          => 'nullable|string',
+            'custom_head_code'=> 'nullable|string',
+            'custom_body_code'=> 'nullable|string',
         ]);
 
         $data = $request->only('name', 'tagline', 'address', 'phone', 'email', 'currency', 'footer_text', 'seo_title', 'seo_description', 'facebook', 'youtube', 'twitter', 'instagram', 'tiktok');
+
+        // Extract clean Facebook Pixel ID if full script or digits was entered
+        $rawFbPixel = trim((string) $request->input('fb_pixel_id', ''));
+        if ($rawFbPixel !== '') {
+            if (preg_match("/fbq\(['\"]init['\"],\s*['\"]([0-9]+)['\"]\)/i", $rawFbPixel, $m)) {
+                $data['fb_pixel_id'] = $m[1];
+            } elseif (preg_match('/id=([0-9]+)/i', $rawFbPixel, $m)) {
+                $data['fb_pixel_id'] = $m[1];
+            } elseif (preg_match('/([0-9]{10,20})/', $rawFbPixel, $m)) {
+                $data['fb_pixel_id'] = $m[1];
+            } else {
+                $data['fb_pixel_id'] = $rawFbPixel;
+            }
+        } else {
+            $data['fb_pixel_id'] = null;
+        }
+
+        // Extract clean Google Tag Manager ID (GTM-XXXXXXX)
+        $rawGtm = trim((string) $request->input('gtm_id', ''));
+        if ($rawGtm !== '') {
+            if (preg_match('/(GTM-[A-Z0-9]+)/i', $rawGtm, $m)) {
+                $data['gtm_id'] = strtoupper($m[1]);
+            } else {
+                $data['gtm_id'] = strtoupper($rawGtm);
+            }
+        } else {
+            $data['gtm_id'] = null;
+        }
+
+        $data['custom_head_code'] = $request->input('custom_head_code');
+        $data['custom_body_code'] = $request->input('custom_body_code');
 
         if ($request->hasFile('logo')) {
             $old = AppSetting::get('logo_path');
