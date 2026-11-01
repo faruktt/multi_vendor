@@ -305,4 +305,29 @@
         </div>
     </div>
 </div>
+
+@push('scripts')
+@php
+    $checkoutTrackingItems = ($lines ?? collect())->map(function($line) {
+        $product = is_array($line) ? ($line['product'] ?? null) : ($line->product ?? null);
+        $productId = is_array($line) ? ($line['product_id'] ?? $product?->id ?? '') : ($line->product_id ?? $product?->id ?? '');
+        $price = is_array($line) ? ($line['price'] ?? 0) : ($line->price ?? 0);
+        $qty = is_array($line) ? ($line['qty'] ?? 1) : ($line->qty ?? 1);
+        return [
+            'id'       => $productId,
+            'name'     => $product?->name ?? 'Product',
+            'price'    => (float) $price,
+            'quantity' => (int) $qty,
+            'category' => $product?->category?->name ?? '',
+        ];
+    })->values()->all();
+@endphp
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof window.trackInitiateCheckout === 'function') {
+        window.trackInitiateCheckout(@json($checkoutTrackingItems), {{ (float) $subtotal }});
+    }
+});
+</script>
+@endpush
 @endsection
