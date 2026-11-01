@@ -52,6 +52,10 @@
 <span class="text-gray-300">/</span>
 <a href="{{ route('shop.products.category', $product->category->slug) }}" class="hover:text-brand-dark">{{ $product->category->name }}</a>
 @endif
+@if($product->subCategory)
+<span class="text-gray-300">/</span>
+<span class="text-gray-600">{{ $product->subCategory->name }}</span>
+@endif
 <span class="text-gray-300">/</span>
 <span class="text-gray-900 font-semibold truncate">{{ $product->name }}</span>
 @endsection
@@ -73,8 +77,9 @@
                 {{-- Image & Gallery Slider --}}
                 <div class="flex flex-col gap-3">
                     <div class="relative aspect-square bg-gray-50 border border-gray-200 rounded-2xl overflow-hidden flex items-center justify-center group">
-                        <template x-if="stock <= 0">
-                            <div class="absolute top-0 left-0 right-0 bg-red-500 text-white text-center text-[11px] font-extrabold tracking-wide py-1.5 z-10">OUT OF STOCK</div>
+                        <template x-if="isOutOfStock">
+                            <div class="absolute top-0 left-0 right-0 bg-red-500 text-white text-center text-[11px] font-extrabold tracking-wide py-1.5 z-10"
+                                 x-text="totalStock <= 0 ? 'OUT OF STOCK' : 'SELECTED OPTION OUT OF STOCK'"></div>
                         </template>
 
                         <template x-if="images.length > 0">
@@ -122,9 +127,17 @@
 
                 {{-- Details --}}
                 <div>
-                    @if($product->category)
-                    <span class="inline-block text-[11px] font-bold text-brand-dark uppercase tracking-wide mb-2 bg-brand-light rounded-full px-2.5 py-1">{{ $product->category->name }}</span>
-                    @endif
+                    <div class="flex items-center gap-1.5 mb-2 flex-wrap">
+                        @if($product->category)
+                        <span class="inline-block text-[11px] font-bold text-brand-dark uppercase tracking-wide bg-brand-light rounded-full px-2.5 py-1">{{ $product->category->name }}</span>
+                        @endif
+                        @if($product->subCategory)
+                        <span class="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-600 bg-slate-100 rounded-full px-2.5 py-1">
+                            <i class="fas fa-angle-right text-[9px] text-slate-400"></i>
+                            {{ $product->subCategory->name }}
+                        </span>
+                        @endif
+                    </div>
                     <h1 class="text-2xl font-extrabold tracking-tight text-gray-900 mb-3 leading-snug">{{ $product->name }}</h1>
 
                     {{-- Flash Sale Deal Banner --}}
@@ -195,12 +208,15 @@
                             <button type="button"
                                     @click="selectColor({{ $c['id'] }})"
                                     class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium border transition-all"
-                                    :class="selectedColorId === {{ $c['id'] }} ? 'border-brand bg-brand-light text-brand-dark shadow-sm' : 'border-gray-200 text-gray-600 hover:border-gray-300'">
+                                    :class="selectedColorId === {{ $c['id'] }} ? 'border-brand bg-brand-light text-brand-dark shadow-sm ring-1 ring-brand' : 'border-gray-200 text-gray-600 hover:border-gray-300'">
                                 @if($c['hex'])
                                 <span class="w-3.5 h-3.5 rounded-full border border-gray-300 flex-shrink-0"
                                       style="background-color: {{ $c['hex'] }}"></span>
                                 @endif
-                                {{ $c['label'] }}
+                                <span>{{ $c['label'] }}</span>
+                                <template x-if="selectedColorId === {{ $c['id'] }} && stock <= 0">
+                                    <span class="text-[10px] text-red-500 font-normal ml-0.5">(Out of stock)</span>
+                                </template>
                             </button>
                             @endforeach
                         </div>
@@ -218,13 +234,14 @@
                             @foreach($variantSizes as $s)
                             <button type="button"
                                     @click="selectSize({{ $s['id'] }})"
-                                    class="px-4 py-2 rounded-xl text-sm font-semibold border transition-all"
+                                    class="px-4 py-2 rounded-xl text-sm font-semibold border transition-all relative"
                                     :class="[
-                                        selectedSizeId === {{ $s['id'] }} ? 'border-brand bg-brand-light text-brand-dark shadow-sm' : 'border-gray-200 text-gray-600 hover:border-gray-300',
-                                        !isSizeAvailable({{ $s['id'] }}) ? 'opacity-40 cursor-not-allowed' : ''
+                                        selectedSizeId === {{ $s['id'] }} ? 'border-brand bg-brand-light text-brand-dark shadow-sm ring-1 ring-brand' : 'border-gray-200 text-gray-600 hover:border-gray-300',
+                                        !isSizeAvailable({{ $s['id'] }}) ? 'opacity-40 cursor-not-allowed bg-gray-50' : '',
+                                        isSizeAvailable({{ $s['id'] }}) && !isSizeInStock({{ $s['id'] }}) ? 'opacity-60 bg-gray-50 line-through text-gray-400' : ''
                                     ]"
                                     :disabled="!isSizeAvailable({{ $s['id'] }})">
-                                {{ $s['label'] }}
+                                <span>{{ $s['label'] }}</span>
                             </button>
                             @endforeach
                         </div>
@@ -237,10 +254,13 @@
                         <label class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">Select Option</label>
                         <div class="flex flex-wrap gap-2">
                             @foreach($product->variants as $v)
-                            <button type="button" @click="variantId = {{ $v->id }}; qty = 1"
-                                    class="px-3.5 py-2 rounded-xl text-sm font-medium border transition-colors"
-                                    :class="variantId === {{ $v->id }} ? 'border-brand bg-brand-light text-brand-dark' : 'border-gray-200 text-gray-600 hover:border-gray-300'">
-                                {{ $v->variant_name }}
+                            <button type="button" @click="selectCustomVariant({{ $v->id }})"
+                                    class="px-3.5 py-2 rounded-xl text-sm font-medium border transition-colors flex items-center gap-1.5"
+                                    :class="selectedCustomVariantId === {{ $v->id }} ? 'border-brand bg-brand-light text-brand-dark ring-1 ring-brand' : 'border-gray-200 text-gray-600 hover:border-gray-300'">
+                                <span>{{ $v->variant_name }}</span>
+                                @if($v->stock_qty <= 0)
+                                    <span class="text-xs text-red-500 font-bold ml-1">(Out of stock)</span>
+                                @endif
                             </button>
                             @endforeach
                         </div>
@@ -257,35 +277,50 @@
                                 <button type="button" @click="qty = Math.min(stock, qty + 1)"
                                         class="w-9 h-9 rounded-lg bg-white border border-gray-200 shadow-sm hover:bg-brand-light hover:text-brand-dark hover:border-brand/40 text-gray-500 font-bold flex items-center justify-center transition-colors">+</button>
                             </div>
-                            <p class="text-xs font-bold text-red-500 flex items-center gap-1" x-show="stock <= 0">
-                                <i class="fas fa-circle-xmark text-[10px]"></i> Out of stock
-                            </p>
+                            <template x-if="stock <= 0">
+                                <p class="text-xs font-bold text-red-500 flex items-center gap-1">
+                                    <i class="fas fa-circle-xmark text-[10px]"></i> Out of stock
+                                </p>
+                            </template>
+                            <template x-if="stock > 0 && stock <= 5">
+                                <p class="text-xs font-bold text-amber-600 flex items-center gap-1">
+                                    <i class="fas fa-triangle-exclamation text-[10px]"></i> Only <span x-text="stock"></span> left in stock
+                                </p>
+                            </template>
+                            <template x-if="stock > 5">
+                                <p class="text-xs font-semibold text-emerald-600 flex items-center gap-1">
+                                    <i class="fas fa-check-circle text-[10px]"></i> In stock (<span x-text="stock"></span> available)
+                                </p>
+                            </template>
                         </div>
                     </div>
 
                     <div class="grid grid-cols-2 gap-3">
-                        <form method="POST" action="{{ route('shop.cart.add') }}">
+                        <form method="POST" action="{{ route('shop.cart.add') }}"
+                              @submit="if(window.trackAddToCart) { window.trackAddToCart({ id: '{{ $product->id }}', name: @json($product->name), price: unitPrice, quantity: qty, category: @json($product->category?->name ?? '') }); }">
                             @csrf
                             <input type="hidden" name="product_id" value="{{ $product->id }}">
                             <input type="hidden" name="variant_id" :value="variantId">
                             <input type="hidden" name="qty" :value="qty">
-                            <button type="submit" :disabled="stock <= 0"
+                            <button type="submit" :disabled="!canAddToCart"
                                     class="w-full h-full bg-deal hover:bg-deal-dark disabled:opacity-40 disabled:cursor-not-allowed text-white py-3.5 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2">
                                 <i class="fas fa-bag-shopping text-xs"></i> Add to Cart
                             </button>
                         </form>
 
-                        <form method="POST" action="{{ route('shop.cart.add') }}">
+                        <form method="POST" action="{{ route('shop.cart.add') }}"
+                              @submit="if(window.trackAddToCart) { window.trackAddToCart({ id: '{{ $product->id }}', name: @json($product->name), price: unitPrice, quantity: qty, category: @json($product->category?->name ?? '') }); }">
                             @csrf
                             <input type="hidden" name="product_id" value="{{ $product->id }}">
                             <input type="hidden" name="variant_id" :value="variantId">
                             <input type="hidden" name="qty" :value="qty">
                             <input type="hidden" name="redirect_to" value="checkout">
-                            <button type="submit" :disabled="stock <= 0"
+                            <button type="submit" :disabled="!canAddToCart"
                                     class="w-full h-full bg-gray-900 hover:bg-black disabled:opacity-40 disabled:cursor-not-allowed text-white py-3.5 rounded-xl text-sm font-bold transition-colors">
                                 Buy Now
                             </button>
                         </form>
+                    </div>
 
                        {{-- @if($whatsappNumber)
                         <a href="https://wa.me/{{ $whatsappNumber }}?text={{ urlencode($whatsappMessage) }}" target="_blank" rel="noopener"
@@ -459,16 +494,41 @@
 <script>
 function productPage(variants, baseStock, basePrice, variantColors, variantSizes, imageUrls) {
     return {
-        variants: variants,
-        variantColors: variantColors,
-        variantSizes: variantSizes,
+        variants: variants || [],
+        variantColors: variantColors || [],
+        variantSizes: variantSizes || [],
         images: imageUrls || [],
         activeImageIndex: 0,
         qty: 1,
+        baseStock: Number(baseStock) || 0,
+        basePrice: Number(basePrice) || 0,
 
         // Selected color & size IDs
         selectedColorId: null,
         selectedSizeId: null,
+        selectedCustomVariantId: null,
+
+        init() {
+            if (this.variants && this.variants.length > 0) {
+                // Preselect the first in-stock variant, or first variant if all out of stock
+                const firstAvailable = this.variants.find(v => (Number(v.stock) || 0) > 0) || this.variants[0];
+                if (firstAvailable) {
+                    if (this.variantColors.length > 0 && firstAvailable.color_id) {
+                        this.selectedColorId = firstAvailable.color_id;
+                    }
+                    if (this.variantSizes.length > 0 && firstAvailable.size_id) {
+                        this.selectedSizeId = firstAvailable.size_id;
+                    }
+                    this.selectedCustomVariantId = firstAvailable.id;
+                }
+            }
+        },
+
+        // Total stock across all variants
+        get totalStock() {
+            if (!this.variants.length) return this.baseStock;
+            return this.variants.reduce((sum, v) => sum + (Number(v.stock) || 0), 0);
+        },
 
         // Computed labels
         get selectedColorLabel() {
@@ -480,43 +540,119 @@ function productPage(variants, baseStock, basePrice, variantColors, variantSizes
             return s ? s.label : '';
         },
 
-        // The matched variant (color + size), or null
+        // The matched variant (color + size), or custom variant, or null
         get matchedVariant() {
             if (!this.variants.length) return null;
 
             const hasColors = this.variantColors.length > 0;
             const hasSizes  = this.variantSizes.length  > 0;
 
-            return this.variants.find(v => {
-                const colorMatch = !hasColors || v.color_id === this.selectedColorId;
-                const sizeMatch  = !hasSizes  || v.size_id  === this.selectedSizeId;
-                return colorMatch && sizeMatch;
-            }) || null;
+            if (hasColors || hasSizes) {
+                return this.variants.find(v => {
+                    const colorMatch = !hasColors || v.color_id === this.selectedColorId;
+                    const sizeMatch  = !hasSizes  || v.size_id  === this.selectedSizeId;
+                    return colorMatch && sizeMatch;
+                }) || null;
+            }
+
+            if (this.selectedCustomVariantId) {
+                return this.variants.find(v => v.id === this.selectedCustomVariantId) || null;
+            }
+
+            return null;
         },
 
         // The variant_id to submit with the cart form
         get variantId() {
-            return this.matchedVariant ? this.matchedVariant.id : null;
+            if (this.matchedVariant) return this.matchedVariant.id;
+            if (this.selectedCustomVariantId) return this.selectedCustomVariantId;
+            return null;
         },
 
+        // Dynamic stock for current selection
         get stock() {
-            if (!this.variants.length) return baseStock;
-            return this.matchedVariant ? this.matchedVariant.stock : 0;
+            if (!this.variants.length) return this.baseStock;
+            if (this.matchedVariant) return Number(this.matchedVariant.stock) || 0;
+
+            // If user unselected one attribute, show remaining sum
+            if (this.selectedColorId && !this.selectedSizeId) {
+                const colorVars = this.variants.filter(v => v.color_id === this.selectedColorId);
+                return colorVars.reduce((sum, v) => sum + (Number(v.stock) || 0), 0);
+            }
+            if (this.selectedSizeId && !this.selectedColorId) {
+                const sizeVars = this.variants.filter(v => v.size_id === this.selectedSizeId);
+                return sizeVars.reduce((sum, v) => sum + (Number(v.stock) || 0), 0);
+            }
+
+            if (this.variantColors.length > 0 && this.variantSizes.length > 0) {
+                return 0;
+            }
+
+            return this.totalStock;
         },
+
+        get isOutOfStock() {
+            if (!this.variants.length) return this.baseStock <= 0;
+            if (this.matchedVariant) return (Number(this.matchedVariant.stock) || 0) <= 0;
+            return this.totalStock <= 0;
+        },
+
+        get canAddToCart() {
+            if (!this.variants.length) return this.baseStock > 0;
+            return !!(this.matchedVariant && (Number(this.matchedVariant.stock) || 0) > 0);
+        },
+
         get price() {
-            if (!this.variants.length) return basePrice;
-            return this.matchedVariant ? this.matchedVariant.price : basePrice;
+            if (!this.variants.length) return this.basePrice;
+            return this.matchedVariant ? this.matchedVariant.price : this.basePrice;
         },
 
-        // Color selector (toggle)
+        // Color selector
         selectColor(colorId) {
-            this.selectedColorId = this.selectedColorId === colorId ? null : colorId;
+            this.selectedColorId = colorId;
             this.qty = 1;
+
+            // When changing color, if current size is not in stock for this color, switch to an in-stock size
+            if (this.variantSizes.length > 0) {
+                const currentCombo = this.variants.find(v => v.color_id === colorId && v.size_id === this.selectedSizeId);
+                if (!currentCombo || (Number(currentCombo.stock) || 0) <= 0) {
+                    const inStockVar = this.variants.find(v => v.color_id === colorId && (Number(v.stock) || 0) > 0);
+                    if (inStockVar) {
+                        this.selectedSizeId = inStockVar.size_id;
+                    } else if (!currentCombo) {
+                        const anyVar = this.variants.find(v => v.color_id === colorId);
+                        if (anyVar) {
+                            this.selectedSizeId = anyVar.size_id;
+                        }
+                    }
+                }
+            }
         },
 
-        // Size selector (toggle)
+        // Size selector
         selectSize(sizeId) {
-            this.selectedSizeId = this.selectedSizeId === sizeId ? null : sizeId;
+            this.selectedSizeId = sizeId;
+            this.qty = 1;
+
+            // When changing size, if current color is not in stock for this size, switch to an in-stock color
+            if (this.variantColors.length > 0) {
+                const currentCombo = this.variants.find(v => v.color_id === this.selectedColorId && v.size_id === sizeId);
+                if (!currentCombo || (Number(currentCombo.stock) || 0) <= 0) {
+                    const inStockVar = this.variants.find(v => v.size_id === sizeId && (Number(v.stock) || 0) > 0);
+                    if (inStockVar) {
+                        this.selectedColorId = inStockVar.color_id;
+                    } else if (!currentCombo) {
+                        const anyVar = this.variants.find(v => v.size_id === sizeId);
+                        if (anyVar) {
+                            this.selectedColorId = anyVar.color_id;
+                        }
+                    }
+                }
+            }
+        },
+
+        selectCustomVariant(id) {
+            this.selectedCustomVariantId = id;
             this.qty = 1;
         },
 
@@ -525,6 +661,22 @@ function productPage(variants, baseStock, basePrice, variantColors, variantSizes
             if (!this.variantColors.length) return true;
             if (!this.selectedColorId) return true;
             return this.variants.some(v => v.color_id === this.selectedColorId && v.size_id === sizeId);
+        },
+
+        // Does this size have stock > 0 for the selected color?
+        isSizeInStock(sizeId) {
+            if (!this.variants.length) return true;
+            if (this.selectedColorId) {
+                const v = this.variants.find(v => v.color_id === this.selectedColorId && v.size_id === sizeId);
+                return v ? (Number(v.stock) || 0) > 0 : false;
+            }
+            return this.variants.some(v => v.size_id === sizeId && (Number(v.stock) || 0) > 0);
+        },
+
+        // Does this color have stock > 0?
+        isColorInStock(colorId) {
+            if (!this.variants.length) return true;
+            return this.variants.some(v => v.color_id === colorId && (Number(v.stock) || 0) > 0);
         },
 
         get currentImage() {
@@ -538,5 +690,18 @@ function productPage(variants, baseStock, basePrice, variantColors, variantSizes
         }
     };
 }
+
+// ── Track Product ViewContent / view_item ──
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof window.trackViewContent === 'function') {
+        window.trackViewContent({
+            id: '{{ $product->id }}',
+            name: @json($product->name),
+            price: {{ (float) ($product->sale_price ?? $product->price) }},
+            category: @json($product->category?->name ?? ''),
+            quantity: 1
+        });
+    }
+});
 </script>
 @endpush

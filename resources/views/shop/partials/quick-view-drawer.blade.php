@@ -7,6 +7,7 @@
 
     $variants = $product->variants ?? collect();
     $hasVariants = $variants->isNotEmpty();
+    $firstInStock = $variants->firstWhere('stock_qty', '>', 0) ?? $variants->first();
 
     $variantsJson = $variants->map(function ($v) {
         return [
@@ -20,20 +21,22 @@
     // Subtitle / tags
     $tags = [];
     if (!empty($product->category?->name)) $tags[] = $product->category->name;
+    if (!empty($product->subCategory?->name)) $tags[] = $product->subCategory->name;
     $tags[] = 'NEW ARRIVAL';
     if (!empty($product->supplier?->display_name)) $tags[] = $product->supplier->display_name;
     else $tags[] = 'WOMAN';
 @endphp
 
 <div class="w-full"
+     x-init="if (typeof window.trackViewContent === 'function') { window.trackViewContent({ id: '{{ $product->id }}', name: @js($product->name), price: currentPrice, category: @js($product->category?->name ?? '') }); }"
      x-data="{
         qty: 1,
         activeImg: '{{ $firstImg }}',
         variants: @js($variantsJson),
-        selectedVariantId: {{ $hasVariants ? ($variants->first()->id ?? 'null') : 'null' }},
+        selectedVariantId: {{ $hasVariants ? ($firstInStock->id ?? 'null') : 'null' }},
         basePrice: {{ (float) $product->price }},
         flashPrice: {{ $product->is_on_flash_sale ? (float) $product->flash_price : 0 }},
-        stock: {{ (int) $product->stock_qty }},
+        stock: {{ $hasVariants ? (int) ($firstInStock->stock_qty ?? 0) : (int) $product->stock_qty }},
         isAdding: false,
 
         get currentPrice() {
@@ -127,9 +130,12 @@
                 <div class="flex flex-wrap gap-2">
                     <template x-for="v in variants" :key="v.id">
                         <button type="button"
-                                @click="selectedVariantId = v.id; if (v.stock > 0) stock = v.stock"
+                                @click="selectedVariantId = v.id; stock = v.stock"
                                 class="min-w-[42px] h-9 px-3 rounded-md text-xs font-bold border transition-all flex items-center justify-center uppercase"
-                                :class="selectedVariantId === v.id ? 'border-gray-900 bg-gray-900 text-white shadow-sm' : 'border-gray-300 text-gray-800 hover:border-gray-500 bg-white'">
+                                :class="[
+                                    selectedVariantId === v.id ? 'border-gray-900 bg-gray-900 text-white shadow-sm' : 'border-gray-300 text-gray-800 hover:border-gray-500 bg-white',
+                                    v.stock <= 0 ? 'opacity-50 line-through text-gray-400' : ''
+                                ]">
                             <span x-text="v.name"></span>
                         </button>
                     </template>
