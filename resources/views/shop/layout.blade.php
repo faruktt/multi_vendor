@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="h-full">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -49,14 +49,31 @@
         [x-cloak] { display: none !important; }
         .scroll-smooth::-webkit-scrollbar { display: none; }
         .scroll-smooth { scrollbar-width: none; -ms-overflow-style: none; }
+        html, body {
+            overflow-x: clip;
+        }
     </style>
-</head>
-<body class="h-full bg-[#F2F4EF] text-[#1A1E19] overflow-x-hidden" x-data="{ cartOpen: false, categoryDrawer: false, compareOpen: false, quickViewOpen: false, wishlistOpen: false, compareCount: 0, wishlistCount: 0 }" x-init="$nextTick(() => { window.shopSyncCompareBadges && window.shopSyncCompareBadges(); window.shopSyncWishlistBadges && window.shopSyncWishlistBadges(); })">
 
-<div class="sticky top-0 z-40">
+    {{-- Facebook Pixel & Google Tag Manager (GTM) Dynamic Analytics --}}
+    @include('shop.partials.analytics')
+</head>
+<body class="min-h-screen bg-[#F2F4EF] text-[#1A1E19] overflow-x-clip" x-data="{ cartOpen: false, categoryDrawer: false, compareOpen: false, quickViewOpen: false, wishlistOpen: false, compareCount: 0, wishlistCount: 0 }" x-init="$nextTick(() => { window.shopSyncCompareBadges && window.shopSyncCompareBadges(); window.shopSyncWishlistBadges && window.shopSyncWishlistBadges(); })">
+
+{{-- Google Tag Manager (noscript) --}}
+@if(!empty($appSettings['gtm_id']))
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id={{ $appSettings['gtm_id'] }}"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+@endif
+
+{{-- Custom Body Code --}}
+@if(!empty($appSettings['custom_body_code']))
+{!! $appSettings['custom_body_code'] !!}
+@endif
+
+<header class="sticky top-0 z-40 shadow-sm">
 
 <!-- ══ Header row 1 ══ -->
-<div class="w-full bg-brand">
+<div class="w-full bg-black">
     <div class="max-w-[1440px] mx-auto px-3 sm:px-6 py-2.5 sm:py-3">
         {{-- ── Mobile Header View (Logo + Login in Row 1, Search + Icons in Row 2) ── --}}
         <div class="flex md:hidden flex-col gap-2">
@@ -218,7 +235,7 @@
                         <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
                         </svg>
-                        <span class="wishlist-header-badge absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] font-bold min-w-[16px] h-[16px] rounded-full flex items-center justify-center px-0.5 border-2 border-brand"
+                        <span class="wishlist-header-badge absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] font-bold min-w-[16px] h-[16px] rounded-full flex items-center justify-center px-0.5 border-2 border-black"
                               x-show="wishlistCount > 0"
                               x-text="wishlistCount"
                               style="display:none">0</span>
@@ -231,7 +248,7 @@
                         <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/>
                         </svg>
-                        <span class="compare-header-badge absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] font-bold min-w-[16px] h-[16px] rounded-full flex items-center justify-center px-0.5 border-2 border-brand"
+                        <span class="compare-header-badge absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] font-bold min-w-[16px] h-[16px] rounded-full flex items-center justify-center px-0.5 border-2 border-black"
                               x-show="compareCount > 0"
                               x-text="compareCount"
                               style="display:none">0</span>
@@ -242,7 +259,7 @@
                         <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/>
                         </svg>
-                        <span class="cart-header-badge absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] font-bold min-w-[16px] h-[16px] rounded-full flex items-center justify-center px-0.5 border-2 border-brand"
+                        <span class="cart-header-badge absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] font-bold min-w-[16px] h-[16px] rounded-full flex items-center justify-center px-0.5 border-2 border-black"
                               style="{{ ($cartCount ?? 0) > 0 ? '' : 'display:none' }}">{{ $cartCount ?? 0 }}</span>
                     </button>
                 </div>
@@ -402,7 +419,7 @@
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
                     </svg>
-                    <span class="wishlist-header-badge absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] font-bold min-w-[17px] h-[17px] rounded-full flex items-center justify-center px-1 border-2 border-brand"
+                    <span class="wishlist-header-badge absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] font-bold min-w-[17px] h-[17px] rounded-full flex items-center justify-center px-1 border-2 border-black"
                           x-show="wishlistCount > 0"
                           x-text="wishlistCount"
                           style="display:none">0</span>
@@ -415,7 +432,7 @@
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/>
                     </svg>
-                    <span class="compare-header-badge absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] font-bold min-w-[17px] h-[17px] rounded-full flex items-center justify-center px-1 border-2 border-brand"
+                    <span class="compare-header-badge absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] font-bold min-w-[17px] h-[17px] rounded-full flex items-center justify-center px-1 border-2 border-black"
                           x-show="compareCount > 0"
                           x-text="compareCount"
                           style="display:none">0</span>
@@ -426,7 +443,7 @@
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/>
                     </svg>
-                    <span class="cart-header-badge absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] font-bold min-w-[17px] h-[17px] rounded-full flex items-center justify-center px-1 border-2 border-brand"
+                    <span class="cart-header-badge absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] font-bold min-w-[17px] h-[17px] rounded-full flex items-center justify-center px-1 border-2 border-black"
                           style="{{ ($cartCount ?? 0) > 0 ? '' : 'display:none' }}">{{ $cartCount ?? 0 }}</span>
                 </button>
             </div>
@@ -436,46 +453,64 @@
 
 <!-- ══ Header row 2 ══ -->
 <div class="w-full bg-white border-b border-gray-200">
-    <div class="max-w-[1440px] mx-auto flex items-center flex-wrap gap-x-4 sm:gap-x-6 gap-y-1.5 px-4 sm:px-6 py-2.5">
-        <div class="relative flex-shrink-0" x-data="{ open: false }" @mouseenter="open = true" @mouseleave="open = false">
-            <button type="button" @click="categoryDrawer = true" class="flex items-center gap-2 text-[13px] sm:text-sm font-extrabold uppercase tracking-wide text-gray-900">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
-                Shop by Category
+    <div class="max-w-[1440px] mx-auto flex items-center flex-nowrap overflow-x-auto scroll-smooth gap-3 sm:gap-6 px-3.5 sm:px-6 py-2 sm:py-2.5 whitespace-nowrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {{-- Home Link with Icon --}}
+        <a href="{{ route('root') }}"
+           class="flex items-center gap-1 sm:gap-1.5 text-[12.5px] sm:text-sm font-extrabold uppercase tracking-wide text-gray-900 hover:text-brand-dark transition-colors flex-shrink-0 {{ request()->routeIs('root') ? 'text-brand-dark' : '' }}">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0">
+                <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                <polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+            <span>Home</span>
+        </a>
+
+        <div class="relative flex-shrink-0" x-data="{ open: false, activeCat: null }" @mouseenter="open = true" @mouseleave="open = false; activeCat = null">
+            <button type="button" @click="categoryDrawer = true" class="flex items-center gap-1.5 sm:gap-2 text-[12.5px] sm:text-sm font-extrabold uppercase tracking-wide text-gray-900 hover:text-brand-dark transition-colors flex-shrink-0">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+                <span class="sm:hidden">Category</span>
+                <span class="hidden sm:inline">Shop by Category</span>
             </button>
             <div x-show="open" x-cloak
-                 class="hidden lg:block absolute left-0 top-full w-64 max-w-[calc(100vw-2rem)] bg-white border border-gray-200 rounded-xl shadow-lg py-2 z-30">
-                @forelse(($categories ?? collect()) as $cat)
-                <div class="relative group/cat">
-                    <a href="{{ route('shop.products.category', $cat->slug) }}"
-                       class="flex items-center justify-between gap-2 px-4 py-2 text-[13px] font-semibold text-gray-700 hover:bg-gray-50 hover:text-brand-dark">
-                        <span>{{ $cat->name }}</span>
+                 class="hidden lg:block absolute left-0 top-full pt-1.5 w-64 max-w-[calc(100vw-2rem)] z-50">
+                <div class="bg-white border border-gray-200 rounded-xl shadow-xl py-2">
+                    @forelse(($categories ?? collect()) as $cat)
+                    <div class="relative group/cat" @mouseenter="activeCat = {{ $cat->id }}">
+                        <a href="{{ route('shop.products.category', $cat->slug) }}"
+                           class="flex items-center justify-between gap-2 px-4 py-2.5 text-[13px] font-semibold text-gray-700 hover:bg-gray-50 hover:text-brand-dark transition-colors"
+                           :class="activeCat === {{ $cat->id }} ? 'bg-gray-50 text-brand-dark' : ''">
+                            <span>{{ $cat->name }}</span>
+                            @if($cat->children->isNotEmpty())
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-gray-300 flex-shrink-0"><path d="M9 18l6-6-6-6"/></svg>
+                            @endif
+                        </a>
                         @if($cat->children->isNotEmpty())
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-gray-300 flex-shrink-0"><path d="M9 18l6-6-6-6"/></svg>
+                        <div class="hidden group-hover/cat:block absolute left-full top-0 -ml-2 pl-3 w-60 z-50 pointer-events-auto"
+                             :class="activeCat === {{ $cat->id }} ? '!block' : ''">
+                            <div class="bg-white border border-gray-200 rounded-xl shadow-xl py-2">
+                                @foreach($cat->children as $child)
+                                <a href="{{ route('shop.products.category', $child->slug) }}"
+                                   class="block px-4 py-2 text-[13px] font-medium text-gray-600 hover:bg-gray-50 hover:text-brand-dark transition-colors">{{ $child->name }}</a>
+                                @endforeach
+                            </div>
+                        </div>
                         @endif
-                    </a>
-                    @if($cat->children->isNotEmpty())
-                    <div class="hidden group-hover/cat:block absolute left-full top-0 ml-1 w-56 bg-white border border-gray-200 rounded-xl shadow-lg py-2">
-                        @foreach($cat->children as $child)
-                        <a href="{{ route('shop.products.category', $child->slug) }}"
-                           class="block px-4 py-2 text-[13px] text-gray-600 hover:bg-gray-50 hover:text-brand-dark">{{ $child->name }}</a>
-                        @endforeach
                     </div>
-                    @endif
+                    @empty
+                    <p class="px-4 py-2 text-[13px] text-gray-400">No categories yet.</p>
+                    @endforelse
                 </div>
-                @empty
-                <p class="px-4 py-2 text-[13px] text-gray-400">No categories yet.</p>
-                @endforelse
             </div>
         </div>
-        <nav class="flex items-center gap-6 text-sm font-semibold text-gray-700 whitespace-nowrap">
-            <a href="{{ route('shop.products.index') }}" class="hover:text-brand-dark {{ request()->routeIs('shop.products.*') ? 'text-brand-dark' : '' }}">All Products</a>
-            <a href="{{ route('shop.track.index') }}" class="hover:text-brand-dark {{ request()->routeIs('shop.track.*') ? 'text-brand-dark' : '' }}">Track Order</a>
+
+        <nav class="flex items-center gap-3.5 sm:gap-6 text-[12.5px] sm:text-sm font-semibold text-gray-700 whitespace-nowrap flex-shrink-0">
+            <a href="{{ route('shop.products.index') }}" class="hover:text-brand-dark transition-colors flex-shrink-0 {{ request()->routeIs('shop.products.*') ? 'text-brand-dark font-bold' : '' }}">All Products</a>
+            <a href="{{ route('shop.track.index') }}" class="hover:text-brand-dark transition-colors flex-shrink-0 {{ request()->routeIs('shop.track.*') ? 'text-brand-dark font-bold' : '' }}">Track Order</a>
         </nav>
 
     </div>
 </div>
 
-</div>
+</header>
 
 @hasSection('breadcrumb')
 <div class="max-w-[1440px] mx-auto px-4 pt-4">
@@ -662,7 +697,7 @@
          class="absolute left-0 top-0 h-full w-full max-w-xs bg-white shadow-2xl flex flex-col transition-transform duration-200 ease-in-out"
          :class="categoryDrawer ? 'translate-x-0' : '-translate-x-full'">
 
-        <div class="flex items-center justify-between px-5 py-4 bg-brand flex-shrink-0">
+        <div class="flex items-center justify-between px-5 py-4 bg-black flex-shrink-0">
             <h2 class="font-extrabold text-white text-sm uppercase tracking-wide">Shop by Category</h2>
             <button type="button" @click="categoryDrawer = false" class="w-8 h-8 rounded-lg text-white/70 hover:text-white hover:bg-white/10 flex items-center justify-center">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
@@ -717,7 +752,7 @@
          class="absolute right-0 top-0 h-full w-full max-w-sm bg-white shadow-2xl flex flex-col transition-transform duration-200 ease-in-out"
          :class="cartOpen ? 'translate-x-0' : 'translate-x-full'">
 
-        <div class="flex items-center justify-between px-5 py-4 bg-brand flex-shrink-0">
+        <div class="flex items-center justify-between px-5 py-4 bg-black flex-shrink-0">
             <h2 class="font-extrabold text-white text-sm uppercase tracking-wide">Your Cart <span id="cart-drawer-count">@if(($cartCount ?? 0) > 0)({{ $cartCount }})@endif</span></h2>
             <button type="button" @click="cartOpen = false" class="w-8 h-8 rounded-lg text-white/70 hover:text-white hover:bg-white/10 flex items-center justify-center">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
@@ -740,7 +775,7 @@
          class="absolute right-0 top-0 h-full w-full max-w-sm sm:max-w-md bg-white shadow-2xl flex flex-col transition-transform duration-200 ease-in-out"
          :class="compareOpen ? 'translate-x-0' : 'translate-x-full'">
 
-        <div class="flex items-center justify-between px-5 py-4 bg-brand flex-shrink-0 text-white">
+        <div class="flex items-center justify-between px-5 py-4 bg-black flex-shrink-0 text-white">
             <div class="flex items-center gap-2">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/>
@@ -777,7 +812,7 @@
          class="absolute right-0 top-0 h-full w-full max-w-sm sm:max-w-md bg-white shadow-2xl flex flex-col transition-transform duration-200 ease-in-out"
          :class="wishlistOpen ? 'translate-x-0' : 'translate-x-full'">
 
-        <div class="flex items-center justify-between px-5 py-4 bg-brand flex-shrink-0 text-white">
+        <div class="flex items-center justify-between px-5 py-4 bg-black flex-shrink-0 text-white">
             <div class="flex items-center gap-2">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
@@ -1407,6 +1442,17 @@ window.shopQuickAddToCart = function(productId, variantId = null, qty = 1) {
 
             window.shopUpdateCartBadges(data.count);
 
+            // Trigger GTM DataLayer & FB Pixel AddToCart event
+            if (typeof window.trackAddToCart === 'function') {
+                window.trackAddToCart({
+                    id: data.item?.id || productId,
+                    name: data.item?.name || 'Product',
+                    price: data.item?.price || 0,
+                    quantity: data.item?.qty || qty,
+                    category: data.item?.category || ''
+                });
+            }
+
             // Open Cart Drawer & close quick view
             const bodyEl = document.querySelector('body');
             if (bodyEl && window.Alpine) {
@@ -1747,7 +1793,7 @@ function showToast(message, type = 'success') {
 document.addEventListener('alpine:initialized', () => {
     @if(session('success')) showToast(@json(session('success')), 'success'); @endif
     @if(session('error'))   showToast(@json(session('error')),   'error');   @endif
-    @if($errors->any())
+    @if(isset($errors) && $errors->any())
         @foreach($errors->all() as $e) showToast(@json($e), 'error'); @endforeach
     @endif
 });
