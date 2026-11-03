@@ -24,6 +24,15 @@
     <div class="flex-1 min-w-0">
         <div class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
 
+            @if(!empty($activeCategory?->image_url))
+            {{-- Category Banner matching 1400x400 aspect ratio with no crop --}}
+            <div class="mb-4 overflow-hidden rounded-xl border border-gray-100 shadow-2xs">
+                <div class="relative w-full aspect-[1400/400] min-h-[140px] overflow-hidden bg-gray-50" style="aspect-ratio: 1400 / 400;">
+                    <img src="{{ $activeCategory->image_url }}" alt="{{ $activeCategory->name }}" class="w-full h-full object-cover object-center" />
+                </div>
+            </div>
+            @endif
+
             {{-- Header: title + sort --}}
             <div class="flex items-center justify-between gap-4 flex-wrap mb-4">
                 <div>
@@ -67,5 +76,25 @@
         </div>
     </div>
 </div>
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof window.trackViewItemList === 'function') {
+        var items = [
+            @foreach($products->take(12) as $p)
+            {
+                id: '{{ $p->id }}',
+                name: @json($p->name),
+                price: {{ (float) ($p->sale_price ?? $p->price) }},
+                category: @json($p->category?->name ?? ''),
+            },
+            @endforeach
+        ];
+        window.trackViewItemList(items, '{{ $activeCategory->name ?? "All Products" }}');
+    }
+});
+</script>
+@endpush
 
 @endsection
