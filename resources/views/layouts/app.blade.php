@@ -16,41 +16,50 @@
         body { font-family: 'SolaimanLipi', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important; }
         [x-cloak] { display: none !important; }
 
-        .sidebar { background: linear-gradient(180deg, #0f172a 0%, #0e1e38 100%); }
+        .sidebar { background: #135ba7; }
 
         .nav-link {
             display: flex; align-items: center; gap: 10px;
             padding: 8px 12px; border-radius: 8px;
-            color: #94a3b8; font-size: 13.5px; font-weight: 500;
+            color: rgba(255, 255, 255, 0.9); font-size: 13.5px; font-weight: 500;
             text-decoration: none; transition: all .15s ease;
         }
-        .nav-link:hover { background: rgba(255,255,255,.07); color: #e2e8f0; }
-        .nav-link.is-active { background: #1d4ed8; color: #fff; box-shadow: 0 2px 10px rgba(29,78,216,.35); }
-        .nav-link .icon { width: 18px; text-align: center; flex-shrink: 0; }
+        .nav-link:hover { background: rgba(255,255,255,.14); color: #ffffff; }
+        .nav-link.is-active {
+            background: #4ea6d6;
+            color: #ffffff;
+            box-shadow: 0 2px 8px rgba(0,0,0,.18);
+            font-weight: 600;
+        }
+        .nav-link .icon { width: 18px; text-align: center; flex-shrink: 0; color: rgba(255, 255, 255, 0.95); }
 
         .branch-btn {
             display: flex; align-items: center; gap: 9px; width: 100%;
             padding: 7px 10px; border-radius: 8px;
-            color: #94a3b8; font-size: 13px; font-weight: 500;
+            color: rgba(255, 255, 255, 0.9); font-size: 13px; font-weight: 500;
             background: none; border: none; cursor: pointer; transition: all .15s ease;
         }
-        .branch-btn:hover { background: rgba(255,255,255,.06); color: #e2e8f0; }
-        .branch-btn.branch-open { color: #e2e8f0; }
+        .branch-btn:hover { background: rgba(255,255,255,.12); color: #ffffff; }
+        .branch-btn.branch-open { color: #ffffff; }
 
         .sub-link {
             display: flex; align-items: center; gap: 8px;
             padding: 6px 10px 6px 12px; border-radius: 6px;
-            color: #64748b; font-size: 12.5px; font-weight: 500;
+            color: rgba(255, 255, 255, 0.82); font-size: 12.5px; font-weight: 500;
             text-decoration: none; transition: all .15s ease;
         }
-        .sub-link:hover { background: rgba(255,255,255,.05); color: #cbd5e1; }
-        .sub-link.sub-active { background: rgba(37,99,235,.22); color: #93c5fd; }
+        .sub-link:hover { background: rgba(255,255,255,.12); color: #ffffff; }
+        .sub-link.sub-active {
+            background: #4ea6d6;
+            color: #ffffff;
+            font-weight: 600;
+        }
 
         .section-label {
             padding: 14px 12px 5px; font-size: 10px; font-weight: 700;
-            letter-spacing: .1em; text-transform: uppercase; color: #334155;
+            letter-spacing: .1em; text-transform: uppercase; color: rgba(255, 255, 255, 0.65);
         }
-        .nav-divider { height: 1px; background: rgba(255,255,255,.06); margin: 8px 0; }
+        .nav-divider { height: 1px; background: rgba(255,255,255,.18); margin: 8px 0; }
 
         .user-avatar {
             width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
@@ -59,8 +68,27 @@
             background: linear-gradient(135deg, #3b82f6, #8b5cf6);
         }
 
-        .sidebar-scroll::-webkit-scrollbar { width: 3px; }
-        .sidebar-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,.08); border-radius: 2px; }
+        /* Sidebar visible custom scrollbar */
+        .sidebar-scroll {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.45) rgba(0, 0, 0, 0.15);
+        }
+        .sidebar-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+        .sidebar-scroll::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.12);
+            border-radius: 6px;
+            margin: 4px 0;
+        }
+        .sidebar-scroll::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.45);
+            border-radius: 6px;
+            transition: background .2s ease;
+        }
+        .sidebar-scroll::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.75);
+        }
 
         html, body {
             overflow-x: clip;
@@ -96,6 +124,9 @@
     @stack('styles')
 </head>
 <body class="h-full bg-slate-100" x-data="{ sidebarOpen: false }" x-effect="if (sidebarOpen) setTimeout(() => window.dispatchEvent(new CustomEvent('sidebar-opened')), 100)">
+@php
+    $headerProfileIcon = $headerProfileIcon ?? null;
+@endphp
 
 {{-- Mobile overlay --}}
 <div x-show="sidebarOpen" @click="sidebarOpen = false"
@@ -110,16 +141,16 @@
        :class="{ 'is-open': sidebarOpen }">
 
     {{-- Brand --}}
-    <div class="flex items-center gap-3 px-5 py-[18px] border-b border-white/[.07] flex-shrink-0">
+    <div class="flex items-center gap-3 px-5 py-[18px] border-b border-white/15 flex-shrink-0">
         @if(!empty($appSettings['logo']))
             <img src="{{ $appSettings['logo'] }}" alt="{{ $appSettings['name'] ?? 'Logo' }}" class="h-9 max-w-[180px] object-contain flex-shrink-0">
         @else
-            <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center flex-shrink-0 shadow-lg">
+            <div class="w-9 h-9 rounded-xl bg-white/15 flex items-center justify-center flex-shrink-0 shadow-sm border border-white/20">
                 <i class="fas fa-store text-white text-[13px]"></i>
             </div>
             <div class="min-w-0">
                 <div class="text-white font-bold text-[13.5px] leading-tight truncate">{{ $appSettings['name'] ?? 'Super POS' }}</div>
-                <div class="text-slate-500 text-[11px] truncate mt-0.5">{{ $appSettings['tagline'] ?? 'Multi-Branch POS' }}</div>
+                <div class="text-blue-100/75 text-[11px] truncate mt-0.5">{{ $appSettings['tagline'] ?? 'Multi-Branch POS' }}</div>
             </div>
         @endif
     </div>
@@ -130,19 +161,23 @@
         @php
             $authUser     = auth()->user();
             $isSuperAdmin = $authUser->hasRole('super-admin');
+            $canSeeAdminPanel = $isSuperAdmin || $authUser->hasAnyRole(['sub-admin', 'manager', 'admin']) || !$authUser->vendor_id;
             $colors       = ['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec4899','#06b6d4','#84cc16'];
             $appFaviconUrl = !empty($appSettings['favicon']) ? asset($appSettings['favicon']) : null;
             $userAvatarUrl = $authUser->image ? ($authUser->image_url ?? Storage::disk('uploads')->url($authUser->image)) : null;
             $headerProfileIcon = $userAvatarUrl ?? $appFaviconUrl;
         @endphp
 
-        @if($isSuperAdmin)
+        @if($canSeeAdminPanel)
             {{-- Overview --}}
+            @if($isSuperAdmin || $authUser->can('view_dashboard'))
             <a href="{{ route('admin.index') }}" class="nav-link {{ request()->routeIs('admin.index') ? 'is-active' : '' }}">
                 <span class="icon"><i class="fas fa-chart-pie text-[11px]"></i></span> Overview
             </a>
+            @endif
 
             {{-- Branches --}}
+            @if($isSuperAdmin || $authUser->can('manage_branches'))
             <div class="section-label">Branches</div>
 
             @foreach(($branches ?? collect())->sortBy(fn($b) => $b->is_warehouse ? 1 : 0)->values() as $idx => $b)
@@ -158,14 +193,14 @@
                     <span style="width:8px;height:8px;border-radius:50%;background:{{ $dotColor }};flex-shrink:0;display:inline-block;"></span>
                     @endif
                     <span class="flex-1 text-left truncate">{{ $b->name }}</span>
-                    <i class="fas fa-chevron-right text-[9px] text-slate-600 transition-transform duration-200"
+                    <i class="fas fa-chevron-right text-[9px] text-white/60 transition-transform duration-200"
                        :class="open ? 'rotate-90' : ''"></i>
                 </button>
                 <div x-show="open" x-cloak
                      x-transition:enter="transition-all duration-150 ease-out"
                      x-transition:enter-start="opacity-0 -translate-y-1"
                      x-transition:enter-end="opacity-100 translate-y-0"
-                     class="mt-0.5 ml-[17px] pl-3 border-l border-slate-700/50 space-y-0.5 pb-1.5">
+                     class="mt-0.5 ml-[17px] pl-3 border-l border-white/20 space-y-0.5 pb-1.5">
 
                     <a href="{{ $b->is_warehouse ? route('admin.warehouse.dashboard', 'warehouse') : route('branch.dashboard', $b) }}"
                        class="sub-link {{ $isActive && (request()->routeIs('branch.dashboard') || request()->routeIs('admin.warehouse.dashboard')) ? 'sub-active' : '' }}">
@@ -181,10 +216,14 @@
                        class="sub-link {{ $isActive && request()->routeIs('branch.sales.*') ? 'sub-active' : '' }}">
                         <i class="fas fa-receipt text-[10px] w-3.5 text-center"></i> Sales
                     </a>
+                    <a href="{{ route('branch.returns.index', $b) }}"
+                       class="sub-link {{ $isActive && request()->routeIs('branch.returns.*') ? 'sub-active' : '' }}">
+                        <i class="fas fa-rotate-left text-[10px] w-3.5 text-center"></i> Partial Return
+                    </a>
                     @endunless
 
                     {{-- Divider --}}
-                    <div style="height:1px;background:rgba(255,255,255,.06);margin:4px 0;"></div>
+                    <div style="height:1px;background:rgba(255,255,255,.18);margin:4px 0;"></div>
 
                     {{-- Management --}}
                     <a href="{{ $b->is_warehouse ? route('admin.warehouse.products.index', 'warehouse') : route('branch.products.index', $b) }}"
@@ -196,6 +235,10 @@
                        class="sub-link {{ $isActive && request()->routeIs('admin.warehouse.categories.*') ? 'sub-active' : '' }}">
                         <i class="fas fa-tags text-[10px] w-3.5 text-center"></i> Categories
                     </a>
+                    <a href="{{ route('admin.warehouse.subcategories.index', 'warehouse') }}"
+                       class="sub-link {{ $isActive && request()->routeIs('admin.warehouse.subcategories.*') ? 'sub-active' : '' }}">
+                        <i class="fas fa-sitemap text-[10px] w-3.5 text-center"></i> Subcategories
+                    </a>
                     @endif
 
                     @if($b->is_warehouse)
@@ -205,10 +248,10 @@
                     </a>
                     <a href="{{ route('admin.warehouse.suppliers.index', 'warehouse') }}"
                        class="sub-link {{ $isActive && request()->routeIs('admin.warehouse.suppliers.*') ? 'sub-active' : '' }}">
-                        <i class="fas fa-industry text-[10px] w-3.5 text-center"></i> Suppliers
+                        <i class="fas fa-industry text-[10px] w-3.5 text-center"></i> Vendors
                     </a>
                     <a href="{{ route('admin.warehouse.transfer', 'warehouse') }}"
-                       class="sub-link {{ request()->routeIs('admin.warehouse.transfer*') ? 'sub-active' : '' }}">
+                       class="sub-link {{ $isActive && request()->routeIs('admin.warehouse.transfer*') ? 'sub-active' : '' }}">
                         <i class="fas fa-right-left text-[10px] w-3.5 text-center"></i> Stock Transfer
                     </a>
                     @endif
@@ -244,45 +287,119 @@
                 </div>
             </div>
             @endforeach
+            @endif
 
-            {{-- Admin tools --}}
+            {{-- Cross-Branch Data --}}
+            @php
+                $canSeeCrossBranch = $isSuperAdmin || $authUser->canAny([
+                    'manage_customers', 'view_sales', 'manage_returns', 'manage_products', 'manage_categories',
+                    'manage_subcategories', 'manage_purchases', 'manage_suppliers',
+                    'view_stock_report', 'view_sales_report', 'view_financial_report',
+                    'manage_ads_cost', 'manage_fraud_check', 'manage_ip_blocks'
+                ]);
+            @endphp
+
+            @if($canSeeCrossBranch)
             <div class="nav-divider !mt-3"></div>
             <div class="section-label">Cross-Branch Data</div>
+
+            @if($isSuperAdmin || $authUser->can('manage_customers'))
             <a href="{{ route('admin.all-customers') }}" class="nav-link {{ request()->routeIs('admin.all-customers*') ? 'is-active' : '' }}">
                 <span class="icon"><i class="fas fa-users text-[11px]"></i></span> All Customers
             </a>
+            @endif
+
+            @if($isSuperAdmin || $authUser->can('view_sales'))
             <a href="{{ route('admin.all-sales') }}" class="nav-link {{ request()->routeIs('admin.all-sales*') ? 'is-active' : '' }}">
                 <span class="icon"><i class="fas fa-receipt text-[11px]"></i></span> All Sales
             </a>
+            @endif
+
+            @if($isSuperAdmin || $authUser->canAny(['manage_returns', 'view_sales']))
+            <a href="{{ route('admin.returns.index') }}" class="nav-link {{ request()->routeIs('admin.returns*') ? 'is-active' : '' }}">
+                <span class="icon"><i class="fas fa-rotate-left text-[11px]"></i></span> Partial Return
+                @if(!empty($globalPendingReturnsCount) && $globalPendingReturnsCount > 0)
+                <span class="ml-auto inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500 text-white shadow-sm leading-none">{{ $globalPendingReturnsCount }}</span>
+                @endif
+            </a>
+            @endif
+
+            @if($isSuperAdmin || $authUser->can('manage_products'))
             <a href="{{ route('admin.all-products') }}" class="nav-link {{ request()->routeIs('admin.all-products*') ? 'is-active' : '' }}">
                 <span class="icon"><i class="fas fa-box text-[11px]"></i></span> All Products
             </a>
+            @endif
+
+            @if($isSuperAdmin || $authUser->can('manage_categories'))
             <a href="{{ route('admin.all-categories') }}" class="nav-link {{ request()->routeIs('admin.all-categories*') ? 'is-active' : '' }}">
                 <span class="icon"><i class="fas fa-tags text-[11px]"></i></span> All Categories
             </a>
+            @endif
+
+            @if($isSuperAdmin || $authUser->can('manage_categories') || $authUser->can('manage_subcategories'))
+            <a href="{{ route('admin.all-subcategories') }}" class="nav-link {{ request()->routeIs('admin.all-subcategories*') ? 'is-active' : '' }}">
+                <span class="icon"><i class="fas fa-sitemap text-[11px]"></i></span> All Subcategories
+            </a>
+            @endif
+
+            @if($isSuperAdmin || $authUser->can('manage_purchases'))
             <a href="{{ route('admin.all-purchases') }}" class="nav-link {{ request()->routeIs('admin.all-purchases*') ? 'is-active' : '' }}">
                 <span class="icon"><i class="fas fa-truck text-[11px]"></i></span> All Purchases
             </a>
+            @endif
+
+            @if($isSuperAdmin || $authUser->can('manage_suppliers'))
             <a href="{{ route('admin.all-suppliers') }}" class="nav-link {{ request()->routeIs('admin.all-suppliers*') ? 'is-active' : '' }}">
-                <span class="icon"><i class="fas fa-industry text-[11px]"></i></span> Purchase Suppliers
+                <span class="icon"><i class="fas fa-industry text-[11px]"></i></span> Vendor
             </a>
+            @endif
+
+            @if($isSuperAdmin || $authUser->can('view_stock_report'))
             <a href="{{ route('admin.stock-report') }}" class="nav-link {{ request()->routeIs('admin.stock-report*') ? 'is-active' : '' }}">
                 <span class="icon"><i class="fas fa-warehouse text-[11px]"></i></span> Stock Report
             </a>
+            @endif
+
+            @if($isSuperAdmin || $authUser->can('view_sales_report'))
             <a href="{{ route('admin.sales-report') }}" class="nav-link {{ request()->routeIs('admin.sales-report*') ? 'is-active' : '' }}">
                 <span class="icon"><i class="fas fa-file-invoice-dollar text-[11px]"></i></span> Order Report
             </a>
+            @endif
+
+            @if($isSuperAdmin || $authUser->can('view_financial_report'))
             <a href="{{ route('admin.financial-report') }}" class="nav-link {{ request()->routeIs('admin.financial-report*') ? 'is-active' : '' }}">
                 <span class="icon"><i class="fas fa-coins text-[11px]"></i></span> Financial Report
             </a>
+            @endif
+
+            @if($isSuperAdmin || $authUser->can('manage_ads_cost'))
             <a href="{{ route('admin.ads-cost.index') }}" class="nav-link {{ request()->routeIs('admin.ads-cost.*') ? 'is-active' : '' }}">
                 <span class="icon"><i class="fas fa-rectangle-ad text-[11px] text-amber-400"></i></span> Ads Cost
             </a>
+            @endif
+
+            @if($isSuperAdmin || $authUser->can('manage_fraud_check'))
             <a href="{{ route('admin.fraud-check') }}" class="nav-link {{ request()->routeIs('admin.fraud-check*') ? 'is-active' : '' }}">
                 <span class="icon"><i class="fas fa-shield-halved text-[11px]"></i></span> Fraud Check
             </a>
+            @endif
+
+            @if($isSuperAdmin || $authUser->canAny(['manage_ip_blocks', 'manage_fraud_check']))
+            <a href="{{ route('admin.ip-blocks.index') }}" class="nav-link {{ request()->routeIs('admin.ip-blocks.*') ? 'is-active' : '' }} flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <span class="icon"><i class="fas fa-ban text-[11px] text-rose-500"></i></span> IP Block
+                </div>
+                @if(isset($globalBlockedIpsCount) && $globalBlockedIpsCount > 0)
+                <span class="px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-rose-500 text-white leading-none">
+                    {{ $globalBlockedIpsCount }}
+                </span>
+                @endif
+            </a>
+            @endif
+            @endif
 
             {{-- ────────────── RESELLER HUB ────────────── --}}
+            @if($isSuperAdmin || $authUser->canAny(['manage_resellers', 'manage_reseller_orders', 'manage_reseller_withdrawals', 'view_reseller_reports']))
             <div class="nav-divider !mt-3"></div>
             <div class="flex items-center justify-between px-3 pt-2 pb-1">
                 <div class="flex items-center gap-1.5 text-[10.5px] font-extrabold uppercase tracking-wider text-purple-400">
@@ -303,6 +420,7 @@
                 $pendingResellerWithdrawalsCount = \App\Models\ResellerWithdrawal::where('status', 'pending')->count();
             @endphp
 
+            @if($isSuperAdmin || $authUser->can('manage_resellers'))
             <a href="{{ route('admin.resellers.index') }}"
                class="nav-link border-l-2 border-purple-500/30 hover:border-purple-400 {{ request()->routeIs('admin.resellers.index') ? 'is-active !border-purple-400' : '' }}">
                 <span class="icon"><i class="fas fa-handshake text-[11px] text-purple-400"></i></span>
@@ -311,7 +429,9 @@
                     <span class="ml-auto px-1.5 py-0.5 text-[10px] rounded-full bg-purple-500 text-white font-black animate-pulse" title="Pending Resellers">{{ $pendingResellerCount }}</span>
                 @endif
             </a>
+            @endif
 
+            @if($isSuperAdmin || $authUser->can('manage_reseller_orders'))
             <a href="{{ route('admin.resellers.orders') }}"
                class="nav-link border-l-2 border-purple-500/30 hover:border-purple-400 {{ request()->routeIs('admin.resellers.orders*') ? 'is-active' : '' }}">
                 <span class="icon"><i class="fas fa-cart-flatbed text-[11px] text-violet-400"></i></span>
@@ -320,7 +440,9 @@
                     <span class="ml-auto px-1.5 py-0.5 text-[10px] rounded-full bg-blue-500 text-white font-black" title="Pending Orders">{{ $pendingResellerOrdersCount }}</span>
                 @endif
             </a>
+            @endif
 
+            @if($isSuperAdmin || $authUser->can('manage_reseller_withdrawals'))
             <a href="{{ route('admin.resellers.withdrawals') }}"
                class="nav-link border-l-2 border-purple-500/30 hover:border-purple-400 {{ request()->routeIs('admin.resellers.withdrawals*') ? 'is-active' : '' }}">
                 <span class="icon"><i class="fas fa-wallet text-[11px] text-fuchsia-400"></i></span>
@@ -329,18 +451,23 @@
                     <span class="ml-auto px-1.5 py-0.5 text-[10px] rounded-full bg-amber-400 text-amber-950 font-black animate-pulse" title="Pending Withdrawals">{{ $pendingResellerWithdrawalsCount }}</span>
                 @endif
             </a>
+            @endif
 
+            @if($isSuperAdmin || $authUser->can('view_reseller_reports'))
             <a href="{{ route('admin.resellers.report') }}"
                class="nav-link border-l-2 border-purple-500/30 hover:border-purple-400 {{ request()->routeIs('admin.resellers.report*') ? 'is-active' : '' }}">
                 <span class="icon"><i class="fas fa-chart-pie text-[11px] text-indigo-400"></i></span>
                 <span class="truncate">Reseller Reports</span>
             </a>
+            @endif
+            @endif
 
             {{-- ────────────── SUPPLIER MARKETPLACE ────────────── --}}
+            @if($isSuperAdmin || $authUser->canAny(['manage_suppliers_hub', 'manage_supplier_products', 'manage_supplier_sales', 'manage_supplier_withdrawals']))
             <div class="nav-divider !mt-3"></div>
             <div class="flex items-center justify-between px-3 pt-2 pb-1">
                 <div class="flex items-center gap-1.5 text-[10.5px] font-extrabold uppercase tracking-wider text-emerald-400">
-                    <span class="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]"></span>
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(168,85,247,0.8)]"></span>
                     <span>Supplier Hub</span>
                 </div>
                 <span class="px-1.5 py-0.5 text-[9px] font-black uppercase rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
@@ -349,7 +476,7 @@
             </div>
 
             @php
-                $pendingSupplierCount = \App\Models\Supplier::where('status', 'pending')->count();
+                $pendingSupplierCount = \App\Models\Supplier::marketplace()->where('status', 'pending')->count();
                 $pendingSupplierSalesCount = \App\Models\Sale::withoutGlobalScopes()
                     ->where(function($q) {
                         $q->whereNotNull('supplier_id')
@@ -364,81 +491,167 @@
                 $pendingSupplierWithdrawalsCount = \App\Models\SupplierWithdrawal::where('status', 'pending')->count();
             @endphp
 
+            @if($isSuperAdmin || $authUser->can('manage_suppliers_hub'))
             <a href="{{ route('admin.suppliers.manage') }}" class="nav-link {{ request()->routeIs('admin.suppliers.manage*') ? 'is-active' : '' }}">
-                <span class="icon"><i class="fas fa-store text-[11px]"></i></span> Suppliers / Vendors
+                <span class="icon"><i class="fas fa-store text-[11px]"></i></span> Suppliers 
                 @if($pendingSupplierCount > 0)
                     <span class="ml-auto px-1.5 py-0.5 text-[10px] rounded-full bg-amber-400 text-amber-950 font-black animate-pulse">{{ $pendingSupplierCount }}</span>
                 @endif
             </a>
+            @endif
+
+            @if($isSuperAdmin || $authUser->can('manage_supplier_products'))
+            <a href="{{ route('admin.supplier-products.index') }}" class="nav-link {{ request()->routeIs('admin.supplier-products.*') ? 'is-active' : '' }}">
+                <span class="icon"><i class="fas fa-boxes-stacked text-[11px] text-teal-400"></i></span> Supplier Products
+                @if($pendingSupplierProductsCount > 0)
+                    <span class="ml-auto px-1.5 py-0.5 text-[10px] rounded-full bg-amber-400 text-amber-950 font-black animate-pulse">{{ $pendingSupplierProductsCount }}</span>
+                @endif
+            </a>
+            @endif
+
+            @if($isSuperAdmin || $authUser->can('manage_supplier_withdrawals'))
             <a href="{{ route('admin.suppliers.withdrawals') }}" class="nav-link {{ request()->routeIs('admin.suppliers.withdrawals*') ? 'is-active' : '' }}">
                 <span class="icon"><i class="fas fa-wallet text-[11px] text-emerald-400"></i></span> Supplier Withdrawals
                 @if($pendingSupplierWithdrawalsCount > 0)
                     <span class="ml-auto px-1.5 py-0.5 text-[10px] rounded-full bg-amber-400 text-amber-950 font-black animate-pulse">{{ $pendingSupplierWithdrawalsCount }}</span>
                 @endif
             </a>
+            @endif
+
+            @if($isSuperAdmin || $authUser->can('manage_supplier_sales'))
             <a href="{{ route('admin.supplier-sales.index') }}" class="nav-link {{ request()->routeIs('admin.supplier-sales.*') ? 'is-active' : '' }}">
                 <span class="icon"><i class="fas fa-boxes-packing text-[11px] text-amber-400"></i></span> Supplier Sales
                 @if($pendingSupplierSalesCount > 0)
                     <span class="ml-auto px-1.5 py-0.5 text-[10px] rounded-full bg-blue-500 text-white font-black">{{ $pendingSupplierSalesCount }}</span>
                 @endif
             </a>
+            @endif
+            @endif
+
+            @if($isSuperAdmin || $authUser->can('manage_messages'))
             <a href="{{ route('admin.messages.index') }}" class="nav-link {{ request()->routeIs('admin.messages.*') ? 'is-active' : '' }}">
                 <span class="icon"><i class="fas fa-comments text-[11px]"></i></span> Live Chat / Messages
             </a>
+            @endif
+
+            {{-- ────────────── Admin Settings & Management ────────────── --}}
+            @php
+                $canSeeAdminSection = $isSuperAdmin || $authUser->canAny([
+                    'manage_users', 'manage_moderators', 'manage_roles_permissions',
+                    'manage_order_statuses', 'manage_payment_methods', 'manage_banners',
+                    'manage_home_contents', 'manage_pages', 'manage_landing_pages', 'manage_flash_sales', 'manage_coupons',
+                    'manage_shipping_charges', 'manage_couriers', 'manage_settings',
+                    'view_activity_logs', 'view_user_activity'
+                ]);
+            @endphp
+
+            @if($canSeeAdminSection)
             <div class="nav-divider !mt-2"></div>
             <div class="section-label">Admin</div>
+
+            @if($isSuperAdmin || $authUser->can('manage_users'))
             <a href="{{ route('admin.staff.index') }}" class="nav-link {{ request()->routeIs('admin.staff.*') ? 'is-active' : '' }}">
                 <span class="icon"><i class="fas fa-users text-[11px]"></i></span> All Staff
             </a>
+            @endif
+
+            @if($isSuperAdmin || $authUser->can('manage_moderators'))
             <a href="{{ route('admin.moderators.index') }}" class="nav-link {{ request()->routeIs('admin.moderators.*') ? 'is-active' : '' }}">
                 <span class="icon"><i class="fas fa-user-shield text-[11px]"></i></span> Moderators &amp; Work
             </a>
+            @endif
+
+            @if($isSuperAdmin || $authUser->can('manage_roles_permissions'))
             <a href="{{ route('admin.roles-permissions') }}" class="nav-link {{ request()->routeIs('admin.roles-permissions*') ? 'is-active' : '' }}">
                 <span class="icon"><i class="fas fa-shield-halved text-[11px]"></i></span> Roles &amp; Permissions
             </a>
+            @endif
+
+            @if($isSuperAdmin || $authUser->can('manage_order_statuses'))
             <a href="{{ route('admin.order-statuses.index') }}" class="nav-link {{ request()->routeIs('admin.order-statuses*') ? 'is-active' : '' }}">
                 <span class="icon"><i class="fas fa-truck-fast text-[11px]"></i></span> Order Statuses
             </a>
+            @endif
+
+            @if($isSuperAdmin || $authUser->can('manage_payment_methods'))
             <a href="{{ route('admin.payment-methods.index') }}" class="nav-link {{ request()->routeIs('admin.payment-methods*') ? 'is-active' : '' }}">
                 <span class="icon"><i class="fas fa-money-bill-wave text-[11px]"></i></span> Payment Methods
             </a>
+            @endif
+
+            @if($isSuperAdmin || $authUser->can('manage_banners'))
             <a href="{{ route('admin.banners.index') }}" class="nav-link {{ request()->routeIs('admin.banners*') ? 'is-active' : '' }}">
                 <span class="icon"><i class="fas fa-image text-[11px]"></i></span> Homepage Banners
             </a>
+            @endif
+
+            @if($isSuperAdmin || $authUser->can('manage_home_contents'))
             <a href="{{ route('admin.home-contents.index') }}" class="nav-link {{ request()->routeIs('admin.home-contents.*') ? 'is-active' : '' }}">
                 <span class="icon"><i class="fas fa-file-lines text-[11px] text-teal-400"></i></span> Homepage Content
             </a>
+            @endif
+
+            @if($isSuperAdmin || $authUser->can('manage_pages'))
             <a href="{{ route('admin.pages.index') }}" class="nav-link {{ request()->routeIs('admin.pages.*') ? 'is-active' : '' }}">
                 <span class="icon"><i class="fas fa-file-circle-plus text-[11px] text-sky-400"></i></span> Pages
             </a>
+            @endif
+
+            @if($isSuperAdmin || $authUser->canAny(['manage_landing_pages', 'manage_pages']))
+            <a href="{{ route('admin.landing-pages.index') }}" class="nav-link {{ request()->routeIs('admin.landing-pages.*') ? 'is-active' : '' }}">
+                <span class="icon"><i class="fas fa-wand-magic-sparkles text-[11px] text-fuchsia-300"></i></span> Landing Pages
+            </a>
+            @endif
+
+            @if($isSuperAdmin || $authUser->can('manage_flash_sales'))
             <a href="{{ route('admin.flash-sales.index') }}" class="nav-link {{ request()->routeIs('admin.flash-sales.*') ? 'is-active' : '' }}">
                 <span class="icon"><i class="fas fa-bolt text-[11px] text-amber-500"></i></span> Flash Sale
             </a>
+            @endif
+
+            @if($isSuperAdmin || $authUser->can('manage_coupons'))
             <a href="{{ route('admin.coupons.index') }}" class="nav-link {{ request()->routeIs('admin.coupons.*') ? 'is-active' : '' }}">
                 <span class="icon"><i class="fas fa-ticket-alt text-[11px]"></i></span> Coupons
             </a>
+            @endif
+
+            @if($isSuperAdmin || $authUser->can('manage_shipping_charges'))
             <a href="{{ route('admin.shipping-charges.index') }}" class="nav-link {{ request()->routeIs('admin.shipping-charges*') ? 'is-active' : '' }}">
                 <span class="icon"><i class="fas fa-truck text-[11px]"></i></span> Shipping Charges
             </a>
+            @endif
+
+            @if($isSuperAdmin || $authUser->can('manage_couriers'))
             <a href="{{ route('admin.couriers.index') }}" class="nav-link {{ request()->routeIs('admin.couriers*') ? 'is-active' : '' }}">
                 <span class="icon"><i class="fas fa-truck-fast text-[11px]"></i></span> Courier Settings
             </a>
+            @endif
+
+            @if($isSuperAdmin || $authUser->can('manage_settings'))
             <a href="{{ route('admin.settings.index') }}" class="nav-link {{ request()->routeIs('admin.settings.*') ? 'is-active' : '' }}">
                 <span class="icon"><i class="fas fa-gear text-[11px]"></i></span> System Settings
             </a>
+            @endif
+
+            @if($isSuperAdmin || $authUser->can('view_activity_logs'))
             <a href="{{ route('admin.activity-logs.index') }}" class="nav-link {{ request()->routeIs('admin.activity-logs.*') ? 'is-active' : '' }}">
                 <span class="icon"><i class="fas fa-clock-rotate-left text-[11px]"></i></span> Activity Logs
             </a>
+            @endif
+
+            @if($isSuperAdmin || $authUser->can('view_user_activity'))
             <a href="{{ route('admin.user-activity.index') }}" class="nav-link {{ request()->routeIs('admin.user-activity.*') ? 'is-active' : '' }}">
                 <span class="icon"><i class="fas fa-chart-line text-[11px] text-cyan-400"></i></span> User Activity
             </a>
+            @endif
+            @endif
 
         @else
             {{-- Branch staff: permission-gated menu --}}
             @isset($branch)
             <div class="px-3 pb-2 pt-0.5">
                 <div class="text-white text-[12.5px] font-semibold truncate">{{ $branch->name }}</div>
-                <div class="text-slate-500 text-[11px] mt-0.5">Branch Menu</div>
+                <div class="text-blue-100/75 text-[11px] mt-0.5">Branch Menu</div>
             </div>
             <div class="nav-divider"></div>
 
@@ -460,6 +673,13 @@
             <a href="{{ route('branch.sales.index', $branch) }}"
                class="nav-link {{ request()->routeIs('branch.sales.*') ? 'is-active' : '' }}">
                 <span class="icon"><i class="fas fa-receipt text-[11px]"></i></span> Sales
+            </a>
+            @endif
+
+            @if(($authUser->can('manage_returns') || $authUser->can('view_sales')) && !$branch->is_warehouse)
+            <a href="{{ route('branch.returns.index', $branch) }}"
+               class="nav-link {{ request()->routeIs('branch.returns.*') ? 'is-active' : '' }}">
+                <span class="icon"><i class="fas fa-rotate-left text-[11px]"></i></span> Partial Return
             </a>
             @endif
 
@@ -511,6 +731,10 @@
                class="nav-link {{ request()->routeIs('admin.warehouse.categories.*') ? 'is-active' : '' }}">
                 <span class="icon"><i class="fas fa-tags text-[11px]"></i></span> Categories
             </a>
+            <a href="{{ route('admin.warehouse.subcategories.index') }}"
+               class="nav-link {{ request()->routeIs('admin.warehouse.subcategories.*') ? 'is-active' : '' }}">
+                <span class="icon"><i class="fas fa-sitemap text-[11px]"></i></span> Subcategories
+            </a>
             @endif
 
             @if($authUser->can('manage_suppliers') && $branch->is_warehouse)
@@ -554,6 +778,19 @@
                class="nav-link {{ request()->routeIs('branch.fraud-check.*') ? 'is-active' : '' }}">
                 <span class="icon"><i class="fas fa-shield-halved text-[11px]"></i></span> Fraud Check
             </a>
+            @if($isSuperAdmin || $authUser->canAny(['manage_ip_blocks', 'manage_fraud_check']))
+            <a href="{{ route('admin.ip-blocks.index') }}"
+               class="nav-link {{ request()->routeIs('admin.ip-blocks.*') ? 'is-active' : '' }} flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <span class="icon"><i class="fas fa-ban text-[11px] text-rose-500"></i></span> IP Block
+                </div>
+                @if(isset($globalBlockedIpsCount) && $globalBlockedIpsCount > 0)
+                <span class="px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-rose-500 text-white leading-none">
+                    {{ $globalBlockedIpsCount }}
+                </span>
+                @endif
+            </a>
+            @endif
             @endif
 
             @if($authUser->can('manage_users'))
@@ -584,6 +821,13 @@
             </a>
             @endif
 
+            @if($authUser->canAny(['manage_suppliers_hub', 'manage_supplier_products']))
+            <a href="{{ route('admin.supplier-products.index') }}"
+               class="nav-link {{ request()->routeIs('admin.supplier-products.*') ? 'is-active' : '' }}">
+                <span class="icon"><i class="fas fa-boxes-stacked text-[11px] text-teal-400"></i></span> Supplier Products
+            </a>
+            @endif
+
             @if($authUser->can('manage_messages'))
             <a href="{{ route('admin.messages.index') }}"
                class="nav-link {{ request()->routeIs('admin.messages.*') ? 'is-active' : '' }}">
@@ -603,7 +847,7 @@
 
     {{-- User footer --}}
     @auth
-    <div class="border-t border-white/[.07] px-4 py-3.5 flex-shrink-0">
+    <div class="border-t border-white/15 px-4 py-3.5 flex-shrink-0">
         <div class="flex items-center gap-2.5">
             <div class="user-avatar flex items-center justify-center overflow-hidden {{ $headerProfileIcon ? 'bg-white border border-white/20' : '' }}">
                 @if($headerProfileIcon)
@@ -614,14 +858,14 @@
             </div>
             <div class="flex-1 min-w-0">
                 <div class="text-white text-[12px] font-semibold truncate leading-tight">{{ auth()->user()->name }}</div>
-                <div class="text-slate-500 text-[11px] mt-0.5 truncate">
+                <div class="text-blue-100/75 text-[11px] mt-0.5 truncate">
                     {{ auth()->user()->getRoleNames()->first() ?? 'User' }}
                 </div>
             </div>
             <form method="POST" action="{{ route('logout') }}" class="flex-shrink-0">
                 @csrf
                 <button type="submit" title="Logout"
-                        class="text-slate-500 hover:text-red-400 transition-colors p-2 rounded-lg hover:bg-red-400/10">
+                        class="text-blue-100 hover:text-white transition-colors p-2 rounded-lg hover:bg-white/10">
                     <i class="fas fa-right-from-bracket text-[11px]"></i>
                 </button>
             </form>
@@ -1229,7 +1473,7 @@ document.addEventListener('alpine:initialized', () => {
     @if(session('success'))   showToast(@json(session('success')), 'success'); @endif
     @if(session('error'))     showToast(@json(session('error')),   'error');   @endif
     @if(session('warning'))   showToast(@json(session('warning')), 'warning'); @endif
-    @if($errors->any())
+    @if(isset($errors) && $errors->any())
         @foreach($errors->all() as $e) showToast(@json($e), 'error'); @endforeach
     @endif
 });
