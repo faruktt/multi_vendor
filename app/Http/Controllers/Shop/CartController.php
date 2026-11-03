@@ -57,7 +57,16 @@ class CartController extends Controller
             return redirect()->route('shop.checkout.index');
         }
 
-        return $this->cartResponse($request, $branch, $product->name . ' added to your cart.');
+        $unitPrice = (float) ($variant ? ($variant->price ?? $product->price) : ($product->sale_price ?? $product->price));
+        $itemData = [
+            'id'       => $product->id,
+            'name'     => $product->name,
+            'price'    => $unitPrice,
+            'qty'      => $qty,
+            'category' => $product->category?->name ?? '',
+        ];
+
+        return $this->cartResponse($request, $branch, $product->name . ' added to your cart.', $itemData);
     }
 
     public function update(Request $request)
@@ -103,7 +112,7 @@ class CartController extends Controller
         return $this->cartResponse($request, $branch, 'Item removed from cart.');
     }
 
-    private function cartResponse(Request $request, Vendor $branch, string $message)
+    private function cartResponse(Request $request, Vendor $branch, string $message, ?array $item = null)
     {
         if ($request->wantsJson()) {
             $lines = Cart::lines($branch);
@@ -114,6 +123,7 @@ class CartController extends Controller
                 'message'  => $message,
                 'count'    => $lines->count(),
                 'subtotal' => $subtotal,
+                'item'     => $item,
                 'html'     => view('shop.partials.cart-drawer-body', [
                     'cartLines'    => $lines,
                     'cartSubtotal' => $subtotal,
