@@ -45,6 +45,110 @@ class Sale extends Model
                 $sale->due_amount     = 0;
             }
         });
+
+        static::saved(function ($sale) {
+            $cancelledOrReturned = ['cancelled', 'cancel', 'return', 'returned'];
+            $currentStatus  = strtolower((string) $sale->order_status);
+            $originalStatus = strtolower((string) $sale->getOriginal('order_status'));
+
+            if ($sale->wasChanged('order_status')) {
+                if (in_array($currentStatus, $cancelledOrReturned) && !in_array($originalStatus, $cancelledOrReturned)) {
+                    $sale->restoreStock("Stock restored — order #{$sale->invoice_no} status changed to {$sale->order_status}");
+                } elseif (!in_array($currentStatus, $cancelledOrReturned) && in_array($originalStatus, $cancelledOrReturned)) {
+                    $sale->reDeductStock("Stock re-deducted — order #{$sale->invoice_no} status changed from {$originalStatus} to {$sale->order_status}");
+                }
+            }
+        });
+    }
+
+    /**
+     * Restore stock to inventory when order is cancelled or returned.
+     */
+    public function restoreStock(string $reason = ''): void
+    {
+        // Check if stock has already been restored for this sale
+        $alreadyRestored = StockMovement::whereIn('reference_type', ['sale_cancel', 'sale_return'])
+            ->where('reference_id', $this->id)
+            ->exists();
+
+        if ($alreadyRestored) {
+            return;
+        }
+
+        $items = $this->saleItems()->with(['product', 'variant'])->get();
+        foreach ($items as $item) {
+            $qty = (int) $item->quantity;
+            if ($qty <= 0) continue;
+
+            // Restore product stock
+            if ($item->product_id) {
+                Product::withoutGlobalScopes()
+                    ->where('id', $item->product_id)
+                    ->increment('stock_qty', $qty);
+            }
+
+            // Restore variant stock
+            if ($item->product_variant_id) {
+                ProductVariant::where('id', $item->product_variant_id)
+                    ->increment('stock_qty', $qty);
+            }
+
+            // Record stock movement
+            StockMovement::create([
+                'vendor_id'      => $this->vendor_id,
+                'product_id'     => $item->product_id,
+                'type'           => 'in',
+                'quantity'       => $qty,
+                'reference_type' => 'sale_cancel',
+                'reference_id'   => $this->id,
+                'note'           => $reason ?: "Stock restored — order #{$this->invoice_no} cancelled/returned",
+            ]);
+        }
+    }
+
+    /**
+     * Re-deduct stock if a cancelled/returned order is reopened.
+     */
+    public function reDeductStock(string $reason = ''): void
+    {
+        $hasRestored = StockMovement::whereIn('reference_type', ['sale_cancel', 'sale_return'])
+            ->where('reference_id', $this->id)
+            ->exists();
+
+        if (!$hasRestored) {
+            return;
+        }
+
+        $items = $this->saleItems()->with(['product', 'variant'])->get();
+        foreach ($items as $item) {
+            $qty = (int) $item->quantity;
+            if ($qty <= 0) continue;
+
+            if ($item->product_id) {
+                Product::withoutGlobalScopes()
+                    ->where('id', $item->product_id)
+                    ->decrement('stock_qty', $qty);
+            }
+
+            if ($item->product_variant_id) {
+                ProductVariant::where('id', $item->product_variant_id)
+                    ->decrement('stock_qty', $qty);
+            }
+
+            StockMovement::create([
+                'vendor_id'      => $this->vendor_id,
+                'product_id'     => $item->product_id,
+                'type'           => 'out',
+                'quantity'       => $qty,
+                'reference_type' => 'sale',
+                'reference_id'   => $this->id,
+                'note'           => $reason ?: "Stock re-deducted — order #{$this->invoice_no} reopened",
+            ]);
+        }
+
+        StockMovement::whereIn('reference_type', ['sale_cancel', 'sale_return'])
+            ->where('reference_id', $this->id)
+            ->delete();
     }
 
     /**

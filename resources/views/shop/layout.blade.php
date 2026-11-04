@@ -219,13 +219,74 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
             {{-- Mobile Row 2: Search Bar & Icons (Wishlist, Compare, Cart) --}}
             <div class="flex items-center gap-2 pt-0.5">
-                <form method="GET" action="{{ route('shop.products.index') }}" class="flex-1 min-w-0">
-                    <div class="relative">
-                        <svg class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-                        <input type="text" name="q" value="{{ request('q') }}" placeholder="Search products..."
-                               class="w-full h-9 rounded-lg border-0 bg-white pl-9 pr-3 text-xs focus:outline-none focus:ring-2 focus:ring-white/60 shadow-inner" />
+                <div class="flex-1 min-w-0 relative"
+                     x-data="shopSearchAutocomplete('{{ route('shop.suggest') }}')"
+                     @click.outside="close()"
+                     @keydown.escape="close()">
+                    <form method="GET" action="{{ route('shop.products.index') }}" class="w-full">
+                        <div class="relative">
+                            <svg class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                            <input type="text" name="q"
+                                   x-model="query"
+                                   @input.debounce.250ms="onInput($event)"
+                                   @focus="onFocus()"
+                                   autocomplete="off"
+                                   value="{{ request('q') }}"
+                                   placeholder="Search products..."
+                                   class="w-full h-9 rounded-lg border-0 bg-white pl-9 pr-7 text-xs focus:outline-none focus:ring-2 focus:ring-white/60 shadow-inner" />
+                            <div x-show="loading" class="absolute right-2.5 top-1/2 -translate-y-1/2" style="display:none;">
+                                <i class="fas fa-spinner fa-spin text-gray-400 text-xs"></i>
+                            </div>
+                        </div>
+                    </form>
+
+                    {{-- Mobile Suggestion Dropdown --}}
+                    <div x-show="open" x-cloak
+                         class="absolute left-0 right-0 top-full mt-1.5 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden z-[120] max-h-80 overflow-y-auto">
+                        <template x-if="loading && suggestions.length === 0">
+                            <div class="p-3 text-center text-xs text-gray-400">
+                                <i class="fas fa-spinner fa-spin mr-1"></i> অনুসন্ধান করা হচ্ছে...
+                            </div>
+                        </template>
+
+                        <template x-if="!loading && suggestions.length === 0 && query.trim().length >= 1">
+                            <div class="p-3 text-center text-xs text-gray-400">
+                                কোনো প্রোডাক্ট পাওয়া যায়নি
+                            </div>
+                        </template>
+
+                        <template x-if="suggestions.length > 0">
+                            <div class="divide-y divide-gray-100">
+                                <template x-for="item in suggestions" :key="item.id">
+                                    <a :href="item.url" class="flex items-center gap-2.5 p-2 hover:bg-gray-50 transition-colors">
+                                        <div class="w-10 h-10 rounded-lg bg-gray-50 border border-gray-100 flex items-center justify-center overflow-hidden flex-shrink-0">
+                                            <template x-if="item.image">
+                                                <img :src="item.image" :alt="item.name" class="w-full h-full object-contain p-0.5">
+                                            </template>
+                                            <template x-if="!item.image">
+                                                <i class="fas fa-box text-gray-300 text-xs"></i>
+                                            </template>
+                                        </div>
+                                        <div class="flex-1 min-w-0 text-left">
+                                            <p class="text-xs font-semibold text-gray-800 truncate" x-text="item.name"></p>
+                                            <div class="flex items-center gap-1.5 mt-0.5">
+                                                <span class="text-xs font-bold text-rose-600" x-text="item.price"></span>
+                                                <template x-if="item.old_price">
+                                                    <span class="text-[10px] text-gray-400 line-through" x-text="item.old_price"></span>
+                                                </template>
+                                            </div>
+                                        </div>
+                                    </a>
+                                </template>
+
+                                <a :href="'{{ route('shop.products.index') }}?q=' + encodeURIComponent(query)"
+                                   class="block p-2 text-center text-xs font-bold text-brand-dark bg-gray-50 hover:bg-gray-100 transition-colors">
+                                    সবগুলো ফলাফল দেখুন &rarr;
+                                </a>
+                            </div>
+                        </template>
                     </div>
-                </form>
+                </div>
 
                 <div class="flex items-center gap-0.5 flex-shrink-0">
                     {{-- Wishlist Button --}}
@@ -280,13 +341,83 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 @endif
             </a>
 
-            <form method="GET" action="{{ route('shop.products.index') }}" class="flex-1 max-w-[560px] mx-2 lg:mx-4 min-w-0">
-                <div class="relative">
-                    <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-                    <input type="text" name="q" value="{{ request('q') }}" placeholder="Search for products.."
-                           class="w-full h-11 rounded-lg border-0 bg-white pl-11 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-white/60 shadow-inner" />
+            <div class="flex-1 max-w-[560px] mx-2 lg:mx-4 min-w-0 relative"
+                 x-data="shopSearchAutocomplete('{{ route('shop.suggest') }}')"
+                 @click.outside="close()"
+                 @keydown.escape="close()">
+                <form method="GET" action="{{ route('shop.products.index') }}" class="w-full">
+                    <div class="relative">
+                        <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                        <input type="text" name="q"
+                               x-model="query"
+                               @input.debounce.250ms="onInput($event)"
+                               @focus="onFocus()"
+                               autocomplete="off"
+                               value="{{ request('q') }}"
+                               placeholder="Search for products.."
+                               class="w-full h-11 rounded-lg border-0 bg-white pl-11 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-white/60 shadow-inner" />
+                        <div x-show="loading" class="absolute right-3.5 top-1/2 -translate-y-1/2" style="display:none;">
+                            <i class="fas fa-spinner fa-spin text-gray-400 text-sm"></i>
+                        </div>
+                    </div>
+                </form>
+
+                {{-- Desktop Suggestion Dropdown --}}
+                <div x-show="open" x-cloak
+                     class="absolute left-0 right-0 top-full mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-[120] max-h-96 overflow-y-auto">
+                    <template x-if="loading && suggestions.length === 0">
+                        <div class="p-4 text-center text-sm text-gray-400">
+                            <i class="fas fa-spinner fa-spin mr-2"></i> প্রোডাক্ট খোঁজা হচ্ছে...
+                        </div>
+                    </template>
+
+                    <template x-if="!loading && suggestions.length === 0 && query.trim().length >= 1">
+                        <div class="p-4 text-center text-sm text-gray-500">
+                            "<span x-text="query" class="font-bold text-gray-800"></span>" সম্পর্কিত কোনো প্রোডাক্ট পাওয়া যায়নি
+                        </div>
+                    </template>
+
+                    <template x-if="suggestions.length > 0">
+                        <div class="divide-y divide-gray-100">
+                            <template x-for="item in suggestions" :key="item.id">
+                                <a :href="item.url" class="flex items-center gap-3.5 p-3 hover:bg-slate-50 transition-colors group">
+                                    <div class="w-12 h-12 rounded-xl bg-gray-50 border border-gray-200 flex items-center justify-center overflow-hidden flex-shrink-0">
+                                        <template x-if="item.image">
+                                            <img :src="item.image" :alt="item.name" class="w-full h-full object-contain p-0.5 group-hover:scale-105 transition-transform">
+                                        </template>
+                                        <template x-if="!item.image">
+                                            <i class="fas fa-box text-gray-300 text-lg"></i>
+                                        </template>
+                                    </div>
+                                    <div class="flex-1 min-w-0 text-left">
+                                        <div class="flex items-center gap-2 mb-0.5">
+                                            <template x-if="item.category">
+                                                <span class="text-[10px] uppercase font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded" x-text="item.category"></span>
+                                            </template>
+                                            <template x-if="item.is_on_flash">
+                                                <span class="text-[9px] uppercase font-black text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded">⚡ FLASH SALE</span>
+                                            </template>
+                                        </div>
+                                        <p class="text-sm font-bold text-gray-800 group-hover:text-brand-dark transition-colors truncate" x-text="item.name"></p>
+                                    </div>
+                                    <div class="text-right flex-shrink-0">
+                                        <p class="text-sm font-extrabold text-rose-600" x-text="item.price"></p>
+                                        <template x-if="item.old_price">
+                                            <p class="text-xs text-gray-400 line-through" x-text="item.old_price"></p>
+                                        </template>
+                                    </div>
+                                </a>
+                            </template>
+
+                            <a :href="'{{ route('shop.products.index') }}?q=' + encodeURIComponent(query)"
+                               class="block py-2.5 px-4 text-center text-xs font-bold text-brand-dark bg-gray-50 hover:bg-gray-100 transition-colors flex items-center justify-center gap-1.5">
+                                <span>সবগুলো ফলাফল দেখুন</span>
+                                <i class="fas fa-arrow-right text-[11px]"></i>
+                            </a>
+                        </div>
+                    </template>
                 </div>
-            </form>
+            </div>
 
             <div class="flex items-center gap-2 lg:gap-3 flex-shrink-0">
                 {{-- Reseller Panel shortcut if already logged in as reseller --}}
@@ -1094,6 +1225,54 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
 @stack('scripts')
 <script>
+function shopSearchAutocomplete(suggestUrl) {
+    return {
+        query: '{{ request('q', '') }}',
+        suggestions: [],
+        loading: false,
+        open: false,
+
+        onInput(e) {
+            const val = (e.target.value || '').trim();
+            this.query = val;
+            if (val.length < 1) {
+                this.suggestions = [];
+                this.open = false;
+                this.loading = false;
+                return;
+            }
+
+            this.loading = true;
+            this.open = true;
+
+            fetch(`${suggestUrl}?q=${encodeURIComponent(val)}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (this.query.trim().length >= 1) {
+                        this.suggestions = data.products || [];
+                        this.open = true;
+                    }
+                })
+                .catch(() => {
+                    this.suggestions = [];
+                })
+                .finally(() => {
+                    this.loading = false;
+                });
+        },
+
+        onFocus() {
+            if (this.query.trim().length >= 1 && this.suggestions.length > 0) {
+                this.open = true;
+            }
+        },
+
+        close() {
+            this.open = false;
+        }
+    };
+}
+
 function shopLiveChatWidget() {
     return {
         chatOpen: false,

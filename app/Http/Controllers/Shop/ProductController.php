@@ -168,6 +168,65 @@ class ProductController extends Controller
         return view('shop.suppliers.show', compact('branch', 'supplier', 'categories', 'products'));
     }
 
+    /**
+     * Live search autocomplete suggestions API
+     */
+    public function suggest(Request $request)
+    {
+        $q = trim((string) $request->input('q', ''));
+        if (mb_strlen($q) < 1) {
+            return response()->json(['products' => []]);
+        }
+
+        $branch = Vendor::onlineStore();
+        if (!$branch || $branch->status !== 'active') {
+            return response()->json(['products' => []]);
+        }
+
+        $products = Product::withoutGlobalScopes()
+            ->with(['category', 'activeFlashSale'])
+            ->where('vendor_id', $branch->id)
+            ->where('status', 'active')
+            ->where(function ($query) {
+                $query->whereNull('supplier_id')->orWhere('approval_status', 'approved');
+            })
+            ->where(function ($query) use ($q) {
+                $query->where('name', 'like', "%{$q}%")
+                      ->orWhere('sku', 'like', "%{$q}%")
+                      ->orWhereHas('category', function ($catQ) use ($q) {
+                          $catQ->where('name', 'like', "%{$q}%");
+                      });
+            })
+            ->limit(8)
+            ->get();
+
+        $currency = '৳';
+
+        $data = $products->map(function ($p) use ($currency) {
+            $isOnFlash = $p->is_on_flash_sale;
+            $price     = $isOnFlash ? (float) $p->flash_price : (float) ($p->sale_price ?? $p->price);
+            $oldPrice  = $isOnFlash ? (float) $p->price : ($p->has_old_price ? (float) $p->old_price : null);
+
+            return [
+                'id'          => $p->id,
+                'name'        => $p->name,
+                'url'         => route('shop.products.show', $p->slug),
+                'image'       => $p->first_image_url ?: null,
+                'price'       => number_format($price, 0) . $currency,
+                'old_price'   => $oldPrice ? number_format($oldPrice, 0) . $currency : null,
+                'category'    => $p->category?->name,
+                'in_stock'    => (int) $p->stock_qty > 0,
+                'is_on_flash' => $isOnFlash,
+            ];
+        });
+
+        return response()->json([
+            'query'    => $q,
+            'count'    => $data->count(),
+            'products' => $data,
+        ]);
+    }
+
     private function sidebarCategories(int $vendorId)
     {
         return Category::withoutGlobalScopes()

@@ -119,6 +119,7 @@ Route::prefix('customer')->name('shop.customer.')->group(function () {
 Route::prefix('shop')->name('shop.')->group(function () {
     Route::get('/',                          [ShopHomeController::class, 'index'])->name('home');
     Route::get('/products',                    [ShopProductController::class, 'index'])->name('products.index');
+    Route::get('/suggest',                     [ShopProductController::class, 'suggest'])->name('suggest');
     Route::get('/quick-view/{productSlug}',   [ShopProductController::class, 'quickView'])->name('products.quickView');
 
     Route::post('/cart/add',                 [ShopCartController::class, 'add'])->name('cart.add');
