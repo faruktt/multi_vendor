@@ -93,7 +93,7 @@ class ProductController extends Controller
             ->where(function ($q) {
                 $q->whereNull('supplier_id')->orWhere('approval_status', 'approved');
             })
-            ->with(['category', 'subCategory', 'variants.color', 'variants.size', 'supplier'])
+            ->with(['category', 'subCategory', 'variants.color', 'variants.size', 'supplier', 'activeFlashSale'])
             ->firstOrFail();
 
         $related = Product::withoutGlobalScopes()
@@ -104,6 +104,7 @@ class ProductController extends Controller
             ->where(function ($q) {
                 $q->whereNull('supplier_id')->orWhere('approval_status', 'approved');
             })
+            ->with(['activeFlashSale'])
             ->inRandomOrder()
             ->limit(12)
             ->get();

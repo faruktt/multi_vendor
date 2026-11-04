@@ -7,17 +7,30 @@
     $currency = $appSettings['currency'] ?? '৳';
 
     // Build variant data for JS — include color_id, size_id, labels, hex
-    $variantsData = $product->variants->map(fn($v) => [
-        'id'          => $v->id,
-        'name'        => $v->variant_name,
-        'color_id'    => $v->color_id,
-        'size_id'     => $v->size_id,
-        'color_label' => $v->color_label,
-        'size_label'  => $v->size_label,
-        'color_hex'   => $v->color?->hex_code,
-        'price'       => (float) ($v->price ?? $product->price),
-        'stock'       => $v->stock_qty,
-    ]);
+    // flash_price: variant inherits the product-level flash price if on flash sale
+    $productFlashPrice = $product->is_on_flash_sale ? (float) $product->flash_price : null;
+    $productRegularPrice = (float) $product->price;
+    $variantsData = $product->variants->map(function($v) use ($productFlashPrice, $productRegularPrice) {
+        $variantRegularPrice = (float) ($v->price ?? $productRegularPrice);
+        // Apply proportional flash discount to variant price if product is on flash sale
+        $variantFlashPrice = null;
+        if ($productFlashPrice !== null && $productRegularPrice > 0) {
+            $discountRatio = $productFlashPrice / $productRegularPrice;
+            $variantFlashPrice = round($variantRegularPrice * $discountRatio, 0);
+        }
+        return [
+            'id'          => $v->id,
+            'name'        => $v->variant_name,
+            'color_id'    => $v->color_id,
+            'size_id'     => $v->size_id,
+            'color_label' => $v->color_label,
+            'size_label'  => $v->size_label,
+            'color_hex'   => $v->color?->hex_code,
+            'price'       => $variantRegularPrice,
+            'flash_price' => $variantFlashPrice,
+            'stock'       => $v->stock_qty,
+        ];
+    });
 
     // Unique colors and sizes from available variants
     $variantColors = $product->variants
@@ -70,7 +83,8 @@
                 {{ $product->effective_price }},
                 @js($variantColors),
                 @js($variantSizes),
-                @js($product->image_urls)
+                @js($product->image_urls),
+                {{ (float) $product->price }}
              )">
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -175,7 +189,7 @@
                             @if($product->is_on_flash_sale)
                             <div class="flex items-baseline gap-2">
                                 <p class="text-3xl font-black text-rose-600">{{ $currency }}<span x-text="Number(price).toLocaleString()"></span></p>
-                                <p class="text-base text-gray-400 font-semibold line-through">{{ $currency }}{{ number_format($product->price, 0) }}</p>
+                                <p class="text-base text-gray-400 font-semibold line-through">{{ $currency }}<span x-text="Number(regularPrice).toLocaleString()"></span></p>
                             </div>
                             @elseif($product->has_old_price)
                             <div class="flex items-baseline gap-2 flex-wrap">
@@ -492,7 +506,7 @@
 
 @push('scripts')
 <script>
-function productPage(variants, baseStock, basePrice, variantColors, variantSizes, imageUrls) {
+function productPage(variants, baseStock, basePrice, variantColors, variantSizes, imageUrls, baseRegularPrice) {
     return {
         variants: variants || [],
         variantColors: variantColors || [],
@@ -502,6 +516,7 @@ function productPage(variants, baseStock, basePrice, variantColors, variantSizes
         qty: 1,
         baseStock: Number(baseStock) || 0,
         basePrice: Number(basePrice) || 0,
+        baseRegularPrice: Number(baseRegularPrice || basePrice) || 0,
 
         // Selected color & size IDs
         selectedColorId: null,
@@ -602,10 +617,25 @@ function productPage(variants, baseStock, basePrice, variantColors, variantSizes
             return !!(this.matchedVariant && (Number(this.matchedVariant.stock) || 0) > 0);
         },
 
+        // Current effective price (flash price if available, else regular)
         get price() {
             if (!this.variants.length) return this.basePrice;
-            return this.matchedVariant ? this.matchedVariant.price : this.basePrice;
+            if (this.matchedVariant) {
+                return (this.matchedVariant.flash_price != null)
+                    ? this.matchedVariant.flash_price
+                    : this.matchedVariant.price;
+            }
+            return this.basePrice;
         },
+
+        // Regular (non-discounted) price of current selection, used for strikethrough
+        get regularPrice() {
+            if (!this.variants.length) return this.baseRegularPrice;
+            return this.matchedVariant ? this.matchedVariant.price : this.baseRegularPrice;
+        },
+
+        // Alias for cart tracking
+        get unitPrice() { return this.price; },
 
         // Color selector
         selectColor(colorId) {
