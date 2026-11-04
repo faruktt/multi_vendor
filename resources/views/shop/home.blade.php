@@ -5,7 +5,7 @@
 @section('content')
 
 <!-- ══ ROW 1: Hero Banner (Main Slider + Promo Card) ══ -->
-<div class="max-w-[1440px] mx-auto px-4 py-4">
+<div class="max-w-[1440px] mx-auto px-4 py-4 relative z-0">
     <div class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
 
         {{-- ══ Hero row: Main slider (1376x768 exact 1.792:1) and side promo banner (768x768 exact 1:1) ══ --}}

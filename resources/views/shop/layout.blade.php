@@ -70,7 +70,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 {!! $appSettings['custom_body_code'] !!}
 @endif
 
-<header class="sticky top-0 z-40 shadow-sm">
+<header class="sticky top-0 z-50 shadow-sm">
 
 <!-- ══ Header row 1 ══ -->
 <div class="w-full bg-black">
@@ -452,8 +452,8 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 </div>
 
 <!-- ══ Header row 2 ══ -->
-<div class="w-full bg-white border-b border-gray-200">
-    <div class="max-w-[1440px] mx-auto flex items-center flex-nowrap overflow-x-auto scroll-smooth gap-3 sm:gap-6 px-3.5 sm:px-6 py-2 sm:py-2.5 whitespace-nowrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+<div class="w-full bg-white border-b border-gray-200 relative z-40">
+    <div class="max-w-[1440px] mx-auto flex items-center flex-nowrap overflow-x-auto lg:overflow-visible scroll-smooth gap-3 sm:gap-6 px-3.5 sm:px-6 py-2 sm:py-2.5 whitespace-nowrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden relative">
         {{-- Home Link with Icon --}}
         <a href="{{ route('root') }}"
            class="flex items-center gap-1 sm:gap-1.5 text-[12.5px] sm:text-sm font-extrabold uppercase tracking-wide text-gray-900 hover:text-brand-dark transition-colors flex-shrink-0 {{ request()->routeIs('root') ? 'text-brand-dark' : '' }}">
@@ -464,15 +464,15 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <span>Home</span>
         </a>
 
-        <div class="relative flex-shrink-0" x-data="{ open: false, activeCat: null }" @mouseenter="open = true" @mouseleave="open = false; activeCat = null">
+        <div class="relative flex-shrink-0 z-50" x-data="{ open: false, activeCat: null }" @mouseenter="open = true" @mouseleave="open = false; activeCat = null">
             <button type="button" @click="categoryDrawer = true" class="flex items-center gap-1.5 sm:gap-2 text-[12.5px] sm:text-sm font-extrabold uppercase tracking-wide text-gray-900 hover:text-brand-dark transition-colors flex-shrink-0">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
                 <span class="sm:hidden">Category</span>
                 <span class="hidden sm:inline">Shop by Category</span>
             </button>
             <div x-show="open" x-cloak
-                 class="hidden lg:block absolute left-0 top-full pt-1.5 w-64 max-w-[calc(100vw-2rem)] z-50">
-                <div class="bg-white border border-gray-200 rounded-xl shadow-xl py-2">
+                 class="hidden lg:block absolute left-0 top-full pt-1.5 w-64 max-w-[calc(100vw-2rem)] z-[100]">
+                <div class="bg-white border border-gray-200 rounded-xl shadow-2xl py-2 ring-1 ring-black/5">
                     @forelse(($categories ?? collect()) as $cat)
                     <div class="relative group/cat" @mouseenter="activeCat = {{ $cat->id }}">
                         <a href="{{ route('shop.products.category', $cat->slug) }}"
@@ -484,9 +484,9 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                             @endif
                         </a>
                         @if($cat->children->isNotEmpty())
-                        <div class="hidden group-hover/cat:block absolute left-full top-0 -ml-2 pl-3 w-60 z-50 pointer-events-auto"
+                        <div class="hidden group-hover/cat:block absolute left-full top-0 -ml-2 pl-3 w-60 z-[110] pointer-events-auto"
                              :class="activeCat === {{ $cat->id }} ? '!block' : ''">
-                            <div class="bg-white border border-gray-200 rounded-xl shadow-xl py-2">
+                            <div class="bg-white border border-gray-200 rounded-xl shadow-2xl py-2 ring-1 ring-black/5">
                                 @foreach($cat->children as $child)
                                 <a href="{{ route('shop.products.category', $child->slug) }}"
                                    class="block px-4 py-2 text-[13px] font-medium text-gray-600 hover:bg-gray-50 hover:text-brand-dark transition-colors">{{ $child->name }}</a>
