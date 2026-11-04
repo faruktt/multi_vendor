@@ -30,7 +30,7 @@ class POSController extends Controller
 
     public function products(Request $request, Vendor $branch)
     {
-        $query = Product::withoutGlobalScopes()->with(['category', 'variants']);
+        $query = Product::withoutGlobalScopes()->with(['category', 'variants', 'sourceProduct']);
 
         if ($branch->is_warehouse) {
             // Used by the Warehouse's Purchase form to search products entered at any branch
@@ -63,7 +63,7 @@ class POSController extends Controller
                 'barcode'    => $p->barcode,
                 'category'   => $p->category?->name,
                 'branch'     => $branch->is_warehouse ? $p->vendor?->name : null,
-                'image'      => $p->image ? Storage::disk('uploads')->url($p->image) : null,
+                'image'      => $p->first_image_url,
                 'variants'   => $p->variants->map(fn($v) => [
                     'id'           => $v->id,
                     'variant_name' => $v->variant_name,

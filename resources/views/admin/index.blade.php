@@ -13,6 +13,420 @@
 @section('content')
 <div x-data="adminPage()">
 
+{{-- ══ EXECUTIVE KPI SUMMARY (Compact & High-Density) ════════════════ --}}
+<div class="mb-4">
+    <div class="flex items-center justify-between gap-2 mb-2.5 px-0.5">
+        <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-blue-600"></span>
+            <h2 class="text-xs font-bold text-slate-700 uppercase tracking-wider">Business Overview &amp; Key Metrics</h2>
+        </div>
+        <span class="text-[11px] text-slate-400 font-medium hidden sm:inline">Real-time aggregate performance indicators</span>
+    </div>
+
+    <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-8 gap-2.5 sm:gap-3">
+
+        {{-- 1. Total Sale --}}
+        <a href="{{ route('admin.all-sales') }}"
+           class="group bg-white hover:bg-slate-50/90 rounded-2xl p-3 border border-slate-200/80 hover:border-emerald-400 shadow-2xs hover:shadow-md transition-all duration-150 flex flex-col justify-between">
+            <div class="flex items-center justify-between gap-1.5 mb-1.5">
+                <div class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xs flex-shrink-0 group-hover:scale-105 transition-transform">
+                    <i class="fas fa-coins"></i>
+                </div>
+                <span class="text-[9.5px] font-bold px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-100">
+                    All-Time
+                </span>
+            </div>
+            <div>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Sale</p>
+                <p class="text-lg font-black text-slate-800 font-mono tracking-tight mt-0.5">
+                    {{ $currency }}{{ number_format($kpi['total_sales'], 0) }}
+                </p>
+            </div>
+            <div class="mt-2 pt-1.5 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400">
+                <span>{{ $kpi['total_sales_orders'] }} completed</span>
+                <span class="text-slate-500 font-semibold">{{ $kpi['all_orders_count'] }} orders</span>
+            </div>
+        </a>
+
+        {{-- 2. Today Sale --}}
+        <a href="{{ route('admin.all-sales') }}?preset=today"
+           class="group bg-white hover:bg-slate-50/90 rounded-2xl p-3 border border-slate-200/80 hover:border-amber-400 shadow-2xs hover:shadow-md transition-all duration-150 flex flex-col justify-between">
+            <div class="flex items-center justify-between gap-1.5 mb-1.5">
+                <div class="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-xs flex-shrink-0 group-hover:scale-105 transition-transform">
+                    <i class="fas fa-calendar-day"></i>
+                </div>
+                @if($kpi['today_change'] !== null)
+                    <span class="text-[9.5px] font-bold px-1.5 py-0.5 rounded-md border {{ $kpi['today_change'] >= 0 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-red-50 text-red-600 border-red-200' }}">
+                        {{ $kpi['today_change'] >= 0 ? '+' : '' }}{{ $kpi['today_change'] }}%
+                    </span>
+                @else
+                    <span class="text-[9.5px] font-bold px-1.5 py-0.5 rounded-md bg-amber-50 text-amber-700 border border-amber-100">
+                        Today
+                    </span>
+                @endif
+            </div>
+            <div>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Today Sale</p>
+                <p class="text-lg font-black text-slate-800 font-mono tracking-tight mt-0.5">
+                    {{ $currency }}{{ number_format($kpi['today_sales'], 0) }}
+                </p>
+            </div>
+            <div class="mt-2 pt-1.5 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400">
+                <span>{{ $kpi['today_orders'] }} orders today</span>
+                <span class="text-amber-600 font-semibold">Live</span>
+            </div>
+        </a>
+
+        {{-- 3. Month Sales --}}
+        <a href="{{ route('admin.all-sales') }}?preset=this_month"
+           class="group bg-white hover:bg-slate-50/90 rounded-2xl p-3 border border-slate-200/80 hover:border-indigo-400 shadow-2xs hover:shadow-md transition-all duration-150 flex flex-col justify-between">
+            <div class="flex items-center justify-between gap-1.5 mb-1.5">
+                <div class="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-xs flex-shrink-0 group-hover:scale-105 transition-transform">
+                    <i class="fas fa-calendar-alt"></i>
+                </div>
+                <span class="text-[9.5px] font-bold px-1.5 py-0.5 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-100">
+                    {{ now()->format('M Y') }}
+                </span>
+            </div>
+            <div>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Month Sales</p>
+                <p class="text-lg font-black text-slate-800 font-mono tracking-tight mt-0.5">
+                    {{ $currency }}{{ number_format($kpi['month_sales'], 0) }}
+                </p>
+            </div>
+            <div class="mt-2 pt-1.5 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400">
+                <span>{{ $kpi['month_orders'] }} orders</span>
+                @if($kpi['month_change'] !== null)
+                    <span class="{{ $kpi['month_change'] >= 0 ? 'text-emerald-600' : 'text-red-500' }} font-bold">
+                        {{ $kpi['month_change'] >= 0 ? '+' : '' }}{{ $kpi['month_change'] }}%
+                    </span>
+                @else
+                    <span class="text-indigo-600 font-semibold">{{ now()->format('F') }}</span>
+                @endif
+            </div>
+        </a>
+
+        {{-- 4. Branch Sales --}}
+        <a href="#all-branches-section"
+           class="group bg-white hover:bg-slate-50/90 rounded-2xl p-3 border border-slate-200/80 hover:border-sky-400 shadow-2xs hover:shadow-md transition-all duration-150 flex flex-col justify-between">
+            <div class="flex items-center justify-between gap-1.5 mb-1.5">
+                <div class="w-8 h-8 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center text-xs flex-shrink-0 group-hover:scale-105 transition-transform">
+                    <i class="fas fa-store"></i>
+                </div>
+                <span class="text-[9.5px] font-bold px-1.5 py-0.5 rounded-md bg-sky-50 text-sky-700 border border-sky-100">
+                    {{ $kpi['physical_branches_count'] }} Outlets
+                </span>
+            </div>
+            <div>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Branch Sales</p>
+                <p class="text-lg font-black text-slate-800 font-mono tracking-tight mt-0.5">
+                    {{ $currency }}{{ number_format($kpi['branch_sales'], 0) }}
+                </p>
+            </div>
+            <div class="mt-2 pt-1.5 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400">
+                <span>{{ $kpi['branch_orders'] }} outlet orders</span>
+                <span class="text-sky-600 font-semibold">POS</span>
+            </div>
+        </a>
+
+        {{-- 5. Total Profit --}}
+        <a href="{{ route('admin.financial-report') }}"
+           class="group bg-white hover:bg-slate-50/90 rounded-2xl p-3 border border-slate-200/80 hover:border-emerald-400 shadow-2xs hover:shadow-md transition-all duration-150 flex flex-col justify-between">
+            <div class="flex items-center justify-between gap-1.5 mb-1.5">
+                <div class="w-8 h-8 rounded-xl {{ $kpi['total_profit'] >= 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600' }} flex items-center justify-center text-xs flex-shrink-0 group-hover:scale-105 transition-transform">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <span class="text-[9.5px] font-bold px-1.5 py-0.5 rounded-md border {{ $kpi['total_profit'] >= 0 ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-red-50 text-red-600 border-red-100' }}">
+                    Net P&amp;L
+                </span>
+            </div>
+            <div>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Profit</p>
+                <p class="text-lg font-black font-mono tracking-tight mt-0.5 {{ $kpi['total_profit'] >= 0 ? 'text-emerald-600' : 'text-red-500' }}">
+                    {{ $kpi['total_profit'] >= 0 ? '+' : '-' }}{{ $currency }}{{ number_format(abs($kpi['total_profit']), 0) }}
+                </p>
+            </div>
+            <div class="mt-2 pt-1.5 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400">
+                <span>Gross: {{ $currency }}{{ number_format($kpi['gross_profit'], 0) }}</span>
+                <span class="text-emerald-600 font-semibold">Report &rarr;</span>
+            </div>
+        </a>
+
+        {{-- 6. Total Income --}}
+        <a href="{{ route('admin.financial-report') }}"
+           class="group bg-white hover:bg-slate-50/90 rounded-2xl p-3 border border-slate-200/80 hover:border-teal-400 shadow-2xs hover:shadow-md transition-all duration-150 flex flex-col justify-between">
+            <div class="flex items-center justify-between gap-1.5 mb-1.5">
+                <div class="w-8 h-8 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center text-xs flex-shrink-0 group-hover:scale-105 transition-transform">
+                    <i class="fas fa-hand-holding-dollar"></i>
+                </div>
+                <span class="text-[9.5px] font-bold px-1.5 py-0.5 rounded-md bg-teal-50 text-teal-700 border border-teal-100">
+                    Accounts
+                </span>
+            </div>
+            <div>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Income</p>
+                <p class="text-lg font-black text-slate-800 font-mono tracking-tight mt-0.5">
+                    {{ $currency }}{{ number_format($kpi['total_income'], 0) }}
+                </p>
+            </div>
+            <div class="mt-2 pt-1.5 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400">
+                <span title="Total Inflow including sales revenue">Inflow: {{ $currency }}{{ number_format($kpi['total_sales'] + $kpi['total_income'], 0) }}</span>
+                <span class="text-teal-600 font-semibold">Finance</span>
+            </div>
+        </a>
+
+        {{-- 7. Total Purchase --}}
+        <a href="{{ route('admin.all-purchases') }}"
+           class="group bg-white hover:bg-slate-50/90 rounded-2xl p-3 border border-slate-200/80 hover:border-rose-400 shadow-2xs hover:shadow-md transition-all duration-150 flex flex-col justify-between">
+            <div class="flex items-center justify-between gap-1.5 mb-1.5">
+                <div class="w-8 h-8 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center text-xs flex-shrink-0 group-hover:scale-105 transition-transform">
+                    <i class="fas fa-cart-shopping"></i>
+                </div>
+                <span class="text-[9.5px] font-bold px-1.5 py-0.5 rounded-md bg-rose-50 text-rose-700 border border-rose-100">
+                    COGS
+                </span>
+            </div>
+            <div>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Purchase</p>
+                <p class="text-lg font-black text-slate-800 font-mono tracking-tight mt-0.5">
+                    {{ $currency }}{{ number_format($kpi['total_purchases'], 0) }}
+                </p>
+            </div>
+            <div class="mt-2 pt-1.5 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400">
+                <span>Due: {{ $currency }}{{ number_format($kpi['total_purchases_due'], 0) }}</span>
+                <span class="text-rose-600 font-semibold">{{ $kpi['total_purchases_count'] }} orders</span>
+            </div>
+        </a>
+
+        {{-- 8. Total Expense --}}
+        <a href="{{ route('admin.financial-report') }}"
+           class="group bg-white hover:bg-slate-50/90 rounded-2xl p-3 border border-slate-200/80 hover:border-orange-400 shadow-2xs hover:shadow-md transition-all duration-150 flex flex-col justify-between">
+            <div class="flex items-center justify-between gap-1.5 mb-1.5">
+                <div class="w-8 h-8 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center text-xs flex-shrink-0 group-hover:scale-105 transition-transform">
+                    <i class="fas fa-file-invoice"></i>
+                </div>
+                <span class="text-[9.5px] font-bold px-1.5 py-0.5 rounded-md bg-orange-50 text-orange-700 border border-orange-100">
+                    Costs
+                </span>
+            </div>
+            <div>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Expense</p>
+                <p class="text-lg font-black text-slate-800 font-mono tracking-tight mt-0.5">
+                    {{ $currency }}{{ number_format($kpi['total_expense'], 0) }}
+                </p>
+            </div>
+            <div class="mt-2 pt-1.5 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400">
+                <span>Operating costs</span>
+                <span class="text-orange-600 font-semibold">Ledger</span>
+            </div>
+        </a>
+
+        {{-- 9. Total Stock --}}
+        <a href="{{ route('admin.stock-report') }}"
+           class="group bg-white hover:bg-slate-50/90 rounded-2xl p-3 border border-slate-200/80 hover:border-purple-400 shadow-2xs hover:shadow-md transition-all duration-150 flex flex-col justify-between">
+            <div class="flex items-center justify-between gap-1.5 mb-1.5">
+                <div class="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center text-xs flex-shrink-0 group-hover:scale-105 transition-transform">
+                    <i class="fas fa-boxes-stacked"></i>
+                </div>
+                <span class="text-[9.5px] font-bold px-1.5 py-0.5 rounded-md bg-purple-50 text-purple-700 border border-purple-100">
+                    Units
+                </span>
+            </div>
+            <div>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Stock</p>
+                <p class="text-lg font-black text-slate-800 font-mono tracking-tight mt-0.5">
+                    {{ number_format($kpi['total_stock_qty']) }} <span class="text-xs font-semibold text-slate-400 font-sans">pcs</span>
+                </p>
+            </div>
+            <div class="mt-2 pt-1.5 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400">
+                <span>Val: {{ $currency }}{{ number_format($kpi['total_stock_value'], 0) }}</span>
+                <span class="text-purple-600 font-semibold">Stock &rarr;</span>
+            </div>
+        </a>
+
+        {{-- 10. Total Product --}}
+        <a href="{{ route('admin.all-products') }}"
+           class="group bg-white hover:bg-slate-50/90 rounded-2xl p-3 border border-slate-200/80 hover:border-blue-400 shadow-2xs hover:shadow-md transition-all duration-150 flex flex-col justify-between">
+            <div class="flex items-center justify-between gap-1.5 mb-1.5">
+                <div class="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-xs flex-shrink-0 group-hover:scale-105 transition-transform">
+                    <i class="fas fa-box-open"></i>
+                </div>
+                @if($kpi['out_of_stock'] > 0)
+                    <span class="text-[9.5px] font-bold px-1.5 py-0.5 rounded-md bg-red-50 text-red-600 border border-red-100">
+                        {{ $kpi['out_of_stock'] }} Out
+                    </span>
+                @else
+                    <span class="text-[9.5px] font-bold px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-100">
+                        Active
+                    </span>
+                @endif
+            </div>
+            <div>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Product</p>
+                <p class="text-lg font-black text-slate-800 font-mono tracking-tight mt-0.5">
+                    {{ number_format($kpi['total_products']) }} <span class="text-xs font-semibold text-slate-400 font-sans">items</span>
+                </p>
+            </div>
+            <div class="mt-2 pt-1.5 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400">
+                <span>{{ $kpi['low_stock'] > 0 ? $kpi['low_stock'].' low stock' : 'Catalog healthy' }}</span>
+                <span class="text-blue-600 font-semibold">Items &rarr;</span>
+            </div>
+        </a>
+
+        {{-- 11. Total Category --}}
+        <a href="{{ route('admin.all-categories') }}"
+           class="group bg-white hover:bg-slate-50/90 rounded-2xl p-3 border border-slate-200/80 hover:border-violet-400 shadow-2xs hover:shadow-md transition-all duration-150 flex flex-col justify-between">
+            <div class="flex items-center justify-between gap-1.5 mb-1.5">
+                <div class="w-8 h-8 rounded-xl bg-violet-50 text-violet-600 flex items-center justify-center text-xs flex-shrink-0 group-hover:scale-105 transition-transform">
+                    <i class="fas fa-layer-group"></i>
+                </div>
+                <span class="text-[9.5px] font-bold px-1.5 py-0.5 rounded-md bg-violet-50 text-violet-700 border border-violet-100">
+                    Parents
+                </span>
+            </div>
+            <div>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Category</p>
+                <p class="text-lg font-black text-slate-800 font-mono tracking-tight mt-0.5">
+                    {{ number_format($kpi['total_categories']) }}
+                </p>
+            </div>
+            <div class="mt-2 pt-1.5 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400">
+                <span>Main Categories</span>
+                <span class="text-violet-600 font-semibold">Manage &rarr;</span>
+            </div>
+        </a>
+
+        {{-- 12. Subcategory --}}
+        <a href="{{ route('admin.all-subcategories') }}"
+           class="group bg-white hover:bg-slate-50/90 rounded-2xl p-3 border border-slate-200/80 hover:border-fuchsia-400 shadow-2xs hover:shadow-md transition-all duration-150 flex flex-col justify-between">
+            <div class="flex items-center justify-between gap-1.5 mb-1.5">
+                <div class="w-8 h-8 rounded-xl bg-fuchsia-50 text-fuchsia-600 flex items-center justify-center text-xs flex-shrink-0 group-hover:scale-105 transition-transform">
+                    <i class="fas fa-sitemap"></i>
+                </div>
+                <span class="text-[9.5px] font-bold px-1.5 py-0.5 rounded-md bg-fuchsia-50 text-fuchsia-700 border border-fuchsia-100">
+                    Sub-levels
+                </span>
+            </div>
+            <div>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Subcategory</p>
+                <p class="text-lg font-black text-slate-800 font-mono tracking-tight mt-0.5">
+                    {{ number_format($kpi['total_subcategories']) }}
+                </p>
+            </div>
+            <div class="mt-2 pt-1.5 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400">
+                <span>Child Categories</span>
+                <span class="text-fuchsia-600 font-semibold">Manage &rarr;</span>
+            </div>
+        </a>
+
+        {{-- 13. Total Moderator --}}
+        <a href="{{ route('admin.moderators.index') }}"
+           class="group bg-white hover:bg-slate-50/90 rounded-2xl p-3 border border-slate-200/80 hover:border-indigo-400 shadow-2xs hover:shadow-md transition-all duration-150 flex flex-col justify-between">
+            <div class="flex items-center justify-between gap-1.5 mb-1.5">
+                <div class="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-xs flex-shrink-0 group-hover:scale-105 transition-transform">
+                    <i class="fas fa-user-shield"></i>
+                </div>
+                @if($kpi['on_duty_moderators'] > 0)
+                    <span class="text-[9.5px] font-black px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                        {{ $kpi['on_duty_moderators'] }} Duty
+                    </span>
+                @else
+                    <span class="text-[9.5px] font-bold px-1.5 py-0.5 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-100">
+                        {{ $kpi['active_moderators'] }} Active
+                    </span>
+                @endif
+            </div>
+            <div>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Moderator</p>
+                <p class="text-lg font-black text-slate-800 font-mono tracking-tight mt-0.5">
+                    {{ number_format($kpi['total_moderators']) }}
+                </p>
+            </div>
+            <div class="mt-2 pt-1.5 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400">
+                <span>{{ $kpi['active_moderators'] }} active staff</span>
+                <span class="text-indigo-600 font-semibold">Team &rarr;</span>
+            </div>
+        </a>
+
+        {{-- 14. Total Reseller --}}
+        <a href="{{ route('admin.resellers.index') }}"
+           class="group bg-white hover:bg-slate-50/90 rounded-2xl p-3 border border-slate-200/80 hover:border-violet-400 shadow-2xs hover:shadow-md transition-all duration-150 flex flex-col justify-between">
+            <div class="flex items-center justify-between gap-1.5 mb-1.5">
+                <div class="w-8 h-8 rounded-xl bg-violet-50 text-violet-600 flex items-center justify-center text-xs flex-shrink-0 group-hover:scale-105 transition-transform">
+                    <i class="fas fa-handshake"></i>
+                </div>
+                @if($kpi['pending_resellers'] > 0)
+                    <span class="text-[9.5px] font-bold px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-800 border border-amber-200">
+                        {{ $kpi['pending_resellers'] }} Pending
+                    </span>
+                @else
+                    <span class="text-[9.5px] font-bold px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-100">
+                        {{ $kpi['active_resellers'] }} Active
+                    </span>
+                @endif
+            </div>
+            <div>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Reseller</p>
+                <p class="text-lg font-black text-slate-800 font-mono tracking-tight mt-0.5">
+                    {{ number_format($kpi['total_resellers']) }}
+                </p>
+            </div>
+            <div class="mt-2 pt-1.5 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400">
+                <span>{{ $kpi['active_resellers'] }} verified sellers</span>
+                <span class="text-violet-600 font-semibold">Network &rarr;</span>
+            </div>
+        </a>
+
+        {{-- 15. Total Reseller Profit --}}
+        <a href="{{ route('admin.resellers.withdrawals') }}"
+           class="group bg-white hover:bg-slate-50/90 rounded-2xl p-3 border border-slate-200/80 hover:border-emerald-400 shadow-2xs hover:shadow-md transition-all duration-150 flex flex-col justify-between">
+            <div class="flex items-center justify-between gap-1.5 mb-1.5">
+                <div class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xs flex-shrink-0 group-hover:scale-105 transition-transform">
+                    <i class="fas fa-wallet"></i>
+                </div>
+                <span class="text-[9.5px] font-bold px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-100">
+                    Earnings
+                </span>
+            </div>
+            <div>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Reseller Profit</p>
+                <p class="text-lg font-black text-slate-800 font-mono tracking-tight mt-0.5">
+                    {{ $currency }}{{ number_format($kpi['total_reseller_profit'], 0) }}
+                </p>
+            </div>
+            <div class="mt-2 pt-1.5 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400">
+                <span>Pending: {{ $currency }}{{ number_format($kpi['reseller_pending_profit'], 0) }}</span>
+                <span class="text-emerald-600 font-semibold">Payouts &rarr;</span>
+            </div>
+        </a>
+
+        {{-- 16. Courier Logistics --}}
+        <a href="{{ route('admin.couriers.index') }}"
+           class="group bg-white hover:bg-slate-50/90 rounded-2xl p-3 border border-slate-200/80 hover:border-sky-400 shadow-2xs hover:shadow-md transition-all duration-150 flex flex-col justify-between">
+            <div class="flex items-center justify-between gap-1.5 mb-1.5">
+                <div class="w-8 h-8 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center text-xs flex-shrink-0 group-hover:scale-105 transition-transform">
+                    <i class="fas fa-truck-fast"></i>
+                </div>
+                <span class="text-[9.5px] font-bold px-1.5 py-0.5 rounded-md bg-sky-50 text-sky-700 border border-sky-100">
+                    Logistics
+                </span>
+            </div>
+            <div>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Courier Parcels</p>
+                <p class="text-lg font-black text-slate-800 font-mono tracking-tight mt-0.5">
+                    {{ number_format($courierStats['total_parcels']) }}
+                </p>
+            </div>
+            <div class="mt-2 pt-1.5 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400">
+                <span>{{ $courierStats['today_parcels'] }} sent today</span>
+                <span class="text-sky-600 font-semibold">{{ $courierStats['active_count'] }} APIs &rarr;</span>
+            </div>
+        </a>
+
+    </div>
+</div>
+
 {{-- ══ DATE RANGE BAR ══════════════════════════════════════════════ --}}
 <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-3 mb-4">
     <div class="flex flex-wrap gap-2 items-center">
@@ -45,255 +459,6 @@
             </span>
         </p>
     </div>
-</div>
-
-{{-- ══ ROW 1: Quick Stats ══════════════════════════════════════════ --}}
-<div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
-
-    <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
-        <div class="flex items-start justify-between mb-2">
-            <div class="w-9 h-9 rounded-xl bg-blue-100 flex items-center justify-center">
-                <i class="fas fa-chart-line text-blue-600 text-sm"></i>
-            </div>
-            @if($revChange !== null)
-            <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-lg {{ $revChange >= 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-600' }}">
-                {{ $revChange >= 0 ? '+' : '' }}{{ $revChange }}%
-            </span>
-            @endif
-        </div>
-        <p class="text-xl font-bold text-slate-800">{{ $currency }}{{ number_format($revenue, 0) }}</p>
-        <p class="text-[11px] text-slate-400 mt-0.5">Period Revenue</p>
-        <p class="text-[10.5px] text-slate-400 mt-1">{{ $orders }} orders</p>
-    </div>
-
-    <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
-        <div class="flex items-start justify-between mb-2">
-            <div class="w-9 h-9 rounded-xl bg-amber-100 flex items-center justify-center">
-                <i class="fas fa-calendar-day text-amber-600 text-sm"></i>
-            </div>
-            @if($stats['today_vs_yest'] !== null)
-            <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-lg {{ $stats['today_vs_yest'] >= 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-600' }}">
-                {{ $stats['today_vs_yest'] >= 0 ? '+' : '' }}{{ $stats['today_vs_yest'] }}%
-            </span>
-            @endif
-        </div>
-        <p class="text-xl font-bold text-slate-800">{{ $currency }}{{ number_format($stats['today_revenue'], 0) }}</p>
-        <p class="text-[11px] text-slate-400 mt-0.5">Today's Revenue</p>
-    </div>
-
-    <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
-        <div class="w-9 h-9 rounded-xl bg-purple-100 flex items-center justify-center mb-2">
-            <i class="fas fa-coins text-purple-600 text-sm"></i>
-        </div>
-        <p class="text-xl font-bold text-slate-800">{{ $currency }}{{ number_format($stats['all_revenue'], 0) }}</p>
-        <p class="text-[11px] text-slate-400 mt-0.5">All-Time Revenue</p>
-        <p class="text-[10.5px] text-slate-400 mt-1">{{ number_format($stats['all_orders']) }} orders</p>
-    </div>
-
-    <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
-        <div class="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center mb-2">
-            <i class="fas fa-store text-slate-600 text-sm"></i>
-        </div>
-        <p class="text-xl font-bold text-slate-800">{{ $stats['total_branches'] }}</p>
-        <p class="text-[11px] text-slate-400 mt-0.5">Branches</p>
-        <p class="text-[10.5px] text-slate-400 mt-1">{{ $stats['total_users'] }} staff members</p>
-    </div>
-
-</div>
-
-{{-- ══ ROW 1.5: OPERATIONAL ECOSYSTEM & TEAMS (Moderators, Resellers, Couriers, Stock) ══ --}}
-<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
-
-    {{-- ── 1. MODERATORS & LIVE DUTY ───────────────────────────────────── --}}
-    <div class="bg-white rounded-2xl border border-indigo-100/90 shadow-sm p-4 flex flex-col justify-between relative overflow-hidden group hover:border-indigo-300 transition-all">
-        <div class="absolute -right-3 -top-3 w-20 h-20 rounded-full bg-indigo-50/60 pointer-events-none"></div>
-        <div>
-            <div class="flex items-center justify-between mb-2.5">
-                <div class="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-sm shadow-2xs">
-                    <i class="fas fa-user-shield"></i>
-                </div>
-                @if($moderatorStats['on_duty_count'] > 0)
-                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10.5px] font-black bg-emerald-100 text-emerald-800 border border-emerald-200 shadow-2xs">
-                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                        {{ $moderatorStats['on_duty_count'] }} On Duty
-                    </span>
-                @else
-                    <span class="text-[10px] font-semibold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">
-                        Off Duty
-                    </span>
-                @endif
-            </div>
-
-            <div class="flex items-baseline gap-2">
-                <p class="text-2xl font-black text-slate-800 font-mono">{{ $moderatorStats['total'] }}</p>
-                <span class="text-[11px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md">
-                    {{ $moderatorStats['active'] }} Active
-                </span>
-            </div>
-            <p class="text-[11.5px] font-bold text-slate-700 mt-0.5">Moderator Team &amp; Duty</p>
-
-            <div class="mt-2.5 pt-2.5 border-t border-slate-100 flex items-center justify-between text-[11px]">
-                <span class="text-slate-400">Today's Work Time:</span>
-                @php
-                    $tMins = round($moderatorStats['today_work_seconds'] / 60);
-                    $mH = floor($tMins / 60);
-                    $mM = $tMins % 60;
-                @endphp
-                <span class="font-bold text-slate-800 font-mono">
-                    {{ $mH > 0 ? "{$mH}h {$mM}m" : "{$mM}m" }}
-                </span>
-            </div>
-        </div>
-
-        <div class="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs">
-            <a href="{{ route('admin.moderators.index') }}" class="text-indigo-600 hover:text-indigo-800 font-bold text-[11px] flex items-center gap-1 hover:underline">
-                <span>Team List</span>
-                <i class="fas fa-chevron-right text-[9px]"></i>
-            </a>
-            <a href="{{ route('admin.moderators.reports') }}" class="text-slate-500 hover:text-slate-800 font-semibold text-[11px] flex items-center gap-1 hover:underline">
-                <span>View Reports</span>
-                <i class="fas fa-file-alt text-[10px]"></i>
-            </a>
-        </div>
-    </div>
-
-    {{-- ── 2. RESELLER NETWORK ─────────────────────────────────────────── --}}
-    <div class="bg-white rounded-2xl border border-violet-100/90 shadow-sm p-4 flex flex-col justify-between relative overflow-hidden group hover:border-violet-300 transition-all">
-        <div class="absolute -right-3 -top-3 w-20 h-20 rounded-full bg-violet-50/60 pointer-events-none"></div>
-        <div>
-            <div class="flex items-center justify-between mb-2.5">
-                <div class="w-9 h-9 rounded-xl bg-violet-50 text-violet-600 flex items-center justify-center font-bold text-sm shadow-2xs">
-                    <i class="fas fa-handshake"></i>
-                </div>
-                @if($resellerStats['pending'] > 0)
-                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
-                        {{ $resellerStats['pending'] }} Pending
-                    </span>
-                @else
-                    <span class="text-[10px] font-semibold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">
-                        All Approved
-                    </span>
-                @endif
-            </div>
-
-            <div class="flex items-baseline gap-2">
-                <p class="text-2xl font-black text-slate-800 font-mono">{{ $resellerStats['total'] }}</p>
-                <span class="text-[11px] font-bold text-violet-600 bg-violet-50 px-2 py-0.5 rounded-md">
-                    {{ $resellerStats['active'] }} Active Resellers
-                </span>
-            </div>
-            <p class="text-[11.5px] font-bold text-slate-700 mt-0.5">Reseller Network</p>
-
-            <div class="mt-2.5 pt-2.5 border-t border-slate-100 flex items-center justify-between text-[11px]">
-                <span class="text-slate-400">Total Reseller Sales:</span>
-                <span class="font-bold text-slate-800 font-mono">
-                    {{ $currency }}{{ number_format($resellerStats['total_revenue'], 0) }} ({{ $resellerStats['total_orders'] }})
-                </span>
-            </div>
-        </div>
-
-        <div class="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs">
-            <a href="{{ route('admin.resellers.index') }}" class="text-violet-600 hover:text-violet-800 font-bold text-[11px] flex items-center gap-1 hover:underline">
-                <span>Reseller List</span>
-                <i class="fas fa-chevron-right text-[9px]"></i>
-            </a>
-            <a href="{{ route('admin.resellers.orders') }}" class="text-slate-500 hover:text-slate-800 font-semibold text-[11px] flex items-center gap-1 hover:underline">
-                <span>Orders</span>
-                <i class="fas fa-shopping-bag text-[10px]"></i>
-            </a>
-        </div>
-    </div>
-
-    {{-- ── 3. COURIER LOGISTICS ────────────────────────────────────────── --}}
-    <div class="bg-white rounded-2xl border border-sky-100/90 shadow-sm p-4 flex flex-col justify-between relative overflow-hidden group hover:border-sky-300 transition-all">
-        <div class="absolute -right-3 -top-3 w-20 h-20 rounded-full bg-sky-50/60 pointer-events-none"></div>
-        <div>
-            <div class="flex items-center justify-between mb-2.5">
-                <div class="w-9 h-9 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center font-bold text-sm shadow-2xs">
-                    <i class="fas fa-truck-fast"></i>
-                </div>
-                <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-sky-50 text-sky-700 border border-sky-200">
-                    {{ $courierStats['active_count'] }} Connected
-                </span>
-            </div>
-
-            <div class="flex items-baseline gap-2">
-                <p class="text-2xl font-black text-slate-800 font-mono">{{ $courierStats['total_parcels'] }}</p>
-                <span class="text-[11px] font-bold text-sky-600 bg-sky-50 px-2 py-0.5 rounded-md">
-                    Total Parcels
-                </span>
-            </div>
-            <p class="text-[11.5px] font-bold text-slate-700 mt-0.5">Courier Delivery &amp; Parcels</p>
-
-            <div class="mt-2.5 pt-2.5 border-t border-slate-100 flex items-center justify-between text-[11px]">
-                <span class="text-slate-400">Dispatched Today:</span>
-                <span class="font-bold text-emerald-600 font-mono">
-                    {{ $courierStats['today_parcels'] }} parcels
-                </span>
-            </div>
-        </div>
-
-        <div class="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs">
-            <a href="{{ route('admin.couriers.index') }}" class="text-sky-600 hover:text-sky-800 font-bold text-[11px] flex items-center gap-1 hover:underline">
-                <span>API Settings</span>
-                <i class="fas fa-cog text-[9px]"></i>
-            </a>
-            <a href="{{ route('admin.all-sales') }}" class="text-slate-500 hover:text-slate-800 font-semibold text-[11px] flex items-center gap-1 hover:underline">
-                <span>Sales &amp; Courier</span>
-                <i class="fas fa-paper-plane text-[10px]"></i>
-            </a>
-        </div>
-    </div>
-
-    {{-- ── 4. INVENTORY & STOCK ALERT ──────────────────────────────────── --}}
-    <div class="bg-white rounded-2xl border border-amber-100/90 shadow-sm p-4 flex flex-col justify-between relative overflow-hidden group hover:border-amber-300 transition-all">
-        <div class="absolute -right-3 -top-3 w-20 h-20 rounded-full bg-amber-50/60 pointer-events-none"></div>
-        <div>
-            <div class="flex items-center justify-between mb-2.5">
-                <div class="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold text-sm shadow-2xs">
-                    <i class="fas fa-boxes-stacked"></i>
-                </div>
-                @if($inventoryStats['out_of_stock'] > 0)
-                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-700 border border-red-200">
-                        {{ $inventoryStats['out_of_stock'] }} Out of Stock
-                    </span>
-                @elseif($inventoryStats['low_stock'] > 0)
-                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
-                        {{ $inventoryStats['low_stock'] }} Low Stock
-                    </span>
-                @else
-                    <span class="text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
-                        Stock Healthy
-                    </span>
-                @endif
-            </div>
-
-            <div class="flex items-baseline gap-2">
-                <p class="text-2xl font-black text-slate-800 font-mono">{{ number_format($inventoryStats['total_products']) }}</p>
-                <span class="text-[11px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md">
-                    Products
-                </span>
-            </div>
-            <p class="text-[11.5px] font-bold text-slate-700 mt-0.5">Inventory &amp; Stock Alerts</p>
-
-            <div class="mt-2.5 pt-2.5 border-t border-slate-100 flex items-center justify-between text-[11px]">
-                <span class="text-slate-400">Total Stock Value:</span>
-                <span class="font-bold text-slate-800 font-mono">
-                    {{ $currency }}{{ number_format($inventoryStats['stock_value'], 0) }}
-                </span>
-            </div>
-        </div>
-
-        <div class="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs">
-            <span class="text-[11px] text-slate-400">
-                <i class="fas fa-users text-[10px] mr-0.5"></i> {{ $inventoryStats['total_customers'] }} Customers
-            </span>
-            <span class="text-[11px] text-emerald-600 font-bold">
-                <i class="fas fa-cart-shopping text-[10px] mr-0.5"></i> {{ $inventoryStats['today_orders'] }} Orders Today
-            </span>
-        </div>
-    </div>
-
 </div>
 
 {{-- ══ ROW 1.6: LIVE DUTY COMMAND CENTER ══ --}}
@@ -641,7 +806,7 @@
 </div>
 
 {{-- ══ ROW 3: Branch Cards ══════════════════════════════════════════ --}}
-<div class="mb-4 mt-6">
+<div id="all-branches-section" class="mb-4 mt-6">
     <div class="flex items-center justify-between mb-3">
         <div class="flex items-center gap-2">
             <div class="w-7 h-7 rounded-lg bg-blue-100 flex items-center justify-center">

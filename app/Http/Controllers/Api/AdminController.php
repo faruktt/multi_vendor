@@ -20,8 +20,8 @@ class AdminController extends Controller
             'total_vendors'  => Vendor::count(),
             'total_users'    => User::count(),
             'total_sales'    => Sale::withoutGlobalScopes()->count(),
-            'total_revenue'  => Sale::withoutGlobalScopes()->sum('total'),
-            'today_revenue'  => Sale::withoutGlobalScopes()->whereDate('created_at', today())->sum('total'),
+            'total_revenue'  => Sale::withoutGlobalScopes()->completedOrPos()->sum('total'),
+            'today_revenue'  => Sale::withoutGlobalScopes()->completedOrPos()->whereDate('created_at', today())->sum('total'),
             'today_sales'    => Sale::withoutGlobalScopes()->whereDate('created_at', today())->count(),
         ]);
     }
@@ -29,7 +29,7 @@ class AdminController extends Controller
     public function vendorIndex()
     {
         $vendors = Vendor::withCount('users')
-            ->withSum(['sales' => fn($q) => $q->withoutGlobalScopes()], 'total')
+            ->withSum(['sales' => fn($q) => $q->withoutGlobalScopes()->completedOrPos()], 'total')
             ->withCount(['sales' => fn($q) => $q->withoutGlobalScopes()])
             ->latest()
             ->get();

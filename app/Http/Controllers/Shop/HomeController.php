@@ -5,12 +5,14 @@ namespace App\Http\Controllers\Shop;
 use App\Http\Controllers\Controller;
 use App\Models\Banner;
 use App\Models\Category;
+use App\Models\Coupon;
 use App\Models\FlashSale;
 use App\Models\HomeContent;
 use App\Models\Product;
 use App\Models\Sale;
 use App\Models\Vendor;
 use App\Services\ProductFeedService;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Storage;
 
 class HomeController extends Controller
@@ -42,7 +44,7 @@ class HomeController extends Controller
         $categoryShelves = $homepageCategories->map(function ($category) use ($branch) {
             return (object) [
                 'category' => $category,
-                'products' => ProductFeedService::getBalancedFeed($branch, categoryId: $category->id, limit: 8),
+                'products' => ProductFeedService::getBalancedFeed($branch, categoryId: $category->id, limit: 12),
             ];
         })->filter(fn($shelf) => $shelf->products->isNotEmpty())->values();
 
@@ -87,6 +89,20 @@ class HomeController extends Controller
         $resellerContents = $homeContents->where('type', 'reseller')->values();
         $supplierContents = $homeContents->where('type', 'supplier')->values();
 
-        return view('shop.home', compact('branch', 'categories', 'bestSelling', 'newArrivals', 'categoryShelves', 'stats', 'heroBanners', 'promo1Banner', 'promo2Banners', 'midBanner', 'flashSaleProducts', 'homeContents', 'resellerContents', 'supplierContents'));
+        $popupCoupon = Coupon::where('status', 'active')
+            ->whereIn('applicable_for', ['everyone', 'customer'])
+            ->where(function ($q) {
+                $q->whereNull('start_date')->orWhere('start_date', '<=', Carbon::today());
+            })
+            ->where(function ($q) {
+                $q->whereNull('end_date')->orWhere('end_date', '>=', Carbon::today());
+            })
+            ->where(function ($q) {
+                $q->whereNull('usage_limit')->orWhereRaw('used_count < usage_limit');
+            })
+            ->latest('id')
+            ->first();
+
+        return view('shop.home', compact('branch', 'categories', 'bestSelling', 'newArrivals', 'categoryShelves', 'stats', 'heroBanners', 'promo1Banner', 'promo2Banners', 'midBanner', 'flashSaleProducts', 'homeContents', 'resellerContents', 'supplierContents', 'popupCoupon'));
     }
 }

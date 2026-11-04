@@ -11,7 +11,7 @@ class Product extends Model
     use BelongsToVendor;
 
     protected $fillable = [
-        'vendor_id', 'supplier_id', 'category_id', 'source_product_id',
+        'vendor_id', 'supplier_id', 'category_id', 'sub_category_id', 'source_product_id',
         'name', 'slug', 'sku', 'barcode', 'image', 'images',
         'description', 'short_description', 'facebook_video_url',
         'price', 'old_price', 'cost_price', 'reseller_price', 'stock_qty', 'unit', 'status',
@@ -28,6 +28,11 @@ class Product extends Model
         'images'                => 'array',
     ];
 
+    protected $appends = [
+        'first_image_url',
+        'image_url',
+    ];
+
     /** Returns all image filenames as an array (merges legacy single image + new images column). */
     public function getImagesListAttribute(): array
     {
@@ -37,6 +42,15 @@ class Product extends Model
             // Keep full relative path if legacy path contains a subfolder, e.g. products/filename.ext
             $list = [$this->image];
         }
+        // Fall back to source product (for branch clones) if empty
+        if (empty($list) && $this->source_product_id) {
+            $source = $this->relationLoaded('sourceProduct')
+                ? $this->sourceProduct
+                : static::withoutGlobalScopes()->find($this->source_product_id);
+            if ($source) {
+                return $source->images_list;
+            }
+        }
         return array_values(array_filter($list));
     }
 
@@ -45,6 +59,12 @@ class Product extends Model
     {
         $urls = $this->image_urls;
         return $urls[0] ?? null;
+    }
+
+    /** URL alias for first_image_url. */
+    public function getImageUrlAttribute(): ?string
+    {
+        return $this->first_image_url;
     }
 
     /** Array of full URLs for all images. */
@@ -101,6 +121,11 @@ class Product extends Model
         return $this->belongsTo(Category::class);
     }
 
+    public function subCategory()
+    {
+        return $this->belongsTo(Category::class, 'sub_category_id');
+    }
+
     public function stockMovements()
     {
         return $this->hasMany(StockMovement::class);
@@ -109,6 +134,11 @@ class Product extends Model
     public function variants()
     {
         return $this->hasMany(ProductVariant::class);
+    }
+
+    public function landingPages()
+    {
+        return $this->belongsToMany(LandingPage::class, 'landing_page_products');
     }
 
     public function saleItems()

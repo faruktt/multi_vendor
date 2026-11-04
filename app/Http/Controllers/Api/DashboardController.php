@@ -15,7 +15,7 @@ class DashboardController extends Controller
     {
         $totalProducts = Product::count();
 
-        $salesToday   = Sale::whereDate('created_at', today())->sum('total');
+        $salesToday   = Sale::completedOrPos()->whereDate('created_at', today())->sum('total');
         $todayOrders  = Sale::whereDate('created_at', today())->count();
 
         $totalCustomers = Customer::count();

@@ -33,11 +33,11 @@
                            class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50 focus:bg-white transition-colors">
                 </div>
 
-                {{-- Category + Unit --}}
-                <div class="grid grid-cols-2 gap-3">
+                {{-- Category & Subcategory --}}
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 mb-1.5">Category <span class="text-red-500">*</span></label>
-                        <select name="category_id" required
+                        <select name="category_id" required x-model="selectedCategoryId" @change="onCategoryChange()"
                                 class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50 focus:bg-white transition-colors">
                             <option value="">Select category</option>
                             @foreach($categories as $cat)
@@ -45,6 +45,21 @@
                             @endforeach
                         </select>
                     </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1.5">Subcategory <span class="text-slate-400 font-normal">(Optional)</span></label>
+                        <select name="sub_category_id" x-model="selectedSubCategoryId"
+                                :disabled="availableSubcategories.length === 0"
+                                class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50 focus:bg-white transition-colors disabled:opacity-50 disabled:bg-slate-100">
+                            <option value="" x-text="availableSubcategories.length === 0 ? (selectedCategoryId ? 'No subcategories' : 'Select category first') : 'Select subcategory'"></option>
+                            <template x-for="sub in availableSubcategories" :key="sub.id">
+                                <option :value="sub.id" :selected="String(sub.id) === String(selectedSubCategoryId)" x-text="sub.name"></option>
+                            </template>
+                        </select>
+                    </div>
+                </div>
+
+                {{-- Unit & Barcode --}}
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div x-data="unitField('{{ old('unit', $product->unit ?? 'pcs') }}')">
                         <label class="block text-xs font-semibold text-slate-600 mb-1.5">Unit</label>
                         @php
@@ -72,14 +87,13 @@
                                placeholder="Type custom unit..."
                                class="mt-2 w-full border border-slate-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
                     </div>
-                </div>
 
-                {{-- Barcode + SKU --}}
-                <div>
-                    <label class="block text-xs font-semibold text-slate-600 mb-1.5">Barcode</label>
-                    <input type="text" name="barcode" value="{{ old('barcode', $product->barcode ?? '') }}"
-                           placeholder="Leave blank to auto-generate"
-                           class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50 focus:bg-white transition-colors font-mono">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1.5">Barcode</label>
+                        <input type="text" name="barcode" value="{{ old('barcode', $product->barcode ?? '') }}"
+                               placeholder="Leave blank to auto-generate"
+                               class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50 focus:bg-white transition-colors font-mono">
+                    </div>
                 </div>
 
                 {{-- Short Description --}}
@@ -340,7 +354,7 @@
                 {{-- Existing saved images (edit mode) --}}
                 <template x-for="(img, idx) in savedImages" :key="'saved-'+idx">
                     <div class="relative aspect-square rounded-xl overflow-hidden border border-slate-200 group">
-                        <img :src="'{{ asset('uploads/products/') }}/' + img"
+                        <img :src="img.includes('/') ? ('{{ asset('uploads') }}/' + img) : ('{{ asset('uploads/products') }}/' + img)"
                              class="w-full h-full object-cover">
                         {{-- Primary badge --}}
                         <span x-show="idx === 0"
@@ -448,6 +462,23 @@ function unitField(initial) {
 
 function productForm() {
     return {
+        categories: @json($categories),
+        selectedCategoryId: '{{ old('category_id', $product->category_id ?? '') }}',
+        selectedSubCategoryId: '{{ old('sub_category_id', $product->sub_category_id ?? '') }}',
+
+        get availableSubcategories() {
+            if (!this.selectedCategoryId) return [];
+            const cat = this.categories.find(c => String(c.id) === String(this.selectedCategoryId));
+            return (cat && cat.children) ? cat.children : [];
+        },
+
+        onCategoryChange() {
+            const valid = this.availableSubcategories.some(s => String(s.id) === String(this.selectedSubCategoryId));
+            if (!valid) {
+                this.selectedSubCategoryId = '';
+            }
+        },
+
         variants: @json(isset($product) ? $product->variants : []),
         price:     {{ old('price', $product->price ?? 0) }},
         costPrice: {{ old('cost_price', $product->cost_price ?? 0) }},

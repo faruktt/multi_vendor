@@ -14,6 +14,8 @@ use App\Models\ModeratorWorkLog;
 use App\Models\Reseller;
 use App\Models\ResellerWithdrawal;
 use App\Models\CourierSetting;
+use App\Models\Product;
+use App\Models\Category;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -32,21 +34,22 @@ class AdminController extends Controller
         // ── Today / yesterday quick stats (always fixed) ──────────
         $today     = $now->toDateString();
         $yesterday = $now->copy()->subDay()->toDateString();
-        $todayRev  = Sale::withoutGlobalScopes()->whereDate('created_at', $today)->sum('total');
-        $yesterdayRev = Sale::withoutGlobalScopes()->whereDate('created_at', $yesterday)->sum('total');
+        $todayRev  = Sale::withoutGlobalScopes()->completedOrPos()->whereDate('created_at', $today)->sum('total');
+        $yesterdayRev = Sale::withoutGlobalScopes()->completedOrPos()->whereDate('created_at', $yesterday)->sum('total');
 
         // ── Period sales ──────────────────────────────────────────
         $periodSales   = Sale::withoutGlobalScopes()->whereBetween('created_at', [$fromC, $toC]);
-        $revenue       = round($periodSales->sum('total'), 2);
+        $eligiblePeriodSales = Sale::withoutGlobalScopes()->completedOrPos()->whereBetween('created_at', [$fromC, $toC]);
+        $revenue       = round($eligiblePeriodSales->sum('total'), 2);
         $orders        = $periodSales->count();
-        $periodPaid    = round($periodSales->sum('paid_amount'), 2);
-        $periodDue     = round($periodSales->sum('due_amount'), 2);
+        $periodPaid    = round($eligiblePeriodSales->sum('paid_amount'), 2);
+        $periodDue     = round($eligiblePeriodSales->sum('due_amount'), 2);
 
         // ── Previous period comparison ────────────────────────────
         $diffDays = max(1, $fromC->diffInDays($toC));
         $prevFrom = $fromC->copy()->subDays($diffDays)->startOfDay();
         $prevTo   = $fromC->copy()->subDay()->endOfDay();
-        $prevRev  = round(Sale::withoutGlobalScopes()->whereBetween('created_at', [$prevFrom, $prevTo])->sum('total'), 2);
+        $prevRev  = round(Sale::withoutGlobalScopes()->completedOrPos()->whereBetween('created_at', [$prevFrom, $prevTo])->sum('total'), 2);
         $revChange = $prevRev > 0 ? round((($revenue - $prevRev) / $prevRev) * 100, 1) : null;
 
         // ── Period purchases ──────────────────────────────────────
@@ -60,9 +63,9 @@ class AdminController extends Controller
         $expense = round($finQ()->where('type','expense')->sum('amount'), 2);
 
         // ── All-time totals ───────────────────────────────────────
-        $allRevenue  = round(Sale::withoutGlobalScopes()->sum('total'), 2);
+        $allRevenue  = round(Sale::withoutGlobalScopes()->completedOrPos()->sum('total'), 2);
         $allOrders   = Sale::withoutGlobalScopes()->count();
-        $allDue      = round(Sale::withoutGlobalScopes()->sum('due_amount'), 2);
+        $allDue      = round(Sale::withoutGlobalScopes()->completedOrPos()->sum('due_amount'), 2);
 
         // ── P&L statement ─────────────────────────────────────────
         $grossProfit    = round($revenue - $purchases, 2);
@@ -79,15 +82,18 @@ class AdminController extends Controller
 
         // ── Per-branch stats (aggregated) ─────────────────────────
         $salePeriodByBranch = Sale::withoutGlobalScopes()
+            ->completedOrPos()
             ->whereBetween('created_at', [$fromC, $toC])
             ->selectRaw('vendor_id, SUM(total) as revenue, COUNT(*) as orders, SUM(due_amount) as customer_due')
             ->groupBy('vendor_id')->get()->keyBy('vendor_id');
 
         $saleAllByBranch = Sale::withoutGlobalScopes()
+            ->completedOrPos()
             ->selectRaw('vendor_id, SUM(total) as revenue, COUNT(*) as orders, SUM(due_amount) as customer_due')
             ->groupBy('vendor_id')->get()->keyBy('vendor_id');
 
         $prevSaleByBranch = Sale::withoutGlobalScopes()
+            ->completedOrPos()
             ->whereBetween('created_at', [$prevFrom, $prevTo])
             ->selectRaw('vendor_id, SUM(total) as revenue')
             ->groupBy('vendor_id')->get()->keyBy('vendor_id');
@@ -146,6 +152,7 @@ class AdminController extends Controller
 
         // ── 30-day chart (always last 30 days) ────────────────────
         $last30 = Sale::withoutGlobalScopes()
+            ->completedOrPos()
             ->where('created_at', '>=', $now->copy()->subDays(29)->startOfDay())
             ->selectRaw('DATE(created_at) as date, SUM(total) as revenue, COUNT(*) as orders')
             ->groupBy('date')->orderBy('date')->get()->keyBy('date');
@@ -164,12 +171,13 @@ class AdminController extends Controller
             $mon = $now->copy()->subMonths($m);
             $last6Months[] = [
                 'label'   => $mon->format('M Y'),
-                'revenue' => round(Sale::withoutGlobalScopes()->whereMonth('created_at',$mon->month)->whereYear('created_at',$mon->year)->sum('total'), 0),
+                'revenue' => round(Sale::withoutGlobalScopes()->completedOrPos()->whereMonth('created_at',$mon->month)->whereYear('created_at',$mon->year)->sum('total'), 0),
             ];
         }
 
         // ── Payment breakdown ──────────────────────────────────────
         $paymentBreakdown = Sale::withoutGlobalScopes()
+            ->completedOrPos()
             ->selectRaw('payment_method, COUNT(*) as cnt, SUM(total) as rev')
             ->groupBy('payment_method')->orderByDesc('rev')->get();
 
@@ -214,7 +222,7 @@ class AdminController extends Controller
             'pending'             => Reseller::where('status', 'pending')->count(),
             'total_orders'        => Sale::withoutGlobalScopes()->whereNotNull('reseller_id')->count(),
             'period_orders'       => Sale::withoutGlobalScopes()->whereNotNull('reseller_id')->whereBetween('created_at', [$fromC, $toC])->count(),
-            'total_revenue'       => round(Sale::withoutGlobalScopes()->whereNotNull('reseller_id')->sum('total'), 2),
+            'total_revenue'       => round(Sale::withoutGlobalScopes()->whereNotNull('reseller_id')->whereIn('order_status', ['completed', 'complete'])->sum('total'), 2),
             'pending_withdrawals' => round(ResellerWithdrawal::sum('amount'), 2),
         ];
 
@@ -241,7 +249,115 @@ class AdminController extends Controller
             'today_orders'   => Sale::withoutGlobalScopes()->whereDate('created_at', Carbon::today())->count(),
         ];
 
+        // ── Compact Executive KPI Summary (All-Time & Period Benchmarks) ──
+        $thisMonthStart  = $now->copy()->startOfMonth();
+        $thisMonthEnd    = $now->copy()->endOfMonth();
+        $lastMonthStart  = $now->copy()->subMonth()->startOfMonth();
+        $lastMonthEnd    = $now->copy()->subMonth()->endOfMonth();
+
+        // 1. Total Sale
+        $totalSales       = round(Sale::withoutGlobalScopes()->completedOrPos()->sum('total'), 2);
+        $totalSalesOrders = Sale::withoutGlobalScopes()->completedOrPos()->count();
+        $allOrdersCount   = Sale::withoutGlobalScopes()->count();
+        $totalSalesDue    = round(Sale::withoutGlobalScopes()->completedOrPos()->sum('due_amount'), 2);
+
+        // 2. Today Sale
+        $todayOrders      = Sale::withoutGlobalScopes()->whereDate('created_at', $today)->count();
+
+        // 3. Month Sales
+        $monthSales       = round(Sale::withoutGlobalScopes()->completedOrPos()->whereBetween('created_at', [$thisMonthStart, $thisMonthEnd])->sum('total'), 2);
+        $monthOrders      = Sale::withoutGlobalScopes()->whereBetween('created_at', [$thisMonthStart, $thisMonthEnd])->count();
+        $lastMonthSales   = round(Sale::withoutGlobalScopes()->completedOrPos()->whereBetween('created_at', [$lastMonthStart, $lastMonthEnd])->sum('total'), 2);
+        $monthVsLastMonth = $lastMonthSales > 0 ? round((($monthSales - $lastMonthSales) / $lastMonthSales) * 100, 1) : null;
+
+        // 4. Branch Sales (Physical outlets / retail branches)
+        $branchSales      = round(Sale::withoutGlobalScopes()->completedOrPos()->whereHas('vendor', fn($q) => $q->where('is_warehouse', false)->where('is_online_store', false))->sum('total'), 2);
+        $branchOrders     = Sale::withoutGlobalScopes()->whereHas('vendor', fn($q) => $q->where('is_warehouse', false)->where('is_online_store', false))->count();
+        $physicalBranchesCount = Vendor::where('is_warehouse', false)->where('is_online_store', false)->count();
+        $allOutletsSales  = round(Sale::withoutGlobalScopes()->completedOrPos()->whereHas('vendor', fn($q) => $q->where('is_warehouse', false))->sum('total'), 2);
+
+        // 5. Total Purchases
+        $totalPurchases      = round(Purchase::withoutGlobalScopes()->sum('total'), 2);
+        $totalPurchasesDue   = round(Purchase::withoutGlobalScopes()->sum('due_amount'), 2);
+        $totalPurchasesCount = Purchase::withoutGlobalScopes()->count();
+
+        // 6. Total Income & Expense (All-Time Accounts)
+        $allTimeIncome       = round(IncomeExpense::withoutGlobalScopes()->where('type', 'income')->sum('amount'), 2);
+        $allTimeExpense      = round(IncomeExpense::withoutGlobalScopes()->where('type', 'expense')->sum('amount'), 2);
+
+        // 7. Total Profit (P&L)
+        $grossProfitAll      = round($totalSales - $totalPurchases, 2);
+        $netProfitAll        = round(($totalSales + $allTimeIncome) - ($totalPurchases + $allTimeExpense), 2);
+
+        // 8. Moderators
+        $totalModerators     = Moderator::count();
+        $activeModerators    = Moderator::where('status', 'active')->count();
+        $onDutyModeratorsCount = ModeratorWorkSession::where('status', 'in_progress')->count();
+
+        // 9. Resellers & Reseller Profit
+        $totalResellers          = Reseller::count();
+        $activeResellers         = Reseller::where('status', 'active')->count();
+        $pendingResellers        = Reseller::where('status', 'pending')->count();
+        $resellerCompletedProfit = round(Sale::withoutGlobalScopes()->whereNotNull('reseller_id')->whereIn('order_status', ['completed', 'complete'])->sum('reseller_profit'), 2);
+        $resellerReturnCharge    = round(Sale::withoutGlobalScopes()->whereNotNull('reseller_id')->whereIn('order_status', ['return', 'returned'])->sum('delivery_charge'), 2);
+        $totalResellerProfit     = round(max(0, $resellerCompletedProfit - $resellerReturnCharge), 2);
+        $resellerPendingProfit   = round(Sale::withoutGlobalScopes()->whereNotNull('reseller_id')->whereNotIn('order_status', ['completed', 'complete', 'cancelled', 'returned', 'return'])->sum('reseller_profit'), 2);
+        $resellerTotalWithdrawn  = round(ResellerWithdrawal::where('status', 'approved')->sum('amount'), 2);
+
+        // 10. Products & Stock
+        $totalProducts       = Product::withoutGlobalScopes()->count();
+        $outOfStockCount     = Product::withoutGlobalScopes()->where('stock_qty', '<=', 0)->count();
+        $lowStockCount       = Product::withoutGlobalScopes()->where('stock_qty', '>', 0)->where('stock_qty', '<=', 10)->count();
+        $totalStockQty       = (int) Product::withoutGlobalScopes()->sum('stock_qty');
+        $totalStockValue     = round(Product::withoutGlobalScopes()->sum(DB::raw('stock_qty * cost_price')), 2);
+
+        // 11. Categories & Subcategories
+        $totalCategories     = Category::withoutGlobalScopes()->whereNull('parent_id')->count();
+        $totalSubcategories  = Category::withoutGlobalScopes()->whereNotNull('parent_id')->count();
+
+        $kpi = [
+            'total_sales'               => $totalSales,
+            'total_sales_orders'        => $totalSalesOrders,
+            'all_orders_count'          => $allOrdersCount,
+            'total_sales_due'           => $totalSalesDue,
+            'today_sales'               => round($todayRev, 2),
+            'today_orders'              => $todayOrders,
+            'today_change'              => $yesterdayRev > 0 ? round((($todayRev - $yesterdayRev) / $yesterdayRev) * 100, 1) : null,
+            'month_sales'               => $monthSales,
+            'month_orders'              => $monthOrders,
+            'month_change'              => $monthVsLastMonth,
+            'branch_sales'              => $branchSales,
+            'branch_orders'             => $branchOrders,
+            'physical_branches_count'   => $physicalBranchesCount,
+            'all_outlets_sales'         => $allOutletsSales,
+            'total_profit'              => $netProfitAll,
+            'gross_profit'              => $grossProfitAll,
+            'total_income'              => $allTimeIncome,
+            'total_expense'             => $allTimeExpense,
+            'total_purchases'           => $totalPurchases,
+            'total_purchases_due'       => $totalPurchasesDue,
+            'total_purchases_count'     => $totalPurchasesCount,
+            'total_stock_qty'           => $totalStockQty,
+            'total_stock_value'         => $totalStockValue,
+            'total_products'            => $totalProducts,
+            'out_of_stock'              => $outOfStockCount,
+            'low_stock'                 => $lowStockCount,
+            'total_categories'          => $totalCategories,
+            'total_subcategories'       => $totalSubcategories,
+            'total_moderators'          => $totalModerators,
+            'active_moderators'         => $activeModerators,
+            'on_duty_moderators'        => $onDutyModeratorsCount,
+            'total_resellers'           => $totalResellers,
+            'active_resellers'          => $activeResellers,
+            'pending_resellers'         => $pendingResellers,
+            'total_reseller_profit'     => $totalResellerProfit,
+            'reseller_completed_profit' => $resellerCompletedProfit,
+            'reseller_pending_profit'   => $resellerPendingProfit,
+            'reseller_withdrawn'        => $resellerTotalWithdrawn,
+        ];
+
         return view('admin.index', compact(
+            'kpi',
             'branchList', 'stats', 'statement', 'branchColors',
             'revenue', 'orders', 'revChange', 'prevRev',
             'chartLabels', 'chartRevenue', 'chartOrders',

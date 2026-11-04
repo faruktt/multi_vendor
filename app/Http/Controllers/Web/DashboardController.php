@@ -19,26 +19,27 @@ class DashboardController extends Controller
         $yesterday = $now->copy()->subDay()->toDateString();
 
         // ── Sales stats ───────────────────────────────────────────
-        $saleQ = fn() => Sale::withoutGlobalScopes()->where('vendor_id', $branch->id);
+        $saleQ     = fn() => Sale::withoutGlobalScopes()->where('vendor_id', $branch->id);
+        $eligibleQ = fn() => Sale::withoutGlobalScopes()->where('vendor_id', $branch->id)->completedOrPos();
 
-        $todayRev    = round($saleQ()->whereDate('created_at', $today)->sum('total'), 2);
+        $todayRev    = round($eligibleQ()->whereDate('created_at', $today)->sum('total'), 2);
         $todayOrders = $saleQ()->whereDate('created_at', $today)->count();
-        $yesterdayRev = round($saleQ()->whereDate('created_at', $yesterday)->sum('total'), 2);
+        $yesterdayRev = round($eligibleQ()->whereDate('created_at', $yesterday)->sum('total'), 2);
         $todayVsYest  = $yesterdayRev > 0 ? round((($todayRev - $yesterdayRev) / $yesterdayRev) * 100, 1) : null;
 
         $monthStart   = $now->copy()->startOfMonth();
         $lastMonthStart = $now->copy()->subMonth()->startOfMonth();
         $lastMonthEnd   = $now->copy()->subMonth()->endOfMonth();
 
-        $monthRev     = round($saleQ()->where('created_at', '>=', $monthStart)->sum('total'), 2);
+        $monthRev     = round($eligibleQ()->where('created_at', '>=', $monthStart)->sum('total'), 2);
         $monthOrders  = $saleQ()->where('created_at', '>=', $monthStart)->count();
-        $lastMonthRev = round($saleQ()->whereBetween('created_at', [$lastMonthStart, $lastMonthEnd])->sum('total'), 2);
+        $lastMonthRev = round($eligibleQ()->whereBetween('created_at', [$lastMonthStart, $lastMonthEnd])->sum('total'), 2);
         $monthVsLast  = $lastMonthRev > 0 ? round((($monthRev - $lastMonthRev) / $lastMonthRev) * 100, 1) : null;
 
-        $allRevenue   = round($saleQ()->sum('total'), 2);
+        $allRevenue   = round($eligibleQ()->sum('total'), 2);
         $allOrders    = $saleQ()->count();
-        $totalDue     = round($saleQ()->sum('due_amount'), 2);
-        $totalPaid    = round($saleQ()->sum('paid_amount'), 2);
+        $totalDue     = round($eligibleQ()->sum('due_amount'), 2);
+        $totalPaid    = round($eligibleQ()->sum('paid_amount'), 2);
 
         // Payment status counts
         $paymentStatus = $saleQ()
@@ -47,7 +48,7 @@ class DashboardController extends Controller
             ->get()->keyBy('payment_status');
 
         // Payment methods
-        $paymentMethods = $saleQ()
+        $paymentMethods = $eligibleQ()
             ->selectRaw('payment_method, COUNT(*) as cnt, SUM(total) as rev')
             ->groupBy('payment_method')
             ->orderByDesc('rev')
@@ -91,6 +92,7 @@ class DashboardController extends Controller
         // ── 30-day revenue chart ──────────────────────────────────
         $last30 = Sale::withoutGlobalScopes()
             ->where('vendor_id', $branch->id)
+            ->completedOrPos()
             ->where('created_at', '>=', $now->copy()->subDays(29)->startOfDay())
             ->selectRaw('DATE(created_at) as date, SUM(total) as revenue, COUNT(*) as orders')
             ->groupBy('date')
@@ -111,6 +113,11 @@ class DashboardController extends Controller
             ->join('products', 'sale_items.product_id', '=', 'products.id')
             ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
             ->where('sales.vendor_id', $branch->id)
+            ->where(function ($q) {
+                $q->where(function ($posQ) {
+                    $posQ->where('sales.channel', 'pos')->whereNotIn('sales.order_status', ['cancelled']);
+                })->orWhereIn('sales.order_status', ['completed', 'complete']);
+            })
             ->selectRaw('products.name, SUM(sale_items.quantity) as total_sold, SUM(sale_items.subtotal) as revenue')
             ->groupBy('sale_items.product_id', 'products.name')
             ->orderByDesc('revenue')

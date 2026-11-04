@@ -19,6 +19,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->web(append: [
             TrackUserActivity::class,
+            \App\Http\Middleware\CheckBlockedIp::class,
         ]);
 
         $middleware->alias([
@@ -26,6 +27,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'permission'         => \Spatie\Permission\Middleware\PermissionMiddleware::class,
             'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
             'branch.access'      => \App\Http\Middleware\BranchAccess::class,
+            'admin.access'       => \App\Http\Middleware\AdminAccess::class,
             'reseller.auth'      => ResellerAuth::class,
             'moderator.auth'     => ModeratorAuth::class,
             'supplier.auth'      => SupplierAuth::class,
@@ -35,6 +37,13 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*'),
         );
+        // Handle PostTooLargeException gracefully without out-of-memory crash
+        $exceptions->render(function (\Illuminate\Http\Exceptions\PostTooLargeException $e, Request $request) {
+            if ($request->expectsJson() || $request->is('api/*')) {
+                return response()->json(['message' => 'আপলোড করা ফাইল বা ডেটার সাইজ অনুমোদিত সীমার চেয়ে বেশি (Post Too Large)।'], 413);
+            }
+            return redirect()->back()->with('error', 'আপলোড করা ফাইলের সাইজ অনেক বড়। অনুগ্রহ করে ছোট সাইজের ছবি আপলোড করুন।');
+        });
         // Redirect unauthenticated web requests to login
         $exceptions->render(function (\Illuminate\Auth\AuthenticationException $e, Request $request) {
             if (!$request->is('api/*') && !$request->expectsJson()) {

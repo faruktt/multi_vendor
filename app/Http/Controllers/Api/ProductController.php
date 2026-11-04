@@ -15,7 +15,7 @@ class ProductController extends Controller
     public function index()
     {
         return response()->json(
-            Product::with(['category', 'variants'])->latest()->get()->map(fn($p) => $this->transform($p))
+            Product::with(['category', 'subCategory', 'variants'])->latest()->get()->map(fn($p) => $this->transform($p))
         );
     }
 
@@ -24,6 +24,7 @@ class ProductController extends Controller
         $validated = $request->validate([
             'name'        => 'required|string|max:255',
             'category_id' => ['required', Rule::exists('categories', 'id')->where('vendor_id', $request->user()->vendor_id)],
+            'sub_category_id' => ['nullable', Rule::exists('categories', 'id')->where('vendor_id', $request->user()->vendor_id)],
             'price'       => 'required|numeric|min:0',
             'cost_price'  => 'required|numeric|min:0',
             'stock_qty'   => 'nullable|integer|min:0',
@@ -47,9 +48,10 @@ class ProductController extends Controller
         $hasVariants = !empty($variants);
 
         $product = Product::create([
-            'vendor_id'   => $request->user()->vendor_id,
-            'category_id' => $validated['category_id'],
-            'name'        => $validated['name'],
+            'vendor_id'       => $request->user()->vendor_id,
+            'category_id'     => $validated['category_id'],
+            'sub_category_id' => $validated['sub_category_id'] ?? null,
+            'name'            => $validated['name'],
             'sku'         => 'SKU-' . strtoupper(Str::random(8)),
             'barcode'     => $validated['barcode'] ?? null,
             'image'       => $imagePath,
@@ -80,6 +82,7 @@ class ProductController extends Controller
         $validated = $request->validate([
             'name'        => 'required|string|max:255',
             'category_id' => ['required', Rule::exists('categories', 'id')->where('vendor_id', $request->user()->vendor_id)],
+            'sub_category_id' => ['nullable', Rule::exists('categories', 'id')->where('vendor_id', $request->user()->vendor_id)],
             'price'       => 'required|numeric|min:0',
             'cost_price'  => 'required|numeric|min:0',
             'stock_qty'   => 'nullable|integer|min:0',
@@ -104,8 +107,9 @@ class ProductController extends Controller
         $hasVariants = !empty($variants);
 
         $product->update([
-            'category_id' => $validated['category_id'],
-            'name'        => $validated['name'],
+            'category_id'     => $validated['category_id'],
+            'sub_category_id' => $validated['sub_category_id'] ?? null,
+            'name'            => $validated['name'],
             'price'       => $validated['price'],
             'cost_price'  => $validated['cost_price'],
             'stock_qty'   => $hasVariants ? collect($variants)->sum('stock_qty') : ($validated['stock_qty'] ?? $product->stock_qty),
@@ -137,7 +141,7 @@ class ProductController extends Controller
             $product->update(['stock_qty' => collect($variants)->sum('stock_qty')]);
         }
 
-        return response()->json($this->transform($product->load(['category', 'variants'])));
+        return response()->json($this->transform($product->load(['category', 'subCategory', 'variants'])));
     }
 
     public function generateBarcode(Product $product)
@@ -167,9 +171,7 @@ class ProductController extends Controller
     private function transform($product)
     {
         $data = $product->toArray();
-        if (!empty($data['image'])) {
-            $data['image'] = Storage::disk('uploads')->url($data['image']);
-        }
+        $data['image'] = $product->first_image_url;
         return $data;
     }
 }

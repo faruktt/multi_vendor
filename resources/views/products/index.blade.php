@@ -108,6 +108,9 @@
                     @if($product->category)
                     <span class="bg-blue-50 text-blue-700 border border-blue-100 px-2.5 py-1 rounded-lg text-[11.5px] font-medium">
                         {{ $product->category->name }}
+                        @if($product->subCategory)
+                            <span class="text-blue-400">/</span> {{ $product->subCategory->name }}
+                        @endif
                     </span>
                     @else
                     <span class="text-slate-300 text-xs">—</span>

@@ -11,7 +11,8 @@ class SupplierController extends Controller
 {
     public function index()
     {
-        $suppliers = Supplier::withCount('purchases')
+        $suppliers = Supplier::purchase()
+            ->withCount('purchases')
             ->withSum(['purchases' => fn($q) => $q->withoutGlobalScopes()], 'total')
             ->withSum(['purchases' => fn($q) => $q->withoutGlobalScopes()], 'due_amount')
             ->latest()
@@ -37,6 +38,7 @@ class SupplierController extends Controller
 
         $supplier = Supplier::create([
             'vendor_id' => $vendorId,
+            'type'      => 'purchase',
             ...$v,
         ]);
 

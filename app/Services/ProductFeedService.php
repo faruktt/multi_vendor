@@ -38,7 +38,21 @@ class ProductFeedService
     ): Collection {
         $branchId = is_object($branch) ? $branch->id : $branch;
 
-        $buildQuery = function () use ($branchId, $categoryId, $search, $minPrice, $maxPrice) {
+        $categoryIds = null;
+        if ($categoryId) {
+            $catIds = [(int) $categoryId];
+            $childIds = \App\Models\Category::withoutGlobalScopes()
+                ->where('parent_id', $categoryId)
+                ->pluck('id')
+                ->map(fn($id) => (int) $id)
+                ->all();
+            if (!empty($childIds)) {
+                $catIds = array_values(array_unique(array_merge($catIds, $childIds)));
+            }
+            $categoryIds = $catIds;
+        }
+
+        $buildQuery = function () use ($branchId, $categoryIds, $search, $minPrice, $maxPrice) {
             $q = Product::withoutGlobalScopes()
                 ->where('vendor_id', $branchId)
                 ->where('status', 'active')
@@ -48,8 +62,11 @@ class ProductFeedService
                 })
                 ->with(['category', 'supplier', 'variants.color', 'variants.size']);
 
-            if ($categoryId) {
-                $q->where('category_id', $categoryId);
+            if ($categoryIds !== null) {
+                $q->where(function ($sub) use ($categoryIds) {
+                    $sub->whereIn('category_id', $categoryIds)
+                        ->orWhereIn('sub_category_id', $categoryIds);
+                });
             }
 
             if ($search) {
@@ -84,7 +101,8 @@ class ProductFeedService
 
         if (!empty($supplierIds)) {
             // Verify active status of suppliers
-            $supplierIds = Supplier::whereIn('id', $supplierIds)
+            $supplierIds = Supplier::marketplace()
+                ->whereIn('id', $supplierIds)
                 ->where('status', 'active')
                 ->pluck('id')
                 ->all();
@@ -183,6 +201,20 @@ class ProductFeedService
     ): LengthAwarePaginator {
         $branchId = is_object($branch) ? $branch->id : $branch;
 
+        $categoryIds = null;
+        if ($categoryId) {
+            $catIds = [(int) $categoryId];
+            $childIds = \App\Models\Category::withoutGlobalScopes()
+                ->where('parent_id', $categoryId)
+                ->pluck('id')
+                ->map(fn($id) => (int) $id)
+                ->all();
+            if (!empty($childIds)) {
+                $catIds = array_values(array_unique(array_merge($catIds, $childIds)));
+            }
+            $categoryIds = $catIds;
+        }
+
         $totalCount = Product::withoutGlobalScopes()
             ->where('vendor_id', $branchId)
             ->where('status', 'active')
@@ -190,7 +222,12 @@ class ProductFeedService
                 $sub->whereNull('supplier_id')
                     ->orWhere('approval_status', 'approved');
             })
-            ->when($categoryId, fn($q) => $q->where('category_id', $categoryId))
+            ->when($categoryIds !== null, function ($q) use ($categoryIds) {
+                $q->where(function ($sub) use ($categoryIds) {
+                    $sub->whereIn('category_id', $categoryIds)
+                        ->orWhereIn('sub_category_id', $categoryIds);
+                });
+            })
             ->when($search, function ($q) use ($search) {
                 $s = trim($search);
                 $q->where(fn($sub) => $sub->where('name', 'like', "%{$s}%")->orWhere('sku', 'like', "%{$s}%"));

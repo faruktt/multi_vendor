@@ -70,11 +70,13 @@
 
         @if($hasChildren)
         <div x-show="open" x-cloak
-             class="absolute left-full top-0 ml-1 w-56 bg-white border border-gray-200 rounded-xl shadow-lg py-2 z-20">
-            @foreach($cat->children as $child)
-            <a href="{{ route('shop.products.category', $child->slug) }}"
-               class="block px-4 py-2 text-[13px] {{ $activeCategoryId === $child->id ? 'text-brand-dark bg-brand-light' : 'text-gray-600 hover:bg-gray-50 hover:text-brand-dark' }}">{{ $child->name }}</a>
-            @endforeach
+             class="absolute left-full top-0 -ml-2 pl-3 w-60 z-50 pointer-events-auto">
+            <div class="bg-white border border-gray-200 rounded-xl shadow-xl py-2">
+                @foreach($cat->children as $child)
+                <a href="{{ route('shop.products.category', $child->slug) }}"
+                   class="block px-4 py-2 text-[13px] {{ $activeCategoryId === $child->id ? 'text-brand-dark bg-brand-light font-semibold' : 'text-gray-600 hover:bg-gray-50 hover:text-brand-dark font-medium' }} transition-colors">{{ $child->name }}</a>
+                @endforeach
+            </div>
         </div>
         @endif
     </div>

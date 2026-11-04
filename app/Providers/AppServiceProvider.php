@@ -54,6 +54,8 @@ class AppServiceProvider extends ServiceProvider
                 if (!isset($view->getData()['branch'])) {
                     $view->with('branch', request()->route('branch'));
                 }
+                $view->with('globalPendingReturnsCount', \App\Models\SaleReturnItem::where('status', 'pending')->count());
+                $view->with('globalBlockedIpsCount', \App\Models\BlockedIp::where('is_active', true)->count());
             }
         });
 
@@ -84,9 +86,34 @@ class AppServiceProvider extends ServiceProvider
             }
         });
 
-        // Reseller portal: always share the cart count for the header/sidebar
+        // Reseller portal: always share the cart count and active popup coupon
         view()->composer('reseller.*', function ($view) {
             $view->with('cartCount', \App\Http\Controllers\Reseller\CartController::count());
+
+            if (auth('reseller')->check()) {
+                $resellerId = auth('reseller')->id();
+                $today      = \Carbon\Carbon::today();
+
+                $popupCoupon = \App\Models\Coupon::where('status', 'active')
+                    ->whereIn('applicable_for', ['everyone', 'reseller'])
+                    ->where(function ($q) use ($today) {
+                        $q->whereNull('start_date')->orWhere('start_date', '<=', $today);
+                    })
+                    ->where(function ($q) use ($today) {
+                        $q->whereNull('end_date')->orWhere('end_date', '>=', $today);
+                    })
+                    ->where(function ($q) {
+                        $q->whereNull('usage_limit')->orWhereRaw('used_count < usage_limit');
+                    })
+                    ->where(function ($q) use ($resellerId) {
+                        $q->whereNull('usage_limit_per_user')
+                          ->orWhereRaw('(SELECT COUNT(*) FROM coupon_usages WHERE coupon_usages.coupon_id = coupons.id AND coupon_usages.reseller_id = ?) < coupons.usage_limit_per_user', [$resellerId]);
+                    })
+                    ->latest('id')
+                    ->first();
+
+                $view->with('popupCoupon', $popupCoupon);
+            }
         });
     }
 }

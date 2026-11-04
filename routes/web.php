@@ -14,6 +14,7 @@ use App\Http\Controllers\Web\UserController;
 use App\Http\Controllers\Web\SettingsController;
 use App\Http\Controllers\Web\AdminController;
 use App\Http\Controllers\Web\FraudCheckController;
+use App\Http\Controllers\Web\BlockedIpController;
 use App\Http\Controllers\Web\GlobalSettingsController;
 use App\Http\Controllers\Web\AdminDataController;
 use App\Http\Controllers\Web\RolePermissionController;
@@ -28,6 +29,8 @@ use App\Http\Controllers\Web\HomeContentController;
 use App\Http\Controllers\Web\PageController;
 use App\Http\Controllers\Web\AdsCostController;
 use App\Http\Controllers\Web\EpbxCallController;
+use App\Http\Controllers\Web\LandingPageController;
+use App\Http\Controllers\Shop\PublicLandingPageController;
 use App\Http\Controllers\Warehouse\DashboardController as WarehouseDashboardController;
 use App\Http\Controllers\Warehouse\ProductController as WarehouseProductController;
 use App\Http\Controllers\Warehouse\CategoryController as WarehouseCategoryController;
@@ -82,6 +85,9 @@ Route::get('/', [ShopHomeController::class, 'index'])->name('root');
 Route::get('/product/{productSlug}', [ShopProductController::class, 'show'])->name('shop.products.show');
 Route::get('/supplier-store/{supplier}', [ShopProductController::class, 'supplierStore'])->name('shop.supplier.show');
 Route::get('/page/{slug}', [ShopPageController::class, 'show'])->name('shop.pages.show');
+Route::get('/landing/{slug}', [PublicLandingPageController::class, 'show'])->name('landing.show');
+Route::post('/landing/{slug}/order', [PublicLandingPageController::class, 'order'])->name('landing.order');
+Route::get('/landing/{slug}/success/{invoiceNo}', [PublicLandingPageController::class, 'success'])->name('landing.success');
 
 // ── Customer Auth & Account Portal ──────────────────────────────────────────
 Route::prefix('customer')->name('shop.customer.')->group(function () {
@@ -246,6 +252,9 @@ Route::prefix('supplier')->name('supplier.')->group(function () {
 // Optional numeric fallback for supplier store /supplier/{id}
 Route::get('/supplier/{supplier}', [ShopProductController::class, 'supplierStore'])->whereNumber('supplier');
 
+// ── Security Actions (Public Signed Routes) ──────────────────────────────────
+Route::get('/security/ip-block/quick-block', [BlockedIpController::class, 'quickBlock'])->name('security.ip-block.quick-block');
+
 // ── Internal system (login, admin panel, all branch operations) — under /admin ──
 Route::prefix('admin')->group(function () {
 
@@ -260,10 +269,10 @@ Route::prefix('admin')->group(function () {
 
         Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-        // Root of /admin → redirect based on role
+        // Root of /admin → redirect based on role and permissions
         Route::get('/', function () {
             $user = auth()->user();
-            if ($user->hasRole('super-admin')) {
+            if ($user->hasRole('super-admin') || $user->hasAnyRole(['sub-admin', 'manager', 'admin', 'moderator']) || !$user->vendor_id) {
                 return redirect()->route('admin.index');
             }
             return redirect()->route('branch.dashboard', $user->vendor_id);
@@ -273,8 +282,8 @@ Route::prefix('admin')->group(function () {
         Route::post('/sales/{sale}/epbx-verify-call', [EpbxCallController::class, 'makeVerificationCall'])->name('epbx.verify-call');
         Route::post('/sales/{sale}/epbx-call-note',   [EpbxCallController::class, 'saveCallNote'])->name('epbx.call-note');
 
-        // ── Super-admin panel ──────────────────────────────────────────────
-        Route::middleware('role:super-admin')->name('admin.')->group(function () {
+        // ── Admin panel ──────────────────────────────────────────────
+        Route::middleware('admin.access')->name('admin.')->group(function () {
             Route::get('/', [AdminController::class, 'index'])->name('index');
 
             // Global system settings
@@ -292,17 +301,28 @@ Route::prefix('admin')->group(function () {
             Route::get('/staff',             [UserController::class, 'adminIndex'])->name('staff.index');
             Route::post('/staff',            [UserController::class, 'adminStore'])->name('staff.store');
             Route::put('/staff/{user}',      [UserController::class, 'adminUpdate'])->name('staff.update');
+            Route::put('/staff/{user}/permissions', [UserController::class, 'adminUpdatePermissions'])->name('staff.permissions.update');
             Route::delete('/staff/{user}',   [UserController::class, 'adminDestroy'])->name('staff.destroy');
             Route::get('/staff/{user}/commission', [UserController::class, 'commission'])->name('staff.commission');
 
             Route::get('/all-sales',                 [AdminDataController::class, 'allSales'])->name('all-sales');
             Route::post('/all-sales/{sale}/status',   [AdminDataController::class, 'updateStatus'])->name('all-sales.status');
             Route::get('/all-sales/bulk-print',       [SaleController::class, 'bulkPrint'])->name('all-sales.bulk-print');
-            Route::post('/all-sales/bd-courier-check', [AdminDataController::class, 'bdCourierCheck'])->name('bd-courier-check');
+            Route::post('/all-sales/bd-courier-check',       [AdminDataController::class, 'bdCourierCheck'])->name('bd-courier-check');
+            Route::post('/all-sales/bd-courier-check/batch', [AdminDataController::class, 'bdCourierCheckBatch'])->name('bd-courier-check.batch');
             Route::get('/all-sales/{sale}/notes',    [AdminDataController::class, 'getNotes'])->name('all-sales.notes.index');
             Route::post('/all-sales/{sale}/notes',   [AdminDataController::class, 'addNote'])->name('all-sales.notes.store');
+            Route::get('/all-sales/{sale}/courier-status', [CourierOrderController::class, 'checkStatus'])->name('all-sales.courier-status');
+            Route::post('/all-sales/courier-sync-batch',   [CourierOrderController::class, 'syncBatch'])->name('all-sales.courier-sync-batch');
+
+            // Returns Management (Cross-Branch)
+            Route::get('/returns',                         [SaleReturnController::class, 'index'])->name('returns.index');
+            Route::post('/returns/{item}/process',         [SaleReturnController::class, 'processReturn'])->name('returns.process');
+            Route::post('/returns/{item}/update-supplier', [SaleReturnController::class, 'updateSupplier'])->name('returns.update-supplier');
+            Route::post('/returns/bulk-process',           [SaleReturnController::class, 'bulkProcess'])->name('returns.bulk-process');
             Route::get('/all-products',   [AdminDataController::class, 'allProducts'])->name('all-products');
-            Route::get('/all-categories', [AdminDataController::class, 'allCategories'])->name('all-categories');
+            Route::get('/all-categories',    [AdminDataController::class, 'allCategories'])->name('all-categories');
+            Route::get('/all-subcategories', [AdminDataController::class, 'allSubcategories'])->name('all-subcategories');
             Route::get('/all-purchases',  [AdminDataController::class, 'allPurchases'])->name('all-purchases');
             Route::get('/all-suppliers',  [AdminDataController::class, 'allSuppliers'])->name('all-suppliers');
             Route::get('/stock-report',     [AdminDataController::class, 'stockReport'])->name('stock-report');
@@ -310,6 +330,15 @@ Route::prefix('admin')->group(function () {
             Route::get('/all-customers',    [AdminDataController::class, 'allCustomers'])->name('all-customers');
             Route::get('/sales-report',     [AdminDataController::class, 'salesReport'])->name('sales-report');
             Route::get('/financial-report', [AdminDataController::class, 'financialReport'])->name('financial-report');
+
+            // ── IP Blocking & Login Security ──────────────────────────────
+            Route::prefix('ip-blocks')->name('ip-blocks.')->group(function () {
+                Route::get('/',                     [BlockedIpController::class, 'index'])->name('index');
+                Route::post('/',                    [BlockedIpController::class, 'store'])->name('store');
+                Route::post('/{blockedIp}/unblock', [BlockedIpController::class, 'unblock'])->name('unblock');
+                Route::post('/{blockedIp}/block',   [BlockedIpController::class, 'block'])->name('block');
+                Route::delete('/{blockedIp}',       [BlockedIpController::class, 'destroy'])->name('destroy');
+            });
 
             // ── Ads Cost Management ───────────────────────────────────────
             Route::prefix('ads-cost')->name('ads-cost.')->group(function () {
@@ -330,8 +359,11 @@ Route::prefix('admin')->group(function () {
             Route::delete('/user-activity/clear',        [UserActivityController::class, 'clear'])->name('user-activity.clear');
 
             // Role & Permission management
-            Route::get('/roles-permissions',  [RolePermissionController::class, 'index'])->name('roles-permissions');
-            Route::post('/roles-permissions', [RolePermissionController::class, 'update'])->name('roles-permissions.update');
+            Route::get('/roles-permissions',                 [RolePermissionController::class, 'index'])->name('roles-permissions');
+            Route::post('/roles-permissions',                [RolePermissionController::class, 'update'])->name('roles-permissions.update');
+            Route::post('/roles-permissions/roles',          [RolePermissionController::class, 'storeRole'])->name('roles-permissions.roles.store');
+            Route::put('/roles-permissions/roles/{role}',    [RolePermissionController::class, 'updateRole'])->name('roles-permissions.roles.update');
+            Route::delete('/roles-permissions/roles/{role}', [RolePermissionController::class, 'destroyRole'])->name('roles-permissions.roles.destroy');
 
             // Order status options (used on the Sales pages)
             Route::get('/order-statuses',                  [OrderStatusController::class, 'index'])->name('order-statuses.index');
@@ -390,6 +422,18 @@ Route::prefix('admin')->group(function () {
                 Route::put('/{page}',                  [PageController::class, 'update'])->name('update');
                 Route::post('/{page}/toggle',          [PageController::class, 'toggle'])->name('toggle');
                 Route::delete('/{page}',               [PageController::class, 'destroy'])->name('destroy');
+            });
+
+            // ── Landing Pages Management ──────────────────────────────────
+            Route::prefix('landing-pages')->name('landing-pages.')->group(function () {
+                Route::get('/',                     [LandingPageController::class, 'index'])->name('index');
+                Route::get('/create',               [LandingPageController::class, 'create'])->name('create');
+                Route::post('/',                    [LandingPageController::class, 'store'])->name('store');
+                Route::post('/upload-editor-image', [LandingPageController::class, 'uploadEditorImage'])->name('upload-editor-image');
+                Route::get('/{landingPage}/edit',    [LandingPageController::class, 'edit'])->name('edit');
+                Route::put('/{landingPage}',        [LandingPageController::class, 'update'])->name('update');
+                Route::delete('/{landingPage}',     [LandingPageController::class, 'destroy'])->name('destroy');
+                Route::post('/{landingPage}/toggle',[LandingPageController::class, 'toggle'])->name('toggle');
             });
 
             // ── Shipping Charges Management ──────────────────────────────
@@ -519,6 +563,12 @@ Route::prefix('admin')->group(function () {
                 Route::post('/sales/{sale}/status',      [SaleController::class, 'updateStatus'])->name('sales.status');
                 Route::post('/sales/{sale}/add-payment', [SaleController::class, 'addPayment'])->name('sales.add-payment');
                 Route::post('/sales/{sale}/return',       [SaleReturnController::class, 'store'])->name('sales.return');
+
+                // Branch Returns
+                Route::get('/returns',                         [SaleReturnController::class, 'index'])->name('returns.index');
+                Route::post('/returns/{item}/process',         [SaleReturnController::class, 'processReturn'])->name('returns.process');
+                Route::post('/returns/{item}/update-supplier', [SaleReturnController::class, 'updateSupplier'])->name('returns.update-supplier');
+                Route::post('/returns/bulk-process',           [SaleReturnController::class, 'bulkProcess'])->name('returns.bulk-process');
             });
 
             // Categories are managed only from the Warehouse now — see admin.warehouse.categories.*
@@ -615,11 +665,18 @@ Route::prefix('admin')->group(function () {
             // applies system-wide (every vendor's matching-named row stays in sync).
             Route::middleware('permission:manage_categories')->group(function () {
                 Route::get('/categories',                                [WarehouseCategoryController::class, 'index'])->name('categories.index');
-                Route::post('/categories',                                [WarehouseCategoryController::class, 'store'])->name('categories.store');
-                Route::put('/categories/{category}',                      [WarehouseCategoryController::class, 'update'])->name('categories.update');
-                Route::delete('/categories/{category}',                   [WarehouseCategoryController::class, 'destroy'])->name('categories.destroy');
-                Route::post('/categories/{category}/toggle-homepage',     [WarehouseCategoryController::class, 'toggleHomepage'])->name('categories.toggle-homepage');
-                Route::post('/categories/{category}/reorder-homepage',    [WarehouseCategoryController::class, 'reorderHomepage'])->name('categories.reorder-homepage');
+                Route::post('/categories',                               [WarehouseCategoryController::class, 'store'])->name('categories.store');
+                Route::put('/categories/{category}',                     [WarehouseCategoryController::class, 'update'])->name('categories.update');
+                Route::delete('/categories/{category}',                  [WarehouseCategoryController::class, 'destroy'])->name('categories.destroy');
+                Route::post('/categories/{category}/toggle-homepage',    [WarehouseCategoryController::class, 'toggleHomepage'])->name('categories.toggle-homepage');
+                Route::post('/categories/{category}/reorder-homepage',   [WarehouseCategoryController::class, 'reorderHomepage'])->name('categories.reorder-homepage');
+
+                // Subcategories
+                Route::get('/subcategories',                              [WarehouseCategoryController::class, 'subcategoriesIndex'])->name('subcategories.index');
+                Route::post('/subcategories',                             [WarehouseCategoryController::class, 'subcategoriesStore'])->name('subcategories.store');
+                Route::put('/subcategories/{category}',                   [WarehouseCategoryController::class, 'subcategoriesUpdate'])->name('subcategories.update');
+                Route::delete('/subcategories/{category}',                [WarehouseCategoryController::class, 'subcategoriesDestroy'])->name('subcategories.destroy');
+                Route::post('/subcategories/{category}/toggle-status',    [WarehouseCategoryController::class, 'subcategoriesToggleStatus'])->name('subcategories.toggle-status');
             });
 
             Route::middleware('permission:manage_suppliers')->group(function () {

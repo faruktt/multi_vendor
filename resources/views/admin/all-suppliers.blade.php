@@ -1,6 +1,6 @@
 @extends('layouts.app')
-@section('title','All Suppliers')
-@section('heading','All Suppliers')
+@section('title','Vendors')
+@section('heading','Vendors')
 @php
     $currency   = $appSettings['currency'] ?? '৳';
     $totalSup   = collect($branchSummary)->sum('count');
@@ -14,7 +14,7 @@
 {{-- ══ STAT CARDS ══ --}}
 <div class="grid grid-cols-2 gap-3 mb-4">
     <div class="bg-white rounded-2xl border border-slate-100 shadow-sm px-4 py-3.5">
-        <p class="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Total Suppliers</p>
+        <p class="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Total Vendors</p>
         <p class="text-2xl font-bold text-slate-800 mt-1">{{ number_format($totalSup) }}</p>
         <p class="text-[11px] text-slate-400 mt-0.5">across all branches</p>
     </div>
@@ -37,7 +37,7 @@
             <div>
                 <p class="text-[11.5px] font-semibold text-slate-700 truncate max-w-[120px] group-hover:text-blue-700">{{ $s['vendor']->name }}</p>
                 <p class="text-[10.5px] text-slate-400 mt-0.5">
-                    <span class="font-bold text-slate-600">{{ $s['count'] }}</span> suppliers
+                    <span class="font-bold text-slate-600">{{ $s['count'] }}</span> vendors
                     &nbsp;·&nbsp;<span class="font-bold text-slate-700">{{ $currency }}{{ number_format($s['total'],0) }}</span>
                 </p>
             </div>
@@ -60,10 +60,10 @@
         <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors">Filter</button>
         <a href="{{ route('admin.all-suppliers') }}" class="border border-slate-200 text-slate-600 hover:bg-slate-50 px-4 py-2 rounded-xl text-sm transition-colors">Reset</a>
         <div class="ml-auto flex items-center gap-3">
-            <span class="text-[12px] text-slate-400 hidden sm:inline">{{ $suppliers->total() }} suppliers</span>
+            <span class="text-[12px] text-slate-400 hidden sm:inline">{{ $suppliers->total() }} vendors</span>
             <a href="{{ route('admin.warehouse.suppliers.index', 'warehouse') }}"
                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-2 shadow-sm shadow-blue-200 transition-colors">
-                <i class="fas fa-plus text-xs"></i> Add Supplier
+                <i class="fas fa-plus text-xs"></i> Add Vendor
             </a>
         </div>
     </div>
@@ -76,7 +76,7 @@
             <thead class="bg-slate-50 border-b border-slate-100">
                 <tr>
                     <th class="px-3 py-3 text-center text-[11px] font-semibold text-slate-400 uppercase w-10">#</th>
-                    <th class="px-4 py-3 text-left text-[11px] font-semibold text-slate-400 uppercase">Supplier</th>
+                    <th class="px-4 py-3 text-left text-[11px] font-semibold text-slate-400 uppercase">Vendor</th>
                     <th class="px-4 py-3 text-left text-[11px] font-semibold text-slate-400 uppercase">Branch</th>
                     <th class="px-4 py-3 text-left text-[11px] font-semibold text-slate-400 uppercase hidden md:table-cell">Phone</th>
                     <th class="px-4 py-3 text-center text-[11px] font-semibold text-slate-400 uppercase hidden md:table-cell">Orders</th>
@@ -147,7 +147,7 @@
                 <tr>
                     <td colspan="8" class="px-4 py-16 text-center">
                         <i class="fas fa-industry text-slate-200 text-4xl mb-3 block"></i>
-                        <p class="text-slate-400 text-sm">No suppliers found</p>
+                        <p class="text-slate-400 text-sm">No vendors found</p>
                     </td>
                 </tr>
                 @endforelse
@@ -168,7 +168,7 @@
             <div class="w-9 h-9 rounded-xl bg-amber-100 flex items-center justify-center">
                 <i class="fas fa-industry text-amber-600 text-sm"></i>
             </div>
-            <h3 class="text-[14px] font-bold text-slate-800">Edit Supplier</h3>
+            <h3 class="text-[14px] font-bold text-slate-800">Edit Vendor</h3>
         </div>
         <form :action="editUrl" method="POST" class="p-5 space-y-3">
             @csrf @method('PUT')
@@ -213,7 +213,7 @@
             <div class="w-14 h-14 rounded-2xl bg-red-100 flex items-center justify-center mx-auto mb-4">
                 <i class="fas fa-trash text-red-500 text-xl"></i>
             </div>
-            <h3 class="text-[15px] font-bold text-slate-800 mb-1">Remove Supplier?</h3>
+            <h3 class="text-[15px] font-bold text-slate-800 mb-1">Remove Vendor?</h3>
             <p class="text-[12.5px] text-slate-500 mb-5">
                 <span class="font-semibold text-slate-700" x-text="deleteName"></span> will be removed from the system.
             </p>

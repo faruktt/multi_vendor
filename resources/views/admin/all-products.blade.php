@@ -147,7 +147,15 @@
                             {{ $product->vendor->name ?? '—' }}
                         </span>
                     </td>
-                    <td class="px-4 py-3 text-slate-600 text-[12.5px] hidden md:table-cell">{{ $product->category->name ?? '—' }}</td>
+                    <td class="px-4 py-3 text-[12.5px] hidden md:table-cell">
+                        <div class="font-medium text-slate-700">{{ $product->category->name ?? '—' }}</div>
+                        @if($product->subCategory)
+                            <div class="text-[11px] text-slate-400 flex items-center gap-1 mt-0.5">
+                                <i class="fas fa-turn-up rotate-90 text-[9px] text-slate-300"></i>
+                                <span>{{ $product->subCategory->name }}</span>
+                            </div>
+                        @endif
+                    </td>
                     <td class="px-4 py-3 text-right font-bold text-slate-800">{{ $currency }}{{ number_format($product->price,0) }}</td>
                     <td class="px-4 py-3 text-right text-slate-500 text-[12.5px] hidden lg:table-cell">{{ $currency }}{{ number_format($product->cost_price,0) }}</td>
                     <td class="px-4 py-3 text-center">

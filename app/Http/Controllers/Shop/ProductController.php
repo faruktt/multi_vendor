@@ -30,7 +30,19 @@ class ProductController extends Controller
             });
 
         if ($category) {
-            $query->where('category_id', $category->id);
+            $catIds = [(int) $category->id];
+            $childIds = Category::withoutGlobalScopes()
+                ->where('parent_id', $category->id)
+                ->pluck('id')
+                ->map(fn($id) => (int) $id)
+                ->all();
+            if (!empty($childIds)) {
+                $catIds = array_values(array_unique(array_merge($catIds, $childIds)));
+            }
+            $query->where(function ($q) use ($catIds) {
+                $q->whereIn('category_id', $catIds)
+                  ->orWhereIn('sub_category_id', $catIds);
+            });
         }
 
         if ($request->filled('q')) {
@@ -81,7 +93,7 @@ class ProductController extends Controller
             ->where(function ($q) {
                 $q->whereNull('supplier_id')->orWhere('approval_status', 'approved');
             })
-            ->with(['category', 'variants.color', 'variants.size', 'supplier'])
+            ->with(['category', 'subCategory', 'variants.color', 'variants.size', 'supplier'])
             ->firstOrFail();
 
         $related = Product::withoutGlobalScopes()
@@ -113,7 +125,7 @@ class ProductController extends Controller
             ->where(function ($q) {
                 $q->whereNull('supplier_id')->orWhere('approval_status', 'approved');
             })
-            ->with(['category', 'variants.color', 'variants.size', 'supplier'])
+            ->with(['category', 'subCategory', 'variants.color', 'variants.size', 'supplier'])
             ->firstOrFail();
 
         $currency = '৳';

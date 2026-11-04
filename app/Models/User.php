@@ -12,12 +12,44 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 
-#[Fillable(['name', 'email', 'phone', 'password', 'vendor_id', 'image', 'nid_front', 'nid_back', 'guardian_nid_front', 'guardian_nid_back'])]
+#[Fillable(['name', 'email', 'phone', 'password', 'vendor_id', 'has_custom_permissions', 'image', 'nid_front', 'nid_back', 'guardian_nid_front', 'guardian_nid_back'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, Notifiable, HasRoles;
+
+    public function hasPermissionTo($permission, ?string $guardName = null): bool
+    {
+        if ($this->hasRole('super-admin')) {
+            return true;
+        }
+
+        if ($this->has_custom_permissions) {
+            $permission = $this->filterPermission($permission, $guardName);
+            return $this->hasDirectPermission($permission);
+        }
+
+        $permission = $this->filterPermission($permission, $guardName);
+        return $this->hasDirectPermission($permission) || $this->hasPermissionViaRole($permission);
+    }
+
+    public function getAllPermissions(): \Illuminate\Support\Collection
+    {
+        if ($this->hasRole('super-admin')) {
+            return \Spatie\Permission\Models\Permission::all();
+        }
+
+        if ($this->has_custom_permissions) {
+            return $this->loadMissing('permissions')->permissions->sort()->values();
+        }
+
+        $permissions = $this->loadMissing('permissions')->permissions;
+        if ($this->roles) {
+            $permissions = $permissions->merge($this->getPermissionsViaRoles());
+        }
+        return $permissions->sort()->values();
+    }
 
     protected $appends = [
         'image_url',
@@ -80,6 +112,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'has_custom_permissions' => 'boolean',
         ];
     }
 }

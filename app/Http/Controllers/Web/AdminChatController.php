@@ -70,7 +70,7 @@ class AdminChatController extends Controller
 
         if ($customer) {
             $orderCount = Sale::withoutGlobalScopes()->where('customer_id', $customer->id)->count();
-            $totalSpent = (float) Sale::withoutGlobalScopes()->where('customer_id', $customer->id)->where('order_status', '!=', 'cancelled')->sum('total');
+            $totalSpent = (float) Sale::withoutGlobalScopes()->where('customer_id', $customer->id)->completedOrPos()->sum('total');
         }
 
         $messages = $conversation->messages()

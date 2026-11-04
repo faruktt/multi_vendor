@@ -31,22 +31,26 @@ class ReportController extends Controller
         $prevTo     = $fromCarbon->copy()->subDay()->endOfDay();
 
         // ── Sales ─────────────────────────────────────────────────
-        $saleQ    = fn() => Sale::withoutGlobalScopes()->where('vendor_id', $branch->id);
-        $salePeriod = (clone $saleQ())->whereBetween('created_at', [$fromCarbon, $toCarbon]);
-        $salePrev   = (clone $saleQ())->whereBetween('created_at', [$prevFrom, $prevTo]);
+        $saleQ         = fn() => Sale::withoutGlobalScopes()->where('vendor_id', $branch->id);
+        $eligibleQ     = fn() => Sale::withoutGlobalScopes()->where('vendor_id', $branch->id)->completedOrPos();
+
+        $salePeriod     = (clone $saleQ())->whereBetween('created_at', [$fromCarbon, $toCarbon]);
+        $eligiblePeriod = (clone $eligibleQ())->whereBetween('created_at', [$fromCarbon, $toCarbon]);
+        $salePrev       = (clone $saleQ())->whereBetween('created_at', [$prevFrom, $prevTo]);
+        $eligiblePrev   = (clone $eligibleQ())->whereBetween('created_at', [$prevFrom, $prevTo]);
 
         $sales = [
-            'revenue'       => round($salePeriod->sum('total'), 2),
+            'revenue'       => round($eligiblePeriod->sum('total'), 2),
             'orders'        => $salePeriod->count(),
-            'paid'          => round($salePeriod->sum('paid_amount'), 2),
-            'due_period'    => round($salePeriod->sum('due_amount'), 2),
-            'prev_revenue'  => round($salePrev->sum('total'), 2),
+            'paid'          => round($eligiblePeriod->sum('paid_amount'), 2),
+            'due_period'    => round($eligiblePeriod->sum('due_amount'), 2),
+            'prev_revenue'  => round($eligiblePrev->sum('total'), 2),
             'prev_orders'   => $salePrev->count(),
-            'total_revenue' => round($saleQ()->sum('total'), 2),
+            'total_revenue' => round($eligibleQ()->sum('total'), 2),
             'total_orders'  => $saleQ()->count(),
-            'total_due'     => round($saleQ()->sum('due_amount'), 2),
-            'avg_order'     => $salePeriod->count() > 0
-                ? round($salePeriod->sum('total') / $salePeriod->count(), 2) : 0,
+            'total_due'     => round($eligibleQ()->sum('due_amount'), 2),
+            'avg_order'     => $eligiblePeriod->count() > 0
+                ? round($eligiblePeriod->sum('total') / $eligiblePeriod->count(), 2) : 0,
         ];
 
         // ── Purchases ─────────────────────────────────────────────
@@ -98,6 +102,11 @@ class ReportController extends Controller
             ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
             ->where('sales.vendor_id', $branch->id)
             ->whereBetween('sales.created_at', [$fromCarbon, $toCarbon])
+            ->where(function ($q) {
+                $q->where(function ($posQ) {
+                    $posQ->where('sales.channel', 'pos')->whereNotIn('sales.order_status', ['cancelled']);
+                })->orWhereIn('sales.order_status', ['completed', 'complete']);
+            })
             ->selectRaw('products.name, SUM(sale_items.quantity) as total_sold, SUM(sale_items.subtotal) as revenue')
             ->groupBy('sale_items.product_id', 'products.name')
             ->orderByDesc('revenue')
@@ -113,7 +122,7 @@ class ReportController extends Controller
             ->map(fn($r) => ['name' => ucfirst($r->name), 'value' => (int) $r->value]);
 
         // ── Payment method breakdown ──────────────────────────────
-        $paymentMethods = (clone $saleQ())
+        $paymentMethods = (clone $eligibleQ())
             ->whereBetween('created_at', [$fromCarbon, $toCarbon])
             ->selectRaw('payment_method as name, COUNT(*) as orders, SUM(total) as revenue')
             ->groupBy('payment_method')
@@ -162,6 +171,7 @@ class ReportController extends Controller
 
         $sales = Sale::withoutGlobalScopes()
             ->where('vendor_id', $branch->id)
+            ->completedOrPos()
             ->whereBetween('created_at', [$from, $to])
             ->get();
 

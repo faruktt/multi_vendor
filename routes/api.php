@@ -17,10 +17,12 @@ use App\Http\Controllers\Api\SupplierController;
 use App\Http\Controllers\Api\IncomeExpenseController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Web\EpbxCallController;
+use App\Http\Controllers\Api\CourierWebhookController;
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login',    [AuthController::class, 'login']);
 Route::post('/epbx/webhook', [EpbxCallController::class, 'handleWebhook']);
+Route::match(['get', 'post'], '/courier/webhook/{courier?}', [CourierWebhookController::class, 'handleWebhook']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me',      [AuthController::class, 'me']);

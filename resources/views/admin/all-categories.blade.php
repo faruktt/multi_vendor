@@ -84,7 +84,14 @@
                                 <i class="fas fa-tag text-[11px]"></i>
                             </div>
                             @endif
-                            <p class="font-semibold text-slate-800 text-[12.5px]">{{ $cat->name }}</p>
+                            <div>
+                                <p class="font-semibold text-slate-800 text-[12.5px]">{{ $cat->name }}</p>
+                                @if($cat->parent)
+                                    <span class="inline-flex items-center gap-1 text-[9.5px] text-blue-700 font-medium mt-0.5">
+                                        <span class="text-slate-400">Parent:</span> {{ $cat->parent->name }}
+                                    </span>
+                                @endif
+                            </div>
                         </div>
                     </td>
                     <td class="px-4 py-3">

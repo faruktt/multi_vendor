@@ -19,9 +19,9 @@
             @foreach($lines as $line)
                 <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 flex items-center gap-4">
                     {{-- Image --}}
-                    <a href="{{ route('reseller.products.show', $line['product']->id) }}" class="w-16 h-16 rounded-xl overflow-hidden bg-slate-50 flex-shrink-0 block hover:opacity-90 transition-opacity">
+                    <a href="{{ route('reseller.products.show', $line['product']->id) }}" class="w-16 h-16 rounded-xl overflow-hidden bg-slate-50 border border-slate-100 flex-shrink-0 flex items-center justify-center p-1 hover:opacity-90 transition-opacity">
                         @if($line['image_url'])
-                            <img src="{{ $line['image_url'] }}" class="w-full h-full object-cover">
+                            <img src="{{ $line['image_url'] }}" alt="{{ $line['product']->name }}" class="w-full h-full object-contain">
                         @else
                             <div class="w-full h-full flex items-center justify-center text-slate-300">
                                 <i class="fas fa-image"></i>
