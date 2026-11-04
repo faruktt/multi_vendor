@@ -147,21 +147,16 @@
         @endif
     </div>
 
-    {{-- Details (Matching Screenshot) --}}
+    {{-- Details --}}
     <div class="pt-1.5 pb-1 flex flex-col text-left">
-        {{-- Tags line (e.g. "KURTI, NEW ARRIVAL, WOMAN") --}}
-        <div class="text-[9.5px] sm:text-[10px] text-gray-400 uppercase tracking-wider font-normal truncate">
-            {{ $tagsText }}
-        </div>
-
-        {{-- Product Name line (e.g. "RONG KURTI || WKD-8...") --}}
+        {{-- Product Name --}}
         <a href="{{ route('shop.products.show', $product->slug) }}"
-           class="text-[12.5px] sm:text-[13px] font-bold text-gray-800 hover:text-black truncate leading-tight mt-1 transition-colors"
+           class="text-[12.5px] sm:text-[13px] font-bold text-gray-800 hover:text-black truncate leading-tight transition-colors"
            title="{{ $product->name }}">
             {{ $product->name }}
         </a>
 
-        {{-- Price line (e.g. "2,155.00৳") --}}
+        {{-- Price line --}}
         <div class="text-[12.5px] sm:text-[13px] text-gray-800 font-normal leading-tight mt-1">
             @if($hasVariantRange)
                 <span>{{ number_format($minVariantPrice, 2) }}৳ – {{ number_format($maxVariantPrice, 2) }}৳</span>

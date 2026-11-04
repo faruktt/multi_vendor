@@ -90,22 +90,30 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {{-- Image & Gallery Slider --}}
                 <div class="flex flex-col gap-3">
-                    <div class="relative aspect-square bg-gray-50 border border-gray-200 rounded-2xl overflow-hidden flex items-center justify-center group">
+                    {{-- Main image container: object-contain (no crop), click to zoom --}}
+                    <div class="relative aspect-square bg-gray-50 border border-gray-200 rounded-2xl overflow-hidden flex items-center justify-center group cursor-zoom-in"
+                         @click="zoomOpen = true">
                         <template x-if="isOutOfStock">
                             <div class="absolute top-0 left-0 right-0 bg-red-500 text-white text-center text-[11px] font-extrabold tracking-wide py-1.5 z-10"
                                  x-text="totalStock <= 0 ? 'OUT OF STOCK' : 'SELECTED OPTION OUT OF STOCK'"></div>
                         </template>
 
                         <template x-if="images.length > 0">
-                            <img :src="currentImage" alt="{{ $product->name }}" class="w-full h-full object-cover">
+                            <img :src="currentImage" alt="{{ $product->name }}"
+                                 class="max-w-full max-h-full w-auto h-auto object-contain p-2 transition-transform duration-200 group-hover:scale-105">
                         </template>
                         <template x-if="images.length === 0">
                             <i class="fas fa-box text-gray-300 text-6xl"></i>
                         </template>
 
+                        {{-- Zoom icon badge --}}
+                        <div class="absolute bottom-3 right-3 z-10 w-8 h-8 rounded-full bg-white/90 border border-gray-200 shadow-md flex items-center justify-center text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/><path d="M11 8v6M8 11h6"/></svg>
+                        </div>
+
                         {{-- Slide buttons --}}
                         <template x-if="images.length > 1">
-                            <div>
+                            <div @click.stop>
                                 <button type="button" @click="prevImage()"
                                         class="absolute left-3 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-white/90 border border-gray-200 shadow-md flex items-center justify-center text-gray-500 hover:text-brand-dark opacity-0 group-hover:opacity-100 transition-opacity">
                                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
@@ -123,9 +131,9 @@
                         <div class="flex items-center gap-2 overflow-x-auto py-1">
                             <template x-for="(img, index) in images" :key="index">
                                 <button type="button" @click="activeImageIndex = index"
-                                        class="w-16 h-16 rounded-lg overflow-hidden border-2 flex-shrink-0 transition-colors"
+                                        class="w-16 h-16 rounded-lg overflow-hidden border-2 flex-shrink-0 transition-colors bg-gray-50 flex items-center justify-center"
                                         :class="activeImageIndex === index ? 'border-brand' : 'border-gray-200 hover:border-gray-300'">
-                                    <img :src="img" class="w-full h-full object-cover">
+                                    <img :src="img" class="max-w-full max-h-full w-auto h-auto object-contain p-0.5">
                                 </button>
                             </template>
                         </div>
@@ -138,6 +146,38 @@
                     </div>
                     @endif
                 </div>
+
+                {{-- ── Zoom Lightbox Modal ── --}}
+                <template x-if="zoomOpen && images.length > 0">
+                    <div class="fixed inset-0 z-[999] flex items-center justify-center bg-black/85 backdrop-blur-sm"
+                         @click.self="zoomOpen = false"
+                         @keydown.escape.window="zoomOpen = false">
+                        <div class="relative max-w-4xl max-h-[90vh] w-full mx-4 flex items-center justify-center">
+                            <img :src="currentImage" alt="{{ $product->name }}"
+                                 class="max-w-full max-h-[85vh] w-auto h-auto object-contain rounded-xl shadow-2xl">
+
+                            {{-- Close button --}}
+                            <button type="button" @click="zoomOpen = false"
+                                    class="absolute -top-3 -right-3 w-9 h-9 rounded-full bg-white text-gray-700 hover:text-red-500 shadow-lg flex items-center justify-center transition-colors">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                            </button>
+
+                            {{-- Prev/Next inside zoom --}}
+                            <template x-if="images.length > 1">
+                                <div>
+                                    <button type="button" @click="prevImage()"
+                                            class="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/20 hover:bg-white/40 text-white flex items-center justify-center transition-colors">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+                                    </button>
+                                    <button type="button" @click="nextImage()"
+                                            class="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/20 hover:bg-white/40 text-white flex items-center justify-center transition-colors">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+                                    </button>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </template>
 
                 {{-- Details --}}
                 <div>
@@ -311,30 +351,38 @@
 
                     <div class="grid grid-cols-2 gap-3">
                         <form method="POST" action="{{ route('shop.cart.add') }}"
-                              @submit="if(window.trackAddToCart) { window.trackAddToCart({ id: '{{ $product->id }}', name: @json($product->name), price: unitPrice, quantity: qty, category: @json($product->category?->name ?? '') }); }">
+                              @submit.prevent="if(validateAndSubmit($event) !== false) { if(window.trackAddToCart) window.trackAddToCart({ id: '{{ $product->id }}', name: @json($product->name), price: unitPrice, quantity: qty, category: @json($product->category?->name ?? '') }); $el.submit(); }">
                             @csrf
                             <input type="hidden" name="product_id" value="{{ $product->id }}">
                             <input type="hidden" name="variant_id" :value="variantId">
                             <input type="hidden" name="qty" :value="qty">
-                            <button type="submit" :disabled="!canAddToCart"
-                                    class="w-full h-full bg-deal hover:bg-deal-dark disabled:opacity-40 disabled:cursor-not-allowed text-white py-3.5 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2">
+                            <button type="submit"
+                                    class="w-full h-full bg-deal hover:bg-deal-dark text-white py-3.5 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2">
                                 <i class="fas fa-bag-shopping text-xs"></i> Add to Cart
                             </button>
                         </form>
 
                         <form method="POST" action="{{ route('shop.cart.add') }}"
-                              @submit="if(window.trackAddToCart) { window.trackAddToCart({ id: '{{ $product->id }}', name: @json($product->name), price: unitPrice, quantity: qty, category: @json($product->category?->name ?? '') }); }">
+                              @submit.prevent="if(validateAndSubmit($event) !== false) { $el.submit(); }">
                             @csrf
                             <input type="hidden" name="product_id" value="{{ $product->id }}">
                             <input type="hidden" name="variant_id" :value="variantId">
                             <input type="hidden" name="qty" :value="qty">
                             <input type="hidden" name="redirect_to" value="checkout">
-                            <button type="submit" :disabled="!canAddToCart"
-                                    class="w-full h-full bg-gray-900 hover:bg-black disabled:opacity-40 disabled:cursor-not-allowed text-white py-3.5 rounded-xl text-sm font-bold transition-colors">
+                            <button type="submit"
+                                    class="w-full h-full bg-gray-900 hover:bg-black text-white py-3.5 rounded-xl text-sm font-bold transition-colors">
                                 Buy Now
                             </button>
                         </form>
                     </div>
+
+                    {{-- Validation message --}}
+                    <template x-if="validationMsg">
+                        <div class="mt-2 flex items-center gap-2 bg-rose-50 border border-rose-200 text-rose-700 text-sm font-semibold px-4 py-2.5 rounded-xl animate-pulse">
+                            <i class="fas fa-circle-exclamation text-rose-500 flex-shrink-0"></i>
+                            <span x-text="validationMsg"></span>
+                        </div>
+                    </template>
 
                        {{-- @if($whatsappNumber)
                         <a href="https://wa.me/{{ $whatsappNumber }}?text={{ urlencode($whatsappMessage) }}" target="_blank" rel="noopener"
@@ -517,26 +565,16 @@ function productPage(variants, baseStock, basePrice, variantColors, variantSizes
         baseStock: Number(baseStock) || 0,
         basePrice: Number(basePrice) || 0,
         baseRegularPrice: Number(baseRegularPrice || basePrice) || 0,
+        zoomOpen: false,
+        validationMsg: '',
 
-        // Selected color & size IDs
+        // Selected color & size IDs — start null (no auto-select)
         selectedColorId: null,
         selectedSizeId: null,
         selectedCustomVariantId: null,
 
         init() {
-            if (this.variants && this.variants.length > 0) {
-                // Preselect the first in-stock variant, or first variant if all out of stock
-                const firstAvailable = this.variants.find(v => (Number(v.stock) || 0) > 0) || this.variants[0];
-                if (firstAvailable) {
-                    if (this.variantColors.length > 0 && firstAvailable.color_id) {
-                        this.selectedColorId = firstAvailable.color_id;
-                    }
-                    if (this.variantSizes.length > 0 && firstAvailable.size_id) {
-                        this.selectedSizeId = firstAvailable.size_id;
-                    }
-                    this.selectedCustomVariantId = firstAvailable.id;
-                }
-            }
+            // No auto-selection — user must choose manually
         },
 
         // Total stock across all variants
@@ -614,7 +652,44 @@ function productPage(variants, baseStock, basePrice, variantColors, variantSizes
 
         get canAddToCart() {
             if (!this.variants.length) return this.baseStock > 0;
+            // Need variant selection when colors/sizes exist
+            const hasColors = this.variantColors.length > 0;
+            const hasSizes  = this.variantSizes.length > 0;
+            const hasCustom = this.variants.length > 0 && !hasColors && !hasSizes;
+            if (hasCustom && !this.selectedCustomVariantId) return false;
             return !!(this.matchedVariant && (Number(this.matchedVariant.stock) || 0) > 0);
+        },
+
+        // Check if selection is complete (for validation)
+        get selectionComplete() {
+            if (!this.variants.length) return true;
+            const hasColors = this.variantColors.length > 0;
+            const hasSizes  = this.variantSizes.length > 0;
+            if (!hasColors && !hasSizes) return !!this.selectedCustomVariantId;
+            if (hasColors && !this.selectedColorId) return false;
+            if (hasSizes  && !this.selectedSizeId)  return false;
+            return true;
+        },
+
+        // Validate before submit — returns false if validation fails
+        validateAndSubmit(event) {
+            this.validationMsg = '';
+            if (!this.selectionComplete) {
+                const hasColors = this.variantColors.length > 0;
+                const hasSizes  = this.variantSizes.length > 0;
+                if (hasColors && hasSizes && !this.selectedColorId && !this.selectedSizeId) {
+                    this.validationMsg = 'অনুগ্রহ করে Color এবং Size সিলেক্ট করুন।';
+                } else if (hasColors && !this.selectedColorId) {
+                    this.validationMsg = 'অনুগ্রহ করে Color সিলেক্ট করুন।';
+                } else if (hasSizes && !this.selectedSizeId) {
+                    this.validationMsg = 'অনুগ্রহ করে Size সিলেক্ট করুন।';
+                } else {
+                    this.validationMsg = 'অনুগ্রহ করে একটি অপশন সিলেক্ট করুন।';
+                }
+                // Auto-clear after 3s
+                setTimeout(() => { this.validationMsg = ''; }, 3000);
+                return false;
+            }
         },
 
         // Current effective price (flash price if available, else regular)
