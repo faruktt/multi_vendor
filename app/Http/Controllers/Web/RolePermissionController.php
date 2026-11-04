@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\PermissionRegistrar;
@@ -15,12 +16,18 @@ class RolePermissionController extends Controller
             'view_dashboard',
             'create_sales',
             'view_sales',
+            'manage_returns',
             'manage_payments',
+            'delete_sales',
+            'manage_courier_send',
+            'manage_sales_notes',
             'view_sales_report',
         ],
         'Products & Catalog' => [
             'manage_products',
             'manage_categories',
+            'manage_subcategories',
+            'manage_variant_attributes',
             'manage_inventory',
             'view_stock_report',
             'manage_stock_transfer',
@@ -37,6 +44,7 @@ class RolePermissionController extends Controller
             'view_financial_report',
             'manage_ads_cost',
             'manage_fraud_check',
+            'manage_ip_blocks',
         ],
         'Reseller Hub' => [
             'manage_resellers',
@@ -53,7 +61,8 @@ class RolePermissionController extends Controller
         'Live Chat & Support' => [
             'manage_messages',
         ],
-        'Staff & Moderation' => [
+        'Staff & Roles' => [
+            'manage_branches',
             'manage_users',
             'manage_moderators',
             'manage_roles_permissions',
@@ -62,6 +71,7 @@ class RolePermissionController extends Controller
             'manage_banners',
             'manage_home_contents',
             'manage_pages',
+            'manage_landing_pages',
             'manage_flash_sales',
             'manage_coupons',
         ],
@@ -81,12 +91,18 @@ class RolePermissionController extends Controller
         'view_dashboard'              => ['View Dashboard', 'Access to overview and main dashboard statistics'],
         'create_sales'                => ['Create Sales / POS', 'Use the POS terminal to process direct sales'],
         'view_sales'                  => ['View Sales Records', 'Browse and view all sale invoices & orders across branches'],
-        'manage_payments'             => ['Process Payments', 'Add payments, edit invoices, and update order payment status'],
+        'manage_returns'              => ['Partial Returns', 'Process return items, restock products, and route back to suppliers or branches'],
+        'manage_payments'             => ['Process Payments & Status', 'Add payments, edit invoices, and update order payment status'],
+        'delete_sales'                => ['Delete / Cancel Sales', 'Cancel or delete orders and process customer returns'],
+        'manage_courier_send'         => ['Send to Courier', 'Dispatch orders to Steadfast, Pathao, RedX courier APIs'],
+        'manage_sales_notes'          => ['Order Notes & Calls', 'Save customer call verification notes and phone order remarks'],
         'view_sales_report'           => ['Order & Sales Report', 'View comprehensive order calculations, returns & shipping deductions'],
 
         // Products & Catalog
         'manage_products'             => ['Manage Products', 'Add, edit, generate barcodes, and manage catalog products'],
-        'manage_categories'           => ['Manage Categories', 'Add, edit, and delete product categories and subcategories'],
+        'manage_categories'           => ['Manage Categories', 'Add, edit, and delete product primary categories'],
+        'manage_subcategories'        => ['Manage Subcategories', 'Add, edit, and manage subcategories under categories'],
+        'manage_variant_attributes'   => ['Colors & Sizes', 'Manage product color variants, sizes, and attributes'],
         'manage_inventory'            => ['Manage Stock / Inventory', 'Adjust stock quantities and inspect stock movements'],
         'view_stock_report'           => ['Stock Report', 'Access warehouse & branch stock valuation and low-stock alerts'],
         'manage_stock_transfer'       => ['Stock Transfer', 'Transfer stock between warehouse and retail branches'],
@@ -103,6 +119,7 @@ class RolePermissionController extends Controller
         'view_financial_report'       => ['Financial Report', 'Access income, expenses, profit statements and balance sheets'],
         'manage_ads_cost'             => ['Ads Cost Management', 'Track, add, export and analyze digital advertising expenses'],
         'manage_fraud_check'          => ['Fraud Check', 'Verify customer delivery success history and fraud risk scores'],
+        'manage_ip_blocks'            => ['IP Block & Login Security', 'View, block, unblock IP addresses, and inspect failed login attempt security logs'],
 
         // Reseller Hub
         'manage_resellers'            => ['All Resellers', 'Review, approve, reject, edit and manage reseller accounts'],
@@ -119,15 +136,17 @@ class RolePermissionController extends Controller
         // Live Chat & Support
         'manage_messages'             => ['Live Chat / Messages', 'Reply to customer real-time chat inquiries and messages'],
 
-        // Staff & Moderation
-        'manage_users'                => ['All Staff Members', 'Add, edit, invite and manage branch staff accounts and roles'],
+        // Staff & Roles
+        'manage_branches'             => ['Branches & Outlets', 'Create and configure physical branch outlets and warehouses'],
+        'manage_users'                => ['All Staff Members', 'Add, edit, invite and manage staff accounts and roles'],
         'manage_moderators'           => ['Moderators & Work', 'Manage call-center moderators, verify work logs and withdrawals'],
-        'manage_roles_permissions'    => ['Roles & Permissions', 'Manage role definitions and assign granular permission access'],
+        'manage_roles_permissions'    => ['Roles & Permissions', 'Create custom roles, edit role templates, and configure permissions'],
 
         // Storefront & CMS
         'manage_banners'              => ['Homepage Banners', 'Upload and configure promotional sliders and promo cards'],
         'manage_home_contents'        => ['Homepage Content', 'Organize storefront product shelves and category sections'],
         'manage_pages'                => ['Dynamic Pages', 'Create and edit custom customer service pages and policies'],
+        'manage_landing_pages'        => ['Landing Pages', 'Create, customize, edit, and publish high-converting sales landing pages'],
         'manage_flash_sales'          => ['Flash Sales', 'Create flash sale campaigns and limited-time discount deals'],
         'manage_coupons'              => ['Coupons & Discounts', 'Create and manage discount promo codes and validity dates'],
 
@@ -140,6 +159,16 @@ class RolePermissionController extends Controller
         'view_activity_logs'          => ['Activity Logs', 'View audit trail of system modifications and staff actions'],
         'view_user_activity'          => ['User Traffic Analytics', 'Monitor real-time website visitors, page hits and traffic logs'],
     ];
+
+    public function getGroups(): array
+    {
+        return $this->groups;
+    }
+
+    public function getLabels(): array
+    {
+        return $this->labels;
+    }
 
     public function index()
     {
@@ -187,6 +216,84 @@ class RolePermissionController extends Controller
         // Bust spatie cache so changes take effect immediately
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
-        return back()->with('success', 'Permissions updated successfully.');
+        return back()->with('success', 'Role template permissions updated successfully.');
+    }
+
+    public function storeRole(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|max:50',
+            'permissions' => 'nullable|array',
+            'permissions.*' => 'string|exists:permissions,name',
+        ]);
+
+        $name = Str::slug($request->name);
+        if (empty($name)) {
+            return back()->with('error', 'Please provide a valid role name.');
+        }
+
+        if (Role::where('name', $name)->where('guard_name', 'web')->exists()) {
+            return back()->with('error', "Role '{$name}' already exists.");
+        }
+
+        $role = Role::create([
+            'name' => $name,
+            'guard_name' => 'web',
+        ]);
+
+        if ($request->filled('permissions')) {
+            $role->syncPermissions($request->permissions);
+        }
+
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+
+        return back()->with('success', "Role '{$role->name}' created successfully.");
+    }
+
+    public function updateRole(Request $request, Role $role)
+    {
+        if ($role->name === 'super-admin') {
+            return back()->with('error', 'The super-admin role cannot be renamed.');
+        }
+
+        $request->validate([
+            'name' => 'required|string|max:50',
+        ]);
+
+        $newName = Str::slug($request->name);
+        if (empty($newName)) {
+            return back()->with('error', 'Please provide a valid role name.');
+        }
+
+        if ($newName !== $role->name && Role::where('name', $newName)->where('guard_name', 'web')->exists()) {
+            return back()->with('error', "A role named '{$newName}' already exists.");
+        }
+
+        $oldName = $role->name;
+        $role->name = $newName;
+        $role->save();
+
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+
+        return back()->with('success', "Role renamed from '{$oldName}' to '{$role->name}'.");
+    }
+
+    public function destroyRole(Role $role)
+    {
+        if ($role->name === 'super-admin') {
+            return back()->with('error', 'The super-admin role cannot be deleted.');
+        }
+
+        $assignedCount = $role->users()->count();
+        if ($assignedCount > 0) {
+            return back()->with('error', "Cannot delete role '{$role->name}' because {$assignedCount} user(s) are currently assigned to it. Please reassign them first.");
+        }
+
+        $roleName = $role->name;
+        $role->delete();
+
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+
+        return back()->with('success', "Role '{$roleName}' deleted successfully.");
     }
 }
