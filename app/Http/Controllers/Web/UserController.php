@@ -130,7 +130,7 @@ class UserController extends Controller
     // Admin-level cross-branch staff management
     public function adminIndex(Request $request)
     {
-        $query = User::with(['roles', 'vendor'])
+        $query = User::with(['roles', 'vendor', 'permissions'])
             ->whereNotNull('vendor_id');
 
         if ($request->filled('branch')) {
@@ -139,10 +139,20 @@ class UserController extends Controller
 
         $users = $query->latest()->paginate(30);
 
-        $roles    = Role::whereNotIn('name', ['super-admin'])->get();
+        $roles    = Role::whereNotIn('name', ['super-admin'])->with('permissions')->get();
         $branches = Vendor::orderBy('name')->get();
 
-        return view('admin.staff', compact('users', 'roles', 'branches'));
+        $roleController = app(RolePermissionController::class);
+        $groups = $roleController->getGroups();
+        $labels = $roleController->getLabels();
+
+        // Role default permissions map for instant selection in UI
+        $roleDefaults = [];
+        foreach ($roles as $r) {
+            $roleDefaults[$r->name] = $r->permissions->pluck('name')->toArray();
+        }
+
+        return view('admin.staff', compact('users', 'roles', 'branches', 'groups', 'labels', 'roleDefaults'));
     }
 
     public function adminStore(Request $request)
@@ -194,7 +204,16 @@ class UserController extends Controller
         $user = User::create($userData);
         $user->assignRole($request->role);
 
-        return back()->with('success', 'Staff member added.');
+        // Individual granular permissions
+        if ($request->has('permissions_submitted')) {
+            $user->has_custom_permissions = true;
+            $user->save();
+            $user->syncPermissions($request->input('permissions', []));
+        }
+
+        app(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
+
+        return back()->with('success', 'Staff member added successfully with assigned permissions.');
     }
 
     public function adminUpdate(Request $request, User $user)
@@ -236,7 +255,28 @@ class UserController extends Controller
         $user->update($updateData);
         $user->syncRoles([$request->role]);
 
-        return back()->with('success', 'Staff member updated.');
+        // Individual granular permissions
+        if ($request->has('permissions_submitted')) {
+            $user->has_custom_permissions = true;
+            $user->save();
+            $user->syncPermissions($request->input('permissions', []));
+        }
+
+        app(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
+
+        return back()->with('success', 'Staff member updated successfully.');
+    }
+
+    public function adminUpdatePermissions(Request $request, User $user)
+    {
+        $permissions = $request->input('permissions', []);
+        $user->has_custom_permissions = true;
+        $user->save();
+        $user->syncPermissions($permissions);
+
+        app(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
+
+        return back()->with('success', "Permissions updated for {$user->name}.");
     }
 
     public function adminDestroy(User $user)
@@ -252,7 +292,7 @@ class UserController extends Controller
         $user->load('vendor', 'roles');
         $commissionRate = (float) ($user->vendor?->commission_percentage ?? 0);
 
-        $salesQuery = Sale::withoutGlobalScopes()->where('created_by', $user->id);
+        $salesQuery = Sale::withoutGlobalScopes()->where('created_by', $user->id)->completedOrPos();
 
         $totalCount  = (clone $salesQuery)->count();
         $totalAmount = (float) (clone $salesQuery)->sum('total');
