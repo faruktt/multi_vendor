@@ -60,36 +60,23 @@
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8 items-start">
 
-        {{-- Left: Gallery (Matches Screenshot 2: Side-by-side images or Large + Thumbs) --}}
+        {{-- Left: Gallery — 1 main image + thumbnail strip --}}
         <div class="space-y-3">
-            @if($secondImg)
-            {{-- 2 Photos side by side just like Screenshot 2! --}}
-            <div class="grid grid-cols-2 gap-2.5">
-                <div class="aspect-[3/4] bg-[#F8F9FA] rounded-lg overflow-hidden flex items-center justify-center p-2 border border-gray-100 group">
-                    <img src="{{ $firstImg }}" alt="{{ $product->name }}"
-                         class="max-w-full max-h-full w-auto h-auto object-contain hover:scale-105 transition-transform duration-300 cursor-pointer"
-                         @click="activeImg = '{{ $firstImg }}'">
-                </div>
-                <div class="aspect-[3/4] bg-[#F8F9FA] rounded-lg overflow-hidden flex items-center justify-center p-2 border border-gray-100 group">
-                    <img src="{{ $secondImg }}" alt="{{ $product->name }}"
-                         class="max-w-full max-h-full w-auto h-auto object-contain hover:scale-105 transition-transform duration-300 cursor-pointer"
-                         @click="activeImg = '{{ $secondImg }}'">
-                </div>
-            </div>
-            @else
+            {{-- Main Image --}}
             <div class="aspect-[4/5] bg-[#F8F9FA] rounded-lg overflow-hidden flex items-center justify-center p-3 border border-gray-100">
                 <img :src="activeImg" alt="{{ $product->name }}"
-                     class="max-w-full max-h-full w-auto h-auto object-contain transition-transform duration-300">
+                     class="max-w-full max-h-full w-auto h-auto object-contain transition-all duration-300">
             </div>
-            @endif
 
-            {{-- Multiple Image Thumbnails if more than 2 --}}
-            @if(count($images) > 2)
+            {{-- Thumbnail strip (show if more than 1 image) --}}
+            @if(count($images) > 1)
             <div class="flex items-center gap-2 overflow-x-auto pb-1">
                 @foreach($images as $img)
-                <button type="button" @click="activeImg = '{{ $img }}'"
-                        class="w-14 h-16 rounded-md bg-[#F8F9FA] border border-gray-200 overflow-hidden flex items-center justify-center flex-shrink-0 p-1 hover:border-brand transition-colors">
-                    <img src="{{ $img }}" class="max-w-full max-h-full object-contain">
+                <button type="button"
+                        @click="activeImg = '{{ $img }}'"
+                        class="w-14 h-16 flex-shrink-0 rounded-md bg-[#F8F9FA] border-2 overflow-hidden flex items-center justify-center p-1 transition-colors"
+                        :class="activeImg === '{{ $img }}' ? 'border-gray-900' : 'border-gray-200 hover:border-gray-500'">
+                    <img src="{{ $img }}" alt="{{ $product->name }}" class="max-w-full max-h-full object-contain">
                 </button>
                 @endforeach
             </div>
