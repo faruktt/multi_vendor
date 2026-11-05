@@ -179,8 +179,10 @@
                         <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-medium">৳</span>
                         <input type="number" name="reseller_price" step="0.01" min="0"
                                value="{{ old('reseller_price', $product->reseller_price ?? '') }}"
+                               placeholder="Optional"
                                class="w-full pl-8 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50 focus:bg-white transition-colors">
                     </div>
+                    <p class="text-[11px] text-slate-400 mt-1">ফাঁকা রাখলে রিসেলার প্যানেলে এই প্রোডাক্ট প্রদর্শিত হবে না।</p>
                 </div>
 
                 {{-- Profit Indicator --}}

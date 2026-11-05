@@ -92,7 +92,10 @@ class FlashSaleController extends Controller
 
         // Determine baseline price based on target audience
         if ($targetAudience === 'reseller') {
-            $basePrice = (float) ($product->reseller_price ?? $product->price);
+            if (empty($product->reseller_price) || (float) $product->reseller_price <= 0) {
+                return back()->withInput()->with('error', "এই প্রোডাক্টটিতে কোনো রিসেলার প্রাইস সেট করা নেই। অনুগ্রহ করে আগে প্রোডাক্ট এডিট করে রিসেলার প্রাইস দিন।");
+            }
+            $basePrice = (float) $product->reseller_price;
             $audienceLabel = 'Reseller';
             $priceLabel = 'reseller price';
         } else {
@@ -140,7 +143,10 @@ class FlashSaleController extends Controller
         $targetAudience = $request->input('target_audience', $flashSale->target_audience ?? 'customer');
 
         if ($targetAudience === 'reseller') {
-            $basePrice = (float) ($product?->reseller_price ?? ($product?->price ?? 0));
+            if (empty($product?->reseller_price) || (float) $product->reseller_price <= 0) {
+                return back()->withInput()->with('error', "এই প্রোডাক্টটিতে কোনো রিসেলার প্রাইস সেট করা নেই।");
+            }
+            $basePrice = (float) $product->reseller_price;
             $priceLabel = 'reseller price';
         } else {
             $basePrice = (float) ($product?->price ?? 0);

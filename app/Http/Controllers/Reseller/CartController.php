@@ -33,11 +33,11 @@ class CartController extends Controller
 
         $website = \App\Models\Vendor::onlineStore();
         $product = Product::withoutGlobalScopes()->findOrFail($request->product_id);
-        if ($product->supplier_id !== null || (int) $product->vendor_id !== (int) $website->id) {
+        if ($product->supplier_id !== null || (int) $product->vendor_id !== (int) $website->id || empty($product->reseller_price) || (float) $product->reseller_price <= 0) {
             if ($request->wantsJson()) {
-                return response()->json(['success' => false, 'message' => 'Only Admin Website products are available for reseller purchase.'], 403);
+                return response()->json(['success' => false, 'message' => 'This product is not available for reseller purchase.'], 403);
             }
-            return back()->with('error', 'Only Admin Website products are available for reseller purchase.');
+            return back()->with('error', 'This product is not available for reseller purchase.');
         }
 
         $key = $request->product_id . '_' . ($request->variant_id ?? 'base');
@@ -101,7 +101,14 @@ class CartController extends Controller
 
         $website    = \App\Models\Vendor::onlineStore();
         $productIds = collect($cart)->pluck('product_id')->unique()->filter();
-        $products   = Product::withoutGlobalScopes()->whereNull('supplier_id')->where('vendor_id', $website->id)->whereIn('id', $productIds)->get()->keyBy('id');
+        $products   = Product::withoutGlobalScopes()
+            ->whereNull('supplier_id')
+            ->where('vendor_id', $website->id)
+            ->whereNotNull('reseller_price')
+            ->where('reseller_price', '>', 0)
+            ->whereIn('id', $productIds)
+            ->get()
+            ->keyBy('id');
 
         $variantIds = collect($cart)->pluck('variant_id')->filter()->unique();
         $variants   = ProductVariant::whereIn('id', $variantIds)->get()->keyBy('id');

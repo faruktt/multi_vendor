@@ -319,19 +319,41 @@ class Product extends Model
     }
 
     /**
-     * Regular reseller baseline price (reseller_price if set, else price).
+     * Regular reseller baseline price (null if not configured for reseller).
      */
-    public function getRegularResellerPriceAttribute(): float
+    public function getRegularResellerPriceAttribute(): ?float
     {
-        return (float) ($this->reseller_price ?? $this->price);
+        return ($this->reseller_price !== null && (float) $this->reseller_price > 0)
+            ? (float) $this->reseller_price
+            : null;
     }
 
     /**
      * The effective price reseller pays (reseller flash price if active, else regular reseller price).
      */
-    public function getEffectiveResellerPriceAttribute(): float
+    public function getEffectiveResellerPriceAttribute(): ?float
     {
         return $this->reseller_flash_price ?? $this->regular_reseller_price;
+    }
+
+    /**
+     * Scope query to products available for resellers (strictly requires reseller_price).
+     */
+    public function scopeForReseller($query)
+    {
+        return $query->whereNull('supplier_id')
+                     ->whereNotNull('reseller_price')
+                     ->where('reseller_price', '>', 0);
+    }
+
+    /**
+     * Check if product is available for reseller panel.
+     */
+    public function isAvailableForReseller(): bool
+    {
+        return $this->supplier_id === null
+            && $this->reseller_price !== null
+            && (float) $this->reseller_price > 0;
     }
 
     /**

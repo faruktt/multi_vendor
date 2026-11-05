@@ -24,6 +24,8 @@ class ProductController extends Controller
             ->where('vendor_id', $website->id)
             ->where('status', 'active')
             ->where('stock_qty', '>', 0)
+            ->whereNotNull('reseller_price')
+            ->where('reseller_price', '>', 0)
             ->with(['category', 'variants', 'vendor', 'activeResellerFlashSale']);
 
         if ($request->search) {
@@ -39,11 +41,13 @@ class ProductController extends Controller
 
         $products = $query->latest()->paginate(24)->withQueryString();
 
-        // ── Active Flash Deals for Top Showcase Shelf (Strictly for Resellers & Admin Website) ──
+        // ── Active Flash Deals for Top Showcase Shelf (Strictly for Resellers & Admin Website with Reseller Price) ──
         $activeFlashIds = FlashSale::active()->forReseller()->pluck('product_id')->unique();
         $sourceProductIds = Product::withoutGlobalScopes()
             ->whereNull('supplier_id')
             ->where('vendor_id', $website->id)
+            ->whereNotNull('reseller_price')
+            ->where('reseller_price', '>', 0)
             ->whereIn('id', $activeFlashIds)
             ->whereNotNull('source_product_id')
             ->pluck('source_product_id');
@@ -55,6 +59,8 @@ class ProductController extends Controller
             ->where('vendor_id', $website->id)
             ->where('status', 'active')
             ->where('stock_qty', '>', 0)
+            ->whereNotNull('reseller_price')
+            ->where('reseller_price', '>', 0)
             ->where(function ($q) use ($allResellerFlashIds) {
                 $q->whereIn('id', $allResellerFlashIds)
                   ->orWhereIn('source_product_id', $allResellerFlashIds);
@@ -63,9 +69,18 @@ class ProductController extends Controller
             ->take(12)
             ->get();
 
-        // Categories strictly for Website store
+        // Categories strictly for Website store with reseller products available
         $categories = Category::withoutGlobalScopes()
             ->where('vendor_id', $website->id)
+            ->whereHas('products', function ($pq) use ($website) {
+                $pq->withoutGlobalScopes()
+                   ->whereNull('supplier_id')
+                   ->where('vendor_id', $website->id)
+                   ->where('status', 'active')
+                   ->where('stock_qty', '>', 0)
+                   ->whereNotNull('reseller_price')
+                   ->where('reseller_price', '>', 0);
+            })
             ->orderBy('name')
             ->get();
 
@@ -73,7 +88,7 @@ class ProductController extends Controller
     }
 
     /**
-     * Show detailed product view strictly for Admin Website products.
+     * Show detailed product view strictly for Admin Website products with reseller price.
      */
     public function show($id)
     {
@@ -83,6 +98,8 @@ class ProductController extends Controller
             ->whereNull('supplier_id')
             ->where('vendor_id', $website->id)
             ->where('status', 'active')
+            ->whereNotNull('reseller_price')
+            ->where('reseller_price', '>', 0)
             ->with(['category', 'subCategory', 'variants', 'vendor', 'activeResellerFlashSale'])
             ->findOrFail($id);
 
@@ -91,6 +108,8 @@ class ProductController extends Controller
             ->where('vendor_id', $website->id)
             ->where('status', 'active')
             ->where('stock_qty', '>', 0)
+            ->whereNotNull('reseller_price')
+            ->where('reseller_price', '>', 0)
             ->where('id', '!=', $product->id)
             ->inRandomOrder()
             ->limit(10)
