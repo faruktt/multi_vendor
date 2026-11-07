@@ -11,10 +11,12 @@ class Category extends Model
 {
     use BelongsToVendor;
 
-    protected $fillable = ['vendor_id', 'parent_id', 'name', 'slug', 'image', 'status', 'show_on_homepage', 'homepage_sort_order'];
+    protected $fillable = ['vendor_id', 'parent_id', 'name', 'slug', 'image', 'status', 'sort_order', 'show_on_homepage', 'homepage_sort_order'];
 
     protected $casts = [
         'show_on_homepage' => 'boolean',
+        'sort_order' => 'integer',
+        'homepage_sort_order' => 'integer',
     ];
 
     public function getImageUrlAttribute(): ?string
@@ -83,6 +85,18 @@ class Category extends Model
     public function subCategories()
     {
         return $this->hasMany(Category::class, 'parent_id');
+    }
+
+    public function scopeActive($query)
+    {
+        return $query->where(function ($q) {
+            $q->whereNull('status')->orWhere('status', 'active');
+        });
+    }
+
+    public function scopeOrdered($query)
+    {
+        return $query->orderBy('sort_order')->orderBy('homepage_sort_order')->orderBy('name');
     }
 
     public function scopeParents($query)

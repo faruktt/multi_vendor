@@ -77,6 +77,24 @@
                            class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50 focus:bg-white transition-colors"
                            placeholder="e.g. Mens Shoes, Electronics, etc.">
                 </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1.5">
+                            Sort Order (Position)
+                        </label>
+                        <input type="number" name="sort_order" value="0" min="0"
+                               class="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50 focus:bg-white transition-colors">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1.5">
+                            Status <span class="text-red-500">*</span>
+                        </label>
+                        <select name="status" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50 focus:bg-white">
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                        </select>
+                    </div>
+                </div>
                 <div>
                     <div class="flex items-center justify-between mb-1">
                         <label class="block text-xs font-bold text-slate-700">
@@ -133,6 +151,20 @@
                         <input type="text" name="name" :value="cat.name" required
                                class="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-amber-500 bg-slate-50 focus:bg-white transition-colors">
                     </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1.5">Sort Order</label>
+                            <input type="number" name="sort_order" :value="cat.sort_order" min="0"
+                                   class="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-amber-500 bg-slate-50 focus:bg-white transition-colors">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1.5">Status</label>
+                            <select name="status" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-amber-500 bg-slate-50 focus:bg-white">
+                                <option value="active" :selected="cat.status === 'active'">Active</option>
+                                <option value="inactive" :selected="cat.status === 'inactive'">Inactive</option>
+                            </select>
+                        </div>
+                    </div>
                     <div>
                         <div class="flex items-center justify-between mb-1">
                             <label class="block text-xs font-bold text-slate-700">
@@ -173,10 +205,12 @@
             <thead class="bg-slate-50 border-b border-slate-100">
                 <tr>
                     <th class="px-3 py-3.5 text-center text-slate-400 text-xs font-bold uppercase w-12">#</th>
+                    <th class="px-3 py-3.5 text-center text-slate-400 text-xs font-bold uppercase w-28">Order</th>
                     <th class="px-4 py-3.5 text-left text-slate-400 text-xs font-bold uppercase w-16">Image</th>
                     <th class="px-4 py-3.5 text-left text-slate-400 text-xs font-bold uppercase">Name</th>
                     <th class="px-4 py-3.5 text-center text-slate-400 text-xs font-bold uppercase">Subcategories</th>
                     <th class="px-4 py-3.5 text-center text-slate-400 text-xs font-bold uppercase">Products</th>
+                    <th class="px-4 py-3.5 text-center text-slate-400 text-xs font-bold uppercase w-28">Status</th>
                     <th class="px-4 py-3.5 text-center text-slate-400 text-xs font-bold uppercase">Homepage</th>
                     <th class="px-4 py-3.5 text-center text-slate-400 text-xs font-bold uppercase w-32">Actions</th>
                 </tr>
@@ -185,6 +219,27 @@
                 @forelse($categories as $index => $cat)
                 <tr class="hover:bg-slate-50/70 transition-colors">
                     <td class="px-3 py-3.5 text-center text-slate-400 text-xs font-medium">{{ $index + 1 }}</td>
+                    <td class="px-3 py-3.5 text-center">
+                        <div class="flex items-center justify-center gap-1">
+                            <form method="POST" action="{{ route('admin.warehouse.categories.reorder', ['warehouse', $cat->id]) }}" class="inline">
+                                @csrf
+                                <input type="hidden" name="direction" value="up">
+                                <button type="submit" title="Move Up" class="w-6 h-6 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-blue-700 flex items-center justify-center text-[10px] transition-colors cursor-pointer" {{ $loop->first ? 'disabled opacity-30 cursor-not-allowed' : '' }}>
+                                    <i class="fas fa-chevron-up"></i>
+                                </button>
+                            </form>
+                            <span class="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-bold text-xs min-w-[28px] text-center">
+                                {{ $cat->sort_order }}
+                            </span>
+                            <form method="POST" action="{{ route('admin.warehouse.categories.reorder', ['warehouse', $cat->id]) }}" class="inline">
+                                @csrf
+                                <input type="hidden" name="direction" value="down">
+                                <button type="submit" title="Move Down" class="w-6 h-6 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-blue-700 flex items-center justify-center text-[10px] transition-colors cursor-pointer" {{ $loop->last ? 'disabled opacity-30 cursor-not-allowed' : '' }}>
+                                    <i class="fas fa-chevron-down"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </td>
                     <td class="px-4 py-3.5">
                         <div class="w-14 h-8 rounded-lg bg-slate-100 border border-slate-200/60 overflow-hidden flex items-center justify-center">
                             @if($cat->image_url)
@@ -220,6 +275,17 @@
                         @else
                             <span class="text-xs text-slate-300 font-mono">—</span>
                         @endif
+                    </td>
+                    <td class="px-4 py-3.5 text-center">
+                        <form method="POST" action="{{ route('admin.warehouse.categories.toggle-status', ['warehouse', $cat->id]) }}" class="inline">
+                            @csrf
+                            <button type="submit"
+                                    title="Click to toggle Active / Inactive"
+                                    class="px-2.5 py-1 rounded-full text-[10.5px] font-bold transition-colors cursor-pointer inline-flex items-center gap-1 {{ $cat->status === 'active' ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200' : 'bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200' }}">
+                                <span class="w-1.5 h-1.5 rounded-full {{ $cat->status === 'active' ? 'bg-emerald-500' : 'bg-rose-500' }}"></span>
+                                <span>{{ $cat->status === 'active' ? 'Active' : 'Inactive' }}</span>
+                            </button>
+                        </form>
                     </td>
                     <td class="px-4 py-3.5 text-center">
                         @if($cat->website_category_id)

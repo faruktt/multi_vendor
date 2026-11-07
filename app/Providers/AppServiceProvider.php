@@ -72,7 +72,17 @@ class AppServiceProvider extends ServiceProvider
                     $view->with('categories', Category::withoutGlobalScopes()
                         ->where('vendor_id', $branch->id)
                         ->whereNull('parent_id')
-                        ->with(['children' => fn($q) => $q->withoutGlobalScopes()->orderBy('name')])
+                        ->where(function ($q) {
+                            $q->whereNull('status')->orWhere('status', 'active');
+                        })
+                        ->with(['children' => fn($q) => $q->withoutGlobalScopes()
+                            ->where(function ($sq) {
+                                $sq->whereNull('status')->orWhere('status', 'active');
+                            })
+                            ->orderBy('sort_order')
+                            ->orderBy('name')
+                        ])
+                        ->orderBy('sort_order')
                         ->orderBy('name')
                         ->get());
                 }

@@ -16,7 +16,13 @@ class ProductController extends Controller
         abort_unless($branch->status === 'active', 404);
 
         $category = $categorySlug
-            ? Category::withoutGlobalScopes()->where('vendor_id', $branch->id)->where('slug', $categorySlug)->firstOrFail()
+            ? Category::withoutGlobalScopes()
+                ->where('vendor_id', $branch->id)
+                ->where('slug', $categorySlug)
+                ->where(function ($q) {
+                    $q->whereNull('status')->orWhere('status', 'active');
+                })
+                ->firstOrFail()
             : null;
 
         $categories = $this->sidebarCategories($branch->id);
@@ -33,6 +39,9 @@ class ProductController extends Controller
             $catIds = [(int) $category->id];
             $childIds = Category::withoutGlobalScopes()
                 ->where('parent_id', $category->id)
+                ->where(function ($q) {
+                    $q->whereNull('status')->orWhere('status', 'active');
+                })
                 ->pluck('id')
                 ->map(fn($id) => (int) $id)
                 ->all();
@@ -190,6 +199,14 @@ class ProductController extends Controller
             ->where(function ($query) {
                 $query->whereNull('supplier_id')->orWhere('approval_status', 'approved');
             })
+            ->where(function ($query) {
+                $query->whereNull('category_id')
+                      ->orWhereHas('category', function ($catQ) {
+                          $catQ->where(function ($subQ) {
+                              $subQ->whereNull('status')->orWhere('status', 'active');
+                          });
+                      });
+            })
             ->where(function ($query) use ($q) {
                 $query->where('name', 'like', "%{$q}%")
                       ->orWhere('sku', 'like', "%{$q}%")
@@ -232,7 +249,17 @@ class ProductController extends Controller
         return Category::withoutGlobalScopes()
             ->where('vendor_id', $vendorId)
             ->whereNull('parent_id')
-            ->with(['children' => fn($q) => $q->withoutGlobalScopes()->orderBy('name')])
+            ->where(function ($q) {
+                $q->whereNull('status')->orWhere('status', 'active');
+            })
+            ->with(['children' => fn($q) => $q->withoutGlobalScopes()
+                ->where(function ($sq) {
+                    $sq->whereNull('status')->orWhere('status', 'active');
+                })
+                ->orderBy('sort_order')
+                ->orderBy('name')
+            ])
+            ->orderBy('sort_order')
             ->orderBy('name')
             ->get();
     }

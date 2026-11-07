@@ -38,6 +38,8 @@ class CategoryController extends Controller
                 return $r->parent_id && ($r->parent_id === $representative->id || ($r->parent && $r->parent->name === $representative->name));
             })->groupBy('name')->count();
 
+            $sortOrder = (int) ($representative->sort_order ?? $representative->homepage_sort_order ?? 0);
+
             return (object) [
                 'id'                  => $representative->id,
                 'name'                => $representative->name,
@@ -49,8 +51,9 @@ class CategoryController extends Controller
                 'products_count'      => $group->sum('products_count'),
                 'branch_names'        => $group->pluck('vendor.name')->filter()->unique()->values(),
                 'website_category_id' => $websiteRow?->id,
-                'show_on_homepage'    => $websiteRow?->show_on_homepage,
+                'show_on_homepage'    => $websiteRow?->show_on_homepage ?? true,
                 'status'              => $representative->status ?? 'active',
+                'sort_order'          => $sortOrder,
             ];
         })->values();
 
@@ -59,7 +62,11 @@ class CategoryController extends Controller
             $categories = $categories->filter(fn($c) => str_contains(mb_strtolower($c->name), $s))->values();
         }
 
-        $categories = $categories->sortBy('name')->values();
+        if ($request->filled('status')) {
+            $categories = $categories->filter(fn($c) => $c->status === $request->status)->values();
+        }
+
+        $categories = $categories->sortBy(fn($c) => [$c->sort_order, $c->name])->values();
 
         // Parent categories for dropdown (just in case)
         $parentCategories = $categories;
@@ -67,13 +74,16 @@ class CategoryController extends Controller
         return view('warehouse.categories.index', compact('branch', 'categories', 'parentCategories'));
     }
 
-    public function store(Request $request, Vendor $branch)
+    public function store(Request $request, ?Vendor $branch = null)
     {
+        $branch = $branch ?? Vendor::warehouse();
+
         $request->validate([
-            'name'      => 'required|string|max:255',
-            'parent_id' => 'nullable|integer',
-            'image'     => 'nullable|image|max:10240',
-            'status'    => 'nullable|string|in:active,inactive',
+            'name'       => 'required|string|max:255',
+            'parent_id'  => 'nullable|integer',
+            'image'      => 'nullable|image|max:10240',
+            'status'     => 'nullable|string|in:active,inactive',
+            'sort_order' => 'nullable|integer',
         ]);
 
         $parentId = $request->filled('parent_id') ? (int)$request->parent_id : null;
@@ -95,6 +105,8 @@ class CategoryController extends Controller
             : null;
 
         $status = $request->input('status', 'active');
+        $maxOrder = Category::withoutGlobalScopes()->whereNull('parent_id')->max('sort_order') ?? 0;
+        $sortOrder = $request->filled('sort_order') ? (int) $request->input('sort_order') : ($maxOrder + 1);
 
         // Resolve parent_id for branch
         $branchParentId = null;
@@ -107,10 +119,12 @@ class CategoryController extends Controller
         }
 
         $branch->categories()->create([
-            'name'      => $request->name,
-            'parent_id' => $branchParentId,
-            'image'     => $imagePath,
-            'status'    => $status,
+            'name'                => $request->name,
+            'parent_id'           => $branchParentId,
+            'image'               => $imagePath,
+            'status'              => $status,
+            'sort_order'          => $sortOrder,
+            'homepage_sort_order' => $sortOrder,
         ]);
 
         $otherVendors = Vendor::where('id', '!=', $branch->id)->where('status', 'active')->get();
@@ -126,7 +140,12 @@ class CategoryController extends Controller
 
             $otherVendor->categories()->firstOrCreate(
                 ['name' => $request->name, 'parent_id' => $otherParentId],
-                ['image' => $imagePath, 'status' => $status]
+                [
+                    'image'               => $imagePath,
+                    'status'              => $status,
+                    'sort_order'          => $sortOrder,
+                    'homepage_sort_order' => $sortOrder,
+                ]
             );
         }
 
@@ -135,13 +154,19 @@ class CategoryController extends Controller
     }
 
     /** Renames/re-images every vendor's row sharing the old name — keeps the whole system in sync. */
-    public function update(Request $request, Vendor $branch, Category $category)
+    public function update(Request $request, $branch, ?Category $category = null)
     {
+        if ($branch instanceof Category && $category === null) {
+            $category = $branch;
+            $branch = Vendor::warehouse();
+        }
+
         $request->validate([
-            'name'      => 'required|string|max:255',
-            'parent_id' => 'nullable|integer',
-            'image'     => 'nullable|image|max:10240',
-            'status'    => 'nullable|string|in:active,inactive',
+            'name'       => 'required|string|max:255',
+            'parent_id'  => 'nullable|integer',
+            'image'      => 'nullable|image|max:10240',
+            'status'     => 'nullable|string|in:active,inactive',
+            'sort_order' => 'nullable|integer',
         ]);
 
         $siblings = Category::withoutGlobalScopes()->where('name', $category->name)->get();
@@ -157,6 +182,7 @@ class CategoryController extends Controller
         $parentId = $request->filled('parent_id') ? (int)$request->parent_id : null;
         $parentCat = $parentId ? Category::withoutGlobalScopes()->find($parentId) : null;
         $status = $request->input('status', $category->status ?? 'active');
+        $sortOrder = $request->filled('sort_order') ? (int) $request->input('sort_order') : ($category->sort_order ?? 0);
 
         foreach ($siblings as $sibling) {
             $siblingParentId = null;
@@ -169,10 +195,12 @@ class CategoryController extends Controller
             }
 
             $sibling->update([
-                'name'      => $request->name,
-                'parent_id' => $siblingParentId,
-                'image'     => $imagePath,
-                'status'    => $status,
+                'name'                => $request->name,
+                'parent_id'           => $siblingParentId,
+                'image'               => $imagePath,
+                'status'              => $status,
+                'sort_order'          => $sortOrder,
+                'homepage_sort_order' => $sortOrder,
             ]);
         }
 
@@ -180,8 +208,13 @@ class CategoryController extends Controller
     }
 
     /** Deletes every vendor's row sharing this name and cascades to its subcategories. */
-    public function destroy(Vendor $branch, Category $category)
+    public function destroy($branch, ?Category $category = null)
     {
+        if ($branch instanceof Category && $category === null) {
+            $category = $branch;
+            $branch = Vendor::warehouse();
+        }
+
         $siblings = Category::withoutGlobalScopes()->where('name', $category->name)->get();
 
         // Also delete subcategories if this was a parent category
@@ -198,6 +231,106 @@ class CategoryController extends Controller
 
         return back()->with('success', 'Category removed everywhere it was used.');
     }
+
+    /** Toggles status between active and inactive across all vendors */
+    public function toggleStatus($branch, ?Category $category = null)
+    {
+        if ($branch instanceof Category && $category === null) {
+            $category = $branch;
+            $branch = Vendor::warehouse();
+        }
+
+        $newStatus = (($category->status ?? 'active') === 'inactive') ? 'active' : 'inactive';
+
+        Category::withoutGlobalScopes()
+            ->where('name', $category->name)
+            ->update(['status' => $newStatus]);
+
+        return back()->with('success', "Category '{$category->name}' status is now {$newStatus}.");
+    }
+
+    /** Reorders categories sequentially up or down across all vendors */
+    public function reorder(Request $request, $branch, ?Category $category = null)
+    {
+        if ($branch instanceof Category && $category === null) {
+            $category = $branch;
+            $branch = Vendor::warehouse();
+        }
+
+        $direction = $request->input('direction') === 'up' ? 'up' : 'down';
+
+        // Get distinct parent categories ordered by sort_order
+        $groups = Category::withoutGlobalScopes()
+            ->whereNull('parent_id')
+            ->select('name', \Illuminate\Support\Facades\DB::raw('MIN(id) as rep_id'), \Illuminate\Support\Facades\DB::raw('COALESCE(MAX(sort_order), MAX(homepage_sort_order), 0) as current_order'))
+            ->groupBy('name')
+            ->orderBy('current_order')
+            ->orderBy('name')
+            ->get()
+            ->values();
+
+        $list = [];
+        foreach ($groups as $idx => $g) {
+            $list[] = ['name' => $g->name, 'order' => $idx];
+        }
+
+        $currentIndex = null;
+        foreach ($list as $idx => $item) {
+            if ($item['name'] === $category->name) {
+                $currentIndex = $idx;
+                break;
+            }
+        }
+
+        if ($currentIndex !== null) {
+            $swapIndex = ($direction === 'up') ? $currentIndex - 1 : $currentIndex + 1;
+            if ($swapIndex >= 0 && $swapIndex < count($list)) {
+                $tmp = $list[$currentIndex];
+                $list[$currentIndex] = $list[$swapIndex];
+                $list[$swapIndex] = $tmp;
+            }
+        }
+
+        foreach ($list as $newIdx => $item) {
+            Category::withoutGlobalScopes()
+                ->where('name', $item['name'])
+                ->update([
+                    'sort_order'          => $newIdx,
+                    'homepage_sort_order' => $newIdx,
+                ]);
+        }
+
+        return back()->with('success', "Category order updated.");
+    }
+
+    /** Direct update of sort_order from form/table input */
+    public function updateOrderDirect(Request $request, $branch, ?Category $category = null)
+    {
+        if ($branch instanceof Category && $category === null) {
+            $category = $branch;
+            $branch = Vendor::warehouse();
+        }
+
+        $request->validate(['sort_order' => 'required|integer|min:0']);
+        $newOrder = (int) $request->input('sort_order');
+
+        Category::withoutGlobalScopes()
+            ->where('name', $category->name)
+            ->update([
+                'sort_order'          => $newOrder,
+                'homepage_sort_order' => $newOrder,
+            ]);
+
+        return back()->with('success', "Sort order for '{$category->name}' set to {$newOrder}.");
+    }
+
+    // Central action wrappers (when called directly without {branch} in route)
+    public function storeCentral(Request $request) { return $this->store($request, Vendor::warehouse()); }
+    public function updateCentral(Request $request, Category $category) { return $this->update($request, Vendor::warehouse(), $category); }
+    public function destroyCentral(Category $category) { return $this->destroy(Vendor::warehouse(), $category); }
+    public function toggleStatusCentral(Category $category) { return $this->toggleStatus(Vendor::warehouse(), $category); }
+    public function reorderCentral(Request $request, Category $category) { return $this->reorder($request, Vendor::warehouse(), $category); }
+    public function updateOrderDirectCentral(Request $request, Category $category) { return $this->updateOrderDirect($request, Vendor::warehouse(), $category); }
 
     /** Only meaningful on the Website's own row — that's the one the storefront actually reads. */
     public function toggleHomepage(Vendor $branch, Category $category)

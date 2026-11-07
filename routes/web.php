@@ -323,6 +323,13 @@ Route::prefix('admin')->group(function () {
             Route::post('/returns/bulk-process',           [SaleReturnController::class, 'bulkProcess'])->name('returns.bulk-process');
             Route::get('/all-products',   [AdminDataController::class, 'allProducts'])->name('all-products');
             Route::get('/all-categories',    [AdminDataController::class, 'allCategories'])->name('all-categories');
+            Route::post('/all-categories',   [WarehouseCategoryController::class, 'storeCentral'])->name('categories.central-store');
+            Route::put('/all-categories/{category}', [WarehouseCategoryController::class, 'updateCentral'])->name('categories.central-update');
+            Route::delete('/all-categories/{category}', [WarehouseCategoryController::class, 'destroyCentral'])->name('categories.central-destroy');
+            Route::post('/all-categories/{category}/toggle-status', [WarehouseCategoryController::class, 'toggleStatusCentral'])->name('categories.central-toggle-status');
+            Route::post('/all-categories/{category}/reorder', [WarehouseCategoryController::class, 'reorderCentral'])->name('categories.central-reorder');
+            Route::post('/all-categories/{category}/update-order', [WarehouseCategoryController::class, 'updateOrderDirectCentral'])->name('categories.central-update-order');
+
             Route::get('/all-subcategories', [AdminDataController::class, 'allSubcategories'])->name('all-subcategories');
             Route::get('/all-purchases',  [AdminDataController::class, 'allPurchases'])->name('all-purchases');
             Route::get('/all-suppliers',  [AdminDataController::class, 'allSuppliers'])->name('all-suppliers');
@@ -669,6 +676,9 @@ Route::prefix('admin')->group(function () {
                 Route::post('/categories',                               [WarehouseCategoryController::class, 'store'])->name('categories.store');
                 Route::put('/categories/{category}',                     [WarehouseCategoryController::class, 'update'])->name('categories.update');
                 Route::delete('/categories/{category}',                  [WarehouseCategoryController::class, 'destroy'])->name('categories.destroy');
+                Route::post('/categories/{category}/toggle-status',      [WarehouseCategoryController::class, 'toggleStatus'])->name('categories.toggle-status');
+                Route::post('/categories/{category}/reorder',            [WarehouseCategoryController::class, 'reorder'])->name('categories.reorder');
+                Route::post('/categories/{category}/update-order',        [WarehouseCategoryController::class, 'updateOrderDirect'])->name('categories.update-order');
                 Route::post('/categories/{category}/toggle-homepage',    [WarehouseCategoryController::class, 'toggleHomepage'])->name('categories.toggle-homepage');
                 Route::post('/categories/{category}/reorder-homepage',   [WarehouseCategoryController::class, 'reorderHomepage'])->name('categories.reorder-homepage');
 
