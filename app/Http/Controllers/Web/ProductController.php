@@ -27,7 +27,7 @@ class ProductController extends Controller
         if ($request->stock === 'out')  $query->where('stock_qty', '<=', 0);
 
         $products   = $query->with(['category', 'subCategory'])->paginate(20)->withQueryString();
-        $categories = $branch->categories()->whereNull('parent_id')->with(['children' => fn($q) => $q->orderBy('name')])->orderBy('name')->get();
+        $categories = Category::active()->ordered()->with(['subCategories' => fn($q) => $q->active()->ordered(), 'children' => fn($q) => $q->active()->ordered()])->get();
 
         $products->getCollection()->transform(function ($p) {
             $p->image_url = $p->first_image_url;
@@ -39,30 +39,12 @@ class ProductController extends Controller
 
     private function ensureBranchCategories(Vendor $branch): void
     {
-        if ($branch->categories()->count() === 0) {
-            $warehouse = Vendor::where('is_warehouse', true)->first();
-            if ($warehouse) {
-                $whCategories = Category::withoutGlobalScopes()->where('vendor_id', $warehouse->id)->whereNull('parent_id')->with('children')->get();
-                foreach ($whCategories as $cat) {
-                    $c = Category::withoutGlobalScopes()->firstOrCreate(
-                        ['vendor_id' => $branch->id, 'name' => $cat->name, 'parent_id' => null],
-                        ['image' => $cat->image, 'status' => $cat->status]
-                    );
-                    foreach ($cat->children as $sub) {
-                        Category::withoutGlobalScopes()->firstOrCreate(
-                            ['vendor_id' => $branch->id, 'name' => $sub->name, 'parent_id' => $c->id],
-                            ['image' => $sub->image, 'status' => $sub->status]
-                        );
-                    }
-                }
-            }
-        }
+        // No-op: categories are now global across all branches, resellers and suppliers
     }
 
     public function create(Vendor $branch)
     {
-        $this->ensureBranchCategories($branch);
-        $categories = $branch->categories()->whereNull('parent_id')->with(['children' => fn($q) => $q->orderBy('name')])->orderBy('name')->get();
+        $categories = Category::active()->ordered()->with(['subCategories' => fn($q) => $q->active()->ordered(), 'children' => fn($q) => $q->active()->ordered()])->get();
         $colors     = Color::orderBy('sort_order')->orderBy('name')->get();
         $sizes      = Size::orderBy('sort_order')->orderBy('name')->get();
         return view('products.form', compact('branch', 'categories', 'colors', 'sizes'));
@@ -97,8 +79,8 @@ class ProductController extends Controller
         $this->ensureBranchCategories($branch);
         $request->validate([
             'name'              => 'required|string|max:255',
-            'category_id'       => ['required', Rule::exists('categories', 'id')->where('vendor_id', $branch->id)],
-            'sub_category_id'   => ['nullable', Rule::exists('categories', 'id')->where('vendor_id', $branch->id)],
+            'category_id'       => 'required|exists:categories,id',
+            'sub_category_id'   => 'nullable|exists:sub_categories,id',
             'price'             => 'required|numeric|min:0',
             'old_price'         => 'nullable|numeric|min:0',
             'cost_price'        => 'required|numeric|min:0',
@@ -178,14 +160,10 @@ class ProductController extends Controller
 
     public function edit(Vendor $branch, Product $product)
     {
-        $categories = $branch->categories()->whereNull('parent_id')->with(['children' => fn($q) => $q->orderBy('name')])->orderBy('name')->get();
+        $categories = Category::active()->ordered()->with(['subCategories' => fn($q) => $q->active()->ordered(), 'children' => fn($q) => $q->active()->ordered()])->get();
         $colors     = Color::orderBy('sort_order')->orderBy('name')->get();
         $sizes      = Size::orderBy('sort_order')->orderBy('name')->get();
         $product->load(['variants', 'category', 'subCategory']);
-        if ($product->category && $product->category->parent_id && !$product->sub_category_id) {
-            $product->sub_category_id = $product->category_id;
-            $product->category_id = $product->category->parent_id;
-        }
         return view('products.form', compact('branch', 'categories', 'product', 'colors', 'sizes'));
     }
 
@@ -193,8 +171,8 @@ class ProductController extends Controller
     {
         $request->validate([
             'name'              => 'required|string|max:255',
-            'category_id'       => ['required', Rule::exists('categories', 'id')->where('vendor_id', $branch->id)],
-            'sub_category_id'   => ['nullable', Rule::exists('categories', 'id')->where('vendor_id', $branch->id)],
+            'category_id'       => 'required|exists:categories,id',
+            'sub_category_id'   => 'nullable|exists:sub_categories,id',
             'price'             => 'required|numeric|min:0',
             'old_price'         => 'nullable|numeric|min:0',
             'cost_price'        => 'required|numeric|min:0',

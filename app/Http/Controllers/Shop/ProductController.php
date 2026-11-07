@@ -16,16 +16,12 @@ class ProductController extends Controller
         abort_unless($branch->status === 'active', 404);
 
         $category = $categorySlug
-            ? Category::withoutGlobalScopes()
-                ->where('vendor_id', $branch->id)
+            ? Category::active()
                 ->where('slug', $categorySlug)
-                ->where(function ($q) {
-                    $q->whereNull('status')->orWhere('status', 'active');
-                })
                 ->firstOrFail()
             : null;
 
-        $categories = $this->sidebarCategories($branch->id);
+        $categories = $this->sidebarCategories();
 
         $query = Product::withoutGlobalScopes()
             ->with(['category', 'supplier'])
@@ -36,21 +32,17 @@ class ProductController extends Controller
             });
 
         if ($category) {
-            $catIds = [(int) $category->id];
-            $childIds = Category::withoutGlobalScopes()
-                ->where('parent_id', $category->id)
-                ->where(function ($q) {
-                    $q->whereNull('status')->orWhere('status', 'active');
-                })
+            $childIds = \App\Models\SubCategory::where('category_id', $category->id)
+                ->active()
                 ->pluck('id')
                 ->map(fn($id) => (int) $id)
                 ->all();
-            if (!empty($childIds)) {
-                $catIds = array_values(array_unique(array_merge($catIds, $childIds)));
-            }
-            $query->where(function ($q) use ($catIds) {
-                $q->whereIn('category_id', $catIds)
-                  ->orWhereIn('sub_category_id', $catIds);
+
+            $query->where(function ($q) use ($category, $childIds) {
+                $q->where('category_id', $category->id);
+                if (!empty($childIds)) {
+                    $q->orWhereIn('sub_category_id', $childIds);
+                }
             });
         }
 
@@ -118,7 +110,7 @@ class ProductController extends Controller
             ->limit(12)
             ->get();
 
-        $categories = $this->sidebarCategories($branch->id);
+        $categories = $this->sidebarCategories();
 
         return view('shop.products.show', compact('branch', 'product', 'related', 'categories'));
     }
@@ -148,7 +140,7 @@ class ProductController extends Controller
         abort_unless($branch->status === 'active', 404);
         abort_unless($supplier->isActive(), 404);
 
-        $categories = $this->sidebarCategories($branch->id);
+        $categories = $this->sidebarCategories();
 
         $query = Product::withoutGlobalScopes()
             ->with('category')
@@ -244,23 +236,14 @@ class ProductController extends Controller
         ]);
     }
 
-    private function sidebarCategories(int $vendorId)
+    private function sidebarCategories()
     {
-        return Category::withoutGlobalScopes()
-            ->where('vendor_id', $vendorId)
-            ->whereNull('parent_id')
-            ->where(function ($q) {
-                $q->whereNull('status')->orWhere('status', 'active');
-            })
-            ->with(['children' => fn($q) => $q->withoutGlobalScopes()
-                ->where(function ($sq) {
-                    $sq->whereNull('status')->orWhere('status', 'active');
-                })
-                ->orderBy('sort_order')
-                ->orderBy('name')
+        return Category::active()
+            ->with([
+                'subCategories' => fn($q) => $q->active()->ordered(),
+                'children' => fn($q) => $q->active()->ordered(),
             ])
-            ->orderBy('sort_order')
-            ->orderBy('name')
+            ->ordered()
             ->get();
     }
 }

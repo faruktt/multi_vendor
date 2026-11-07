@@ -22,37 +22,18 @@ class HomeController extends Controller
         $branch = Vendor::onlineStore();
         abort_unless($branch->status === 'active', 404);
 
-        $categories = Category::withoutGlobalScopes()
-            ->where('vendor_id', $branch->id)
-            ->whereNull('parent_id')
-            ->where(function ($q) {
-                $q->whereNull('status')->orWhere('status', 'active');
-            })
-            ->with(['children' => fn($q) => $q->withoutGlobalScopes()
-                ->where(function ($sq) {
-                    $sq->whereNull('status')->orWhere('status', 'active');
-                })
-                ->orderBy('sort_order')
-                ->orderBy('name')
-            ])
-            ->orderBy('sort_order')
-            ->orderBy('name')
+        $categories = Category::active()
+            ->with(['subCategories' => fn($q) => $q->active()->ordered(), 'children' => fn($q) => $q->active()->ordered()])
+            ->ordered()
             ->get();
 
         // Balanced random feed across various suppliers and admin products
         $bestSelling = ProductFeedService::getBalancedFeed($branch, limit: 8);
         $newArrivals = ProductFeedService::getBalancedFeed($branch, limit: 8);
 
-        $homepageCategories = Category::withoutGlobalScopes()
-            ->where('vendor_id', $branch->id)
-            ->whereNull('parent_id')
-            ->where(function ($q) {
-                $q->whereNull('status')->orWhere('status', 'active');
-            })
+        $homepageCategories = Category::active()
             ->where('show_on_homepage', true)
-            ->orderBy('sort_order')
-            ->orderBy('homepage_sort_order')
-            ->orderBy('name')
+            ->ordered()
             ->get();
 
         $categoryShelves = $homepageCategories->map(function ($category) use ($branch) {

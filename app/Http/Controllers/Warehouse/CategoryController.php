@@ -4,71 +4,35 @@ namespace App\Http\Controllers\Warehouse;
 
 use App\Http\Controllers\Controller;
 use App\Models\Category;
+use App\Models\SubCategory;
 use App\Models\Vendor;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class CategoryController extends Controller
 {
     /**
-     * Main Categories Management (Categories where parent_id is NULL)
-     * Every vendor still has its own physical row for category_id relationships,
-     * but they are kept in sync system-wide from here.
+     * Main Categories Management (Global, no branch duplication)
      */
-    public function index(Request $request, Vendor $branch)
+    public function index(Request $request, ?Vendor $branch = null)
     {
-        $onlineStoreId = Vendor::where('is_online_store', true)->value('id');
+        $branch = $branch ?? Vendor::warehouse();
 
-        $rows = Category::withoutGlobalScopes()
-            ->withCount('products')
-            ->with(['vendor', 'parent'])
-            ->get();
-
-        // Main Categories (parent_id is null)
-        $parentRows = $rows->whereNull('parent_id');
-
-        $categories = $parentRows->groupBy('name')->map(function ($group) use ($branch, $onlineStoreId, $rows) {
-            $representative = $group->firstWhere('vendor_id', $branch->id) ?? $group->first();
-            $websiteRow     = $onlineStoreId ? $group->firstWhere('vendor_id', $onlineStoreId) : null;
-
-            // Count subcategories under this main category
-            $subCount = $rows->filter(function ($r) use ($representative) {
-                return $r->parent_id && ($r->parent_id === $representative->id || ($r->parent && $r->parent->name === $representative->name));
-            })->groupBy('name')->count();
-
-            $sortOrder = (int) ($representative->sort_order ?? $representative->homepage_sort_order ?? 0);
-
-            return (object) [
-                'id'                  => $representative->id,
-                'name'                => $representative->name,
-                'parent_id'           => null,
-                'parent_name'         => null,
-                'is_subcategory'      => false,
-                'subcategories_count' => $subCount,
-                'image_url'           => $representative->image ? Storage::disk('uploads')->url($representative->image) : null,
-                'products_count'      => $group->sum('products_count'),
-                'branch_names'        => $group->pluck('vendor.name')->filter()->unique()->values(),
-                'website_category_id' => $websiteRow?->id,
-                'show_on_homepage'    => $websiteRow?->show_on_homepage ?? true,
-                'status'              => $representative->status ?? 'active',
-                'sort_order'          => $sortOrder,
-            ];
-        })->values();
+        $query = Category::withCount(['products', 'subCategories']);
 
         if ($request->filled('search')) {
-            $s = mb_strtolower(trim($request->search));
-            $categories = $categories->filter(fn($c) => str_contains(mb_strtolower($c->name), $s))->values();
+            $s = trim($request->search);
+            $query->where('name', 'like', "%{$s}%");
         }
 
         if ($request->filled('status')) {
-            $categories = $categories->filter(fn($c) => $c->status === $request->status)->values();
+            $query->where('status', $request->status);
         }
 
-        $categories = $categories->sortBy(fn($c) => [$c->sort_order, $c->name])->values();
-
-        // Parent categories for dropdown (just in case)
+        $categories = $query->orderBy('sort_order')->orderBy('name')->get();
         $parentCategories = $categories;
 
         return view('warehouse.categories.index', compact('branch', 'categories', 'parentCategories'));
@@ -76,511 +40,298 @@ class CategoryController extends Controller
 
     public function store(Request $request, ?Vendor $branch = null)
     {
-        $branch = $branch ?? Vendor::warehouse();
-
         $request->validate([
-            'name'       => 'required|string|max:255',
-            'parent_id'  => 'nullable|integer',
+            'name'       => 'required|string|max:255|unique:categories,name',
             'image'      => 'nullable|image|max:10240',
             'status'     => 'nullable|string|in:active,inactive',
             'sort_order' => 'nullable|integer',
         ]);
-
-        $parentId = $request->filled('parent_id') ? (int)$request->parent_id : null;
-        $parentCat = $parentId ? Category::withoutGlobalScopes()->find($parentId) : null;
-
-        // Check duplicate name within same parent level
-        $existsQuery = Category::withoutGlobalScopes()->where('name', $request->name);
-        if ($parentCat) {
-            $parentNames = [$parentCat->name];
-            $parentIds = Category::withoutGlobalScopes()->whereIn('name', $parentNames)->pluck('id');
-            $exists = $existsQuery->whereIn('parent_id', $parentIds)->exists();
-        } else {
-            $exists = $existsQuery->whereNull('parent_id')->exists();
-        }
-        abort_if($exists, 422, 'A category or subcategory with this name already exists.');
 
         $imagePath = $request->hasFile('image')
             ? $request->file('image')->store('categories', 'uploads')
             : null;
 
         $status = $request->input('status', 'active');
-        $maxOrder = Category::withoutGlobalScopes()->whereNull('parent_id')->max('sort_order') ?? 0;
+        $maxOrder = Category::max('sort_order') ?? 0;
         $sortOrder = $request->filled('sort_order') ? (int) $request->input('sort_order') : ($maxOrder + 1);
 
-        // Resolve parent_id for branch
-        $branchParentId = null;
-        if ($parentCat) {
-            $branchParent = Category::withoutGlobalScopes()
-                ->where('vendor_id', $branch->id)
-                ->where('name', $parentCat->name)
-                ->first();
-            $branchParentId = $branchParent?->id ?? $parentCat->id;
+        Category::create([
+            'name'                => trim($request->name),
+            'image'               => $imagePath,
+            'status'              => $status,
+            'sort_order'          => $sortOrder,
+            'homepage_sort_order' => $sortOrder,
+            'show_on_homepage'    => true,
+        ]);
+
+        return back()->with('success', 'Category added successfully.');
+    }
+
+    public function update(Request $request, $branch, $category = null)
+    {
+        $category = $this->resolveCategory($branch, $category);
+
+        $request->validate([
+            'name'       => 'required|string|max:255|unique:categories,name,' . $category->id,
+            'image'      => 'nullable|image|max:10240',
+            'status'     => 'nullable|string|in:active,inactive',
+            'sort_order' => 'nullable|integer',
+        ]);
+
+        $imagePath = $category->image;
+        if ($request->hasFile('image')) {
+            if ($imagePath) Storage::disk('uploads')->delete($imagePath);
+            $imagePath = $request->file('image')->store('categories', 'uploads');
         }
 
-        $branch->categories()->create([
-            'name'                => $request->name,
-            'parent_id'           => $branchParentId,
+        $status = $request->input('status', $category->status ?? 'active');
+        $sortOrder = $request->filled('sort_order') ? (int) $request->input('sort_order') : ($category->sort_order ?? 0);
+
+        $category->update([
+            'name'                => trim($request->name),
             'image'               => $imagePath,
             'status'              => $status,
             'sort_order'          => $sortOrder,
             'homepage_sort_order' => $sortOrder,
         ]);
 
-        $otherVendors = Vendor::where('id', '!=', $branch->id)->where('status', 'active')->get();
-        foreach ($otherVendors as $otherVendor) {
-            $otherParentId = null;
-            if ($parentCat) {
-                $otherParent = Category::withoutGlobalScopes()
-                    ->where('vendor_id', $otherVendor->id)
-                    ->where('name', $parentCat->name)
-                    ->first();
-                $otherParentId = $otherParent?->id ?? $branchParentId;
-            }
-
-            $otherVendor->categories()->firstOrCreate(
-                ['name' => $request->name, 'parent_id' => $otherParentId],
-                [
-                    'image'               => $imagePath,
-                    'status'              => $status,
-                    'sort_order'          => $sortOrder,
-                    'homepage_sort_order' => $sortOrder,
-                ]
-            );
-        }
-
-        $msg = $parentCat ? 'Subcategory added successfully under ' . $parentCat->name . '.' : 'Category added successfully.';
-        return back()->with('success', $msg);
+        return back()->with('success', 'Category updated successfully.');
     }
 
-    /** Renames/re-images every vendor's row sharing the old name — keeps the whole system in sync. */
-    public function update(Request $request, $branch, ?Category $category = null)
+    public function destroy($branch, $category = null)
     {
-        if ($branch instanceof Category && $category === null) {
-            $category = $branch;
-            $branch = Vendor::warehouse();
+        $category = $this->resolveCategory($branch, $category);
+
+        if ($category->image) {
+            Storage::disk('uploads')->delete($category->image);
         }
 
-        $request->validate([
-            'name'       => 'required|string|max:255',
-            'parent_id'  => 'nullable|integer',
-            'image'      => 'nullable|image|max:10240',
-            'status'     => 'nullable|string|in:active,inactive',
-            'sort_order' => 'nullable|integer',
-        ]);
-
-        $siblings = Category::withoutGlobalScopes()->where('name', $category->name)->get();
-
-        $imagePath = $category->image;
-        if ($request->hasFile('image')) {
-            foreach ($siblings as $sibling) {
-                if ($sibling->image) Storage::disk('uploads')->delete($sibling->image);
-            }
-            $imagePath = $request->file('image')->store('categories', 'uploads');
+        // Subcategories delete cascade automatically via foreign key or model
+        foreach ($category->subCategories as $sub) {
+            if ($sub->image) Storage::disk('uploads')->delete($sub->image);
+            $sub->delete();
         }
 
-        $parentId = $request->filled('parent_id') ? (int)$request->parent_id : null;
-        $parentCat = $parentId ? Category::withoutGlobalScopes()->find($parentId) : null;
-        $status = $request->input('status', $category->status ?? 'active');
-        $sortOrder = $request->filled('sort_order') ? (int) $request->input('sort_order') : ($category->sort_order ?? 0);
+        $category->delete();
 
-        foreach ($siblings as $sibling) {
-            $siblingParentId = null;
-            if ($parentCat) {
-                $sParent = Category::withoutGlobalScopes()
-                    ->where('vendor_id', $sibling->vendor_id)
-                    ->where('name', $parentCat->name)
-                    ->first();
-                $siblingParentId = $sParent?->id ?? $parentId;
-            }
-
-            $sibling->update([
-                'name'                => $request->name,
-                'parent_id'           => $siblingParentId,
-                'image'               => $imagePath,
-                'status'              => $status,
-                'sort_order'          => $sortOrder,
-                'homepage_sort_order' => $sortOrder,
-            ]);
-        }
-
-        return back()->with('success', 'Category updated everywhere it\'s used.');
+        return back()->with('success', 'Category and its subcategories removed successfully.');
     }
 
-    /** Deletes every vendor's row sharing this name and cascades to its subcategories. */
-    public function destroy($branch, ?Category $category = null)
+    public function toggleStatus($branch, $category = null)
     {
-        if ($branch instanceof Category && $category === null) {
-            $category = $branch;
-            $branch = Vendor::warehouse();
-        }
+        $category = $this->resolveCategory($branch, $category);
 
-        $siblings = Category::withoutGlobalScopes()->where('name', $category->name)->get();
+        $newStatus = ($category->status === 'inactive') ? 'active' : 'inactive';
+        $category->update(['status' => $newStatus]);
 
-        // Also delete subcategories if this was a parent category
-        $childCategories = Category::withoutGlobalScopes()->whereIn('parent_id', $siblings->pluck('id'))->get();
-        foreach ($childCategories as $child) {
-            if ($child->image) Storage::disk('uploads')->delete($child->image);
-            $child->delete();
-        }
-
-        foreach ($siblings as $sibling) {
-            if ($sibling->image) Storage::disk('uploads')->delete($sibling->image);
-            $sibling->delete();
-        }
-
-        return back()->with('success', 'Category removed everywhere it was used.');
+        return back()->with('success', "Category '{$category->name}' status changed to " . ucfirst($newStatus) . ".");
     }
 
-    /** Toggles status between active and inactive across all vendors */
-    public function toggleStatus($branch, ?Category $category = null)
+    public function reorder(Request $request, $branch, $category = null)
     {
-        if ($branch instanceof Category && $category === null) {
-            $category = $branch;
-            $branch = Vendor::warehouse();
-        }
-
-        $newStatus = (($category->status ?? 'active') === 'inactive') ? 'active' : 'inactive';
-
-        Category::withoutGlobalScopes()
-            ->where('name', $category->name)
-            ->update(['status' => $newStatus]);
-
-        return back()->with('success', "Category '{$category->name}' status is now {$newStatus}.");
-    }
-
-    /** Reorders categories sequentially up or down across all vendors */
-    public function reorder(Request $request, $branch, ?Category $category = null)
-    {
-        if ($branch instanceof Category && $category === null) {
-            $category = $branch;
-            $branch = Vendor::warehouse();
-        }
-
+        $category = $this->resolveCategory($branch, $category);
         $direction = $request->input('direction') === 'up' ? 'up' : 'down';
 
-        // Get distinct parent categories ordered by sort_order
-        $groups = Category::withoutGlobalScopes()
-            ->whereNull('parent_id')
-            ->select('name', \Illuminate\Support\Facades\DB::raw('MIN(id) as rep_id'), \Illuminate\Support\Facades\DB::raw('COALESCE(MAX(sort_order), MAX(homepage_sort_order), 0) as current_order'))
-            ->groupBy('name')
-            ->orderBy('current_order')
-            ->orderBy('name')
-            ->get()
-            ->values();
+        $categories = Category::orderBy('sort_order')->orderBy('name')->get()->values();
 
-        $list = [];
-        foreach ($groups as $idx => $g) {
-            $list[] = ['name' => $g->name, 'order' => $idx];
+        // Sequential re-indexing
+        $categories->each(fn($c, $i) => $c->sort_order === $i ?: $c->update(['sort_order' => $i, 'homepage_sort_order' => $i]));
+
+        $index = $categories->search(fn($c) => $c->id === $category->id);
+        $swapIndex = ($direction === 'up') ? $index - 1 : $index + 1;
+
+        if ($swapIndex >= 0 && $swapIndex < $categories->count()) {
+            $swapWith = $categories->get($swapIndex);
+            $category->update(['sort_order' => $swapIndex, 'homepage_sort_order' => $swapIndex]);
+            $swapWith->update(['sort_order' => $index, 'homepage_sort_order' => $index]);
         }
 
-        $currentIndex = null;
-        foreach ($list as $idx => $item) {
-            if ($item['name'] === $category->name) {
-                $currentIndex = $idx;
-                break;
-            }
-        }
-
-        if ($currentIndex !== null) {
-            $swapIndex = ($direction === 'up') ? $currentIndex - 1 : $currentIndex + 1;
-            if ($swapIndex >= 0 && $swapIndex < count($list)) {
-                $tmp = $list[$currentIndex];
-                $list[$currentIndex] = $list[$swapIndex];
-                $list[$swapIndex] = $tmp;
-            }
-        }
-
-        foreach ($list as $newIdx => $item) {
-            Category::withoutGlobalScopes()
-                ->where('name', $item['name'])
-                ->update([
-                    'sort_order'          => $newIdx,
-                    'homepage_sort_order' => $newIdx,
-                ]);
-        }
-
-        return back()->with('success', "Category order updated.");
+        return back()->with('success', 'Category order updated.');
     }
 
-    /** Direct update of sort_order from form/table input */
-    public function updateOrderDirect(Request $request, $branch, ?Category $category = null)
+    public function updateOrderDirect(Request $request, $branch, $category = null)
     {
-        if ($branch instanceof Category && $category === null) {
-            $category = $branch;
-            $branch = Vendor::warehouse();
-        }
+        $category = $this->resolveCategory($branch, $category);
 
         $request->validate(['sort_order' => 'required|integer|min:0']);
         $newOrder = (int) $request->input('sort_order');
 
-        Category::withoutGlobalScopes()
-            ->where('name', $category->name)
-            ->update([
-                'sort_order'          => $newOrder,
-                'homepage_sort_order' => $newOrder,
-            ]);
+        $category->update([
+            'sort_order'          => $newOrder,
+            'homepage_sort_order' => $newOrder,
+        ]);
 
         return back()->with('success', "Sort order for '{$category->name}' set to {$newOrder}.");
     }
 
-    // Central action wrappers (when called directly without {branch} in route)
-    public function storeCentral(Request $request) { return $this->store($request, Vendor::warehouse()); }
-    public function updateCentral(Request $request, Category $category) { return $this->update($request, Vendor::warehouse(), $category); }
-    public function destroyCentral(Category $category) { return $this->destroy(Vendor::warehouse(), $category); }
-    public function toggleStatusCentral(Category $category) { return $this->toggleStatus(Vendor::warehouse(), $category); }
-    public function reorderCentral(Request $request, Category $category) { return $this->reorder($request, Vendor::warehouse(), $category); }
-    public function updateOrderDirectCentral(Request $request, Category $category) { return $this->updateOrderDirect($request, Vendor::warehouse(), $category); }
-
-    /** Only meaningful on the Website's own row — that's the one the storefront actually reads. */
-    public function toggleHomepage(Vendor $branch, Category $category)
+    public function toggleHomepage($branch, $category = null)
     {
-        $website = Vendor::where('is_online_store', true)->firstOrFail();
-        abort_unless($category->vendor_id === $website->id, 404);
-
+        $category = $this->resolveCategory($branch, $category);
         $category->update(['show_on_homepage' => !$category->show_on_homepage]);
 
         return back()->with('success', 'Homepage visibility updated.');
     }
 
-    public function reorderHomepage(Request $request, Vendor $branch, Category $category)
+    public function reorderHomepage(Request $request, $branch, $category = null)
     {
-        $website = Vendor::where('is_online_store', true)->firstOrFail();
-        abort_unless($category->vendor_id === $website->id, 404);
+        return $this->reorder($request, $branch, $category);
+    }
 
-        $direction = $request->input('direction') === 'up' ? 'up' : 'down';
+    // Central action wrappers (when called directly without {branch} in route)
+    public function storeCentral(Request $request) { return $this->store($request, Vendor::warehouse()); }
+    public function updateCentral(Request $request, $category) { return $this->update($request, Vendor::warehouse(), $category); }
+    public function destroyCentral($category) { return $this->destroy(Vendor::warehouse(), $category); }
+    public function toggleStatusCentral($category) { return $this->toggleStatus(Vendor::warehouse(), $category); }
+    public function reorderCentral(Request $request, $category) { return $this->reorder($request, Vendor::warehouse(), $category); }
+    public function updateOrderDirectCentral(Request $request, $category) { return $this->updateOrderDirect($request, Vendor::warehouse(), $category); }
 
-        $siblings = Category::withoutGlobalScopes()
-            ->where('vendor_id', $website->id)
-            ->whereNull('parent_id')
-            ->orderBy('homepage_sort_order')
-            ->orderBy('name')
-            ->get()
-            ->values();
-
-        $siblings->each(fn($c, $i) => $c->homepage_sort_order === $i ?: $c->update(['homepage_sort_order' => $i]));
-
-        $index = $siblings->search(fn($c) => $c->id === $category->id);
-        $swapIndex = $direction === 'up' ? $index - 1 : $index + 1;
-
-        if ($swapIndex >= 0 && $swapIndex < $siblings->count()) {
-            $swapWith = $siblings->get($swapIndex);
-            $category->update(['homepage_sort_order' => $swapIndex]);
-            $swapWith->update(['homepage_sort_order' => $index]);
+    private function resolveCategory($branch, $category): Category
+    {
+        if ($branch instanceof Category) {
+            return $branch;
         }
-
-        return back();
+        if ($category instanceof Category) {
+            return $category;
+        }
+        return Category::findOrFail($category ?: $branch);
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // ══ SUBCATEGORIES MANAGEMENT ══
+    // ══ SUBCATEGORIES MANAGEMENT (sub_categories table) ══
     // ─────────────────────────────────────────────────────────────────────────
 
-    public function subcategoriesIndex(Request $request, Vendor $branch)
+    public function subcategoriesIndex(Request $request, ?Vendor $branch = null)
     {
-        $onlineStoreId = Vendor::where('is_online_store', true)->value('id');
+        $branch = $branch ?? Vendor::warehouse();
 
-        // All distinct parent categories for modal dropdown & filter
-        $parentCategories = Category::withoutGlobalScopes()
-            ->whereNull('parent_id')
-            ->get()
-            ->groupBy('name')
-            ->map(function ($group) use ($branch) {
-                return $group->firstWhere('vendor_id', $branch->id) ?? $group->first();
-            })
-            ->sortBy('name')
-            ->values();
+        $parentCategories = Category::orderBy('name')->get();
 
-        // Query only subcategories (where parent_id is not null)
-        $rows = Category::withoutGlobalScopes()
-            ->whereNotNull('parent_id')
-            ->with(['vendor', 'parent'])
-            ->withCount('products')
-            ->get();
+        $query = SubCategory::with('category')->withCount('products');
 
-        // Group by parent name and subcategory name across branches
-        $subcategories = $rows->groupBy(function ($r) {
-            $pName = $r->parent ? $r->parent->name : 'Unknown';
-            return $pName . '___' . $r->name;
-        })->map(function ($group) use ($branch, $onlineStoreId) {
-            $representative = $group->firstWhere('vendor_id', $branch->id) ?? $group->first();
-            $parent = $representative->parent;
-            if (!$parent && $representative->parent_id) {
-                $parent = Category::withoutGlobalScopes()->find($representative->parent_id);
-            }
-
-            return (object) [
-                'id'                  => $representative->id,
-                'name'                => $representative->name,
-                'parent_id'           => $representative->parent_id,
-                'parent_name'         => $parent?->name ?? '—',
-                'parent_category_id'  => $parent?->id,
-                'status'              => $representative->status ?? 'active',
-                'is_active'           => ($representative->status ?? 'active') === 'active',
-                'image_url'           => $representative->image ? Storage::disk('uploads')->url($representative->image) : null,
-                'products_count'      => $group->sum('products_count'),
-                'created_at'          => $representative->created_at,
-            ];
-        })->values();
-
-        // Filter by search
         if ($request->filled('search')) {
-            $s = mb_strtolower(trim($request->search));
-            $subcategories = $subcategories->filter(function ($item) use ($s) {
-                return str_contains(mb_strtolower($item->name), $s) || str_contains(mb_strtolower($item->parent_name), $s);
-            })->values();
+            $s = trim($request->search);
+            $query->where(function ($q) use ($s) {
+                $q->where('name', 'like', "%{$s}%")
+                  ->orWhereHas('category', fn($cq) => $cq->where('name', 'like', "%{$s}%"));
+            });
         }
 
-        // Filter by parent category
-        if ($request->filled('category')) {
-            $catFilter = trim($request->category);
-            $subcategories = $subcategories->filter(function ($item) use ($catFilter) {
-                return (string)$item->parent_id === $catFilter 
-                    || (string)$item->parent_category_id === $catFilter 
-                    || strcasecmp($item->parent_name, $catFilter) === 0;
-            })->values();
+        if ($request->filled('category') || $request->filled('category_id') || $request->filled('parent_id')) {
+            $catFilter = trim($request->category ?: ($request->category_id ?: $request->parent_id));
+            $query->where(function ($q) use ($catFilter) {
+                if (is_numeric($catFilter)) {
+                    $q->where('category_id', $catFilter);
+                } else {
+                    $q->whereHas('category', fn($cq) => $cq->where('name', $catFilter));
+                }
+            });
         }
 
-        // Sort by parent name then subcategory name
-        $subcategories = $subcategories->sortBy(function ($item) {
-            return $item->parent_name . ' - ' . $item->name;
-        })->values();
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
 
-        // Paginate
-        $perPage = 15;
-        $currentPage = Paginator::resolveCurrentPage('page') ?: 1;
-        $pagedData = $subcategories->slice(($currentPage - 1) * $perPage, $perPage)->values();
-        $paginatedSubcategories = new LengthAwarePaginator(
-            $pagedData,
-            $subcategories->count(),
-            $perPage,
-            $currentPage,
-            ['path' => Paginator::resolveCurrentPath(), 'query' => $request->query()]
-        );
+        $paginatedSubcategories = $query->orderBy('sort_order')->orderBy('name')->paginate(15)->withQueryString();
 
         return view('warehouse.subcategories.index', compact('branch', 'paginatedSubcategories', 'parentCategories'));
     }
 
-    public function subcategoriesStore(Request $request, Vendor $branch)
+    public function subcategoriesStore(Request $request, ?Vendor $branch = null)
     {
+        $catId = $request->input('category_id') ?: $request->input('parent_id');
+
         $request->validate([
-            'parent_id' => 'required|integer',
-            'name'      => 'required|string|max:255',
-            'image'     => 'nullable|image|max:10240',
-            'status'    => 'nullable|string|in:active,inactive',
+            'name'        => 'required|string|max:255',
+            'image'       => 'nullable|image|max:10240',
+            'status'      => 'nullable|string|in:active,inactive',
+            'sort_order'  => 'nullable|integer',
         ]);
 
-        $parentCat = Category::withoutGlobalScopes()->findOrFail($request->parent_id);
+        $category = Category::findOrFail($catId);
 
-        // Check duplicate name within this parent category
-        $parentNames = [$parentCat->name];
-        $parentIds = Category::withoutGlobalScopes()->whereIn('name', $parentNames)->pluck('id');
-        $exists = Category::withoutGlobalScopes()
-            ->where('name', $request->name)
-            ->whereIn('parent_id', $parentIds)
+        $exists = SubCategory::where('category_id', $category->id)
+            ->where('name', trim($request->name))
             ->exists();
 
         if ($exists) {
-            return back()->withInput()->with('error', 'A subcategory with this name already exists under "' . $parentCat->name . '".');
+            return back()->withInput()->with('error', 'A subcategory with this name already exists under "' . $category->name . '".');
         }
 
         $imagePath = $request->hasFile('image')
             ? $request->file('image')->store('categories', 'uploads')
             : null;
 
-        $status = $request->input('status', 'active');
+        $maxOrder = SubCategory::where('category_id', $category->id)->max('sort_order') ?? 0;
+        $sortOrder = $request->filled('sort_order') ? (int) $request->input('sort_order') : ($maxOrder + 1);
 
-        // Resolve parent_id for branch
-        $branchParent = Category::withoutGlobalScopes()
-            ->where('vendor_id', $branch->id)
-            ->where('name', $parentCat->name)
-            ->first();
-        $branchParentId = $branchParent?->id ?? $parentCat->id;
-
-        $branch->categories()->create([
-            'name'      => $request->name,
-            'parent_id' => $branchParentId,
-            'image'     => $imagePath,
-            'status'    => $status,
+        SubCategory::create([
+            'category_id' => $category->id,
+            'name'        => trim($request->name),
+            'image'       => $imagePath,
+            'status'      => $request->input('status', 'active'),
+            'sort_order'  => $sortOrder,
         ]);
 
-        $otherVendors = Vendor::where('id', '!=', $branch->id)->where('status', 'active')->get();
-        foreach ($otherVendors as $otherVendor) {
-            $otherParent = Category::withoutGlobalScopes()
-                ->where('vendor_id', $otherVendor->id)
-                ->where('name', $parentCat->name)
-                ->first();
-            $otherParentId = $otherParent?->id ?? $branchParentId;
-
-            $otherVendor->categories()->firstOrCreate(
-                ['name' => $request->name, 'parent_id' => $otherParentId],
-                ['image' => $imagePath, 'status' => $status]
-            );
-        }
-
-        return back()->with('success', 'Subcategory "' . $request->name . '" created successfully under "' . $parentCat->name . '".');
+        return back()->with('success', 'Subcategory "' . $request->name . '" created successfully under "' . $category->name . '".');
     }
 
-    public function subcategoriesUpdate(Request $request, Vendor $branch, Category $category)
+    public function subcategoriesUpdate(Request $request, $branch, $subCategory = null)
     {
+        $sub = $this->resolveSubCategory($branch, $subCategory);
+        $catId = $request->input('category_id') ?: $request->input('parent_id') ?: $sub->category_id;
+
         $request->validate([
-            'parent_id' => 'required|integer',
-            'name'      => 'required|string|max:255',
-            'image'     => 'nullable|image|max:10240',
-            'status'    => 'nullable|string|in:active,inactive',
+            'name'       => 'required|string|max:255',
+            'image'      => 'nullable|image|max:10240',
+            'status'     => 'nullable|string|in:active,inactive',
+            'sort_order' => 'nullable|integer',
         ]);
 
-        $parentCat = Category::withoutGlobalScopes()->findOrFail($request->parent_id);
-
-        $siblings = Category::withoutGlobalScopes()->where('name', $category->name)->get();
-
-        $imagePath = $category->image;
+        $imagePath = $sub->image;
         if ($request->hasFile('image')) {
-            foreach ($siblings as $sibling) {
-                if ($sibling->image) Storage::disk('uploads')->delete($sibling->image);
-            }
+            if ($imagePath) Storage::disk('uploads')->delete($imagePath);
             $imagePath = $request->file('image')->store('categories', 'uploads');
         }
 
-        $status = $request->input('status', $category->status ?? 'active');
+        $sub->update([
+            'category_id' => $catId,
+            'name'        => trim($request->name),
+            'image'       => $imagePath,
+            'status'      => $request->input('status', $sub->status ?? 'active'),
+            'sort_order'  => $request->filled('sort_order') ? (int) $request->input('sort_order') : ($sub->sort_order ?? 0),
+        ]);
 
-        foreach ($siblings as $sibling) {
-            $sParent = Category::withoutGlobalScopes()
-                ->where('vendor_id', $sibling->vendor_id)
-                ->where('name', $parentCat->name)
-                ->first();
-            $siblingParentId = $sParent?->id ?? $parentCat->id;
-
-            $sibling->update([
-                'name'      => $request->name,
-                'parent_id' => $siblingParentId,
-                'image'     => $imagePath,
-                'status'    => $status,
-            ]);
-        }
-
-        return back()->with('success', 'Subcategory "' . $request->name . '" updated successfully.');
+        return back()->with('success', 'Subcategory "' . $sub->name . '" updated successfully.');
     }
 
-    public function subcategoriesToggleStatus(Vendor $branch, Category $category)
+    public function subcategoriesToggleStatus($branch, $subCategory = null)
     {
-        $newStatus = ($category->status ?? 'active') === 'active' ? 'inactive' : 'active';
-        $siblings = Category::withoutGlobalScopes()->where('name', $category->name)->get();
-        foreach ($siblings as $sibling) {
-            $sibling->update(['status' => $newStatus]);
-        }
+        $sub = $this->resolveSubCategory($branch, $subCategory);
+        $newStatus = ($sub->status === 'inactive') ? 'active' : 'inactive';
+        $sub->update(['status' => $newStatus]);
 
         return back()->with('success', 'Subcategory status changed to ' . ucfirst($newStatus) . '.');
     }
 
-    public function subcategoriesDestroy(Vendor $branch, Category $category)
+    public function subcategoriesDestroy($branch, $subCategory = null)
     {
-        $siblings = Category::withoutGlobalScopes()->where('name', $category->name)->get();
-        foreach ($siblings as $sibling) {
-            if ($sibling->image) Storage::disk('uploads')->delete($sibling->image);
-            $sibling->delete();
+        $sub = $this->resolveSubCategory($branch, $subCategory);
+        if ($sub->image) {
+            Storage::disk('uploads')->delete($sub->image);
         }
+        $sub->delete();
 
         return back()->with('success', 'Subcategory deleted successfully.');
+    }
+
+    private function resolveSubCategory($branch, $subCategory): SubCategory
+    {
+        if ($branch instanceof SubCategory) {
+            return $branch;
+        }
+        if ($subCategory instanceof SubCategory) {
+            return $subCategory;
+        }
+        return SubCategory::findOrFail($subCategory ?: $branch);
     }
 }

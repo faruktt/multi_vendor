@@ -69,21 +69,9 @@ class AppServiceProvider extends ServiceProvider
                 $view->with('cartSubtotal', $cartLines->sum('subtotal'));
 
                 if (!isset($view->getData()['categories'])) {
-                    $view->with('categories', Category::withoutGlobalScopes()
-                        ->where('vendor_id', $branch->id)
-                        ->whereNull('parent_id')
-                        ->where(function ($q) {
-                            $q->whereNull('status')->orWhere('status', 'active');
-                        })
-                        ->with(['children' => fn($q) => $q->withoutGlobalScopes()
-                            ->where(function ($sq) {
-                                $sq->whereNull('status')->orWhere('status', 'active');
-                            })
-                            ->orderBy('sort_order')
-                            ->orderBy('name')
-                        ])
-                        ->orderBy('sort_order')
-                        ->orderBy('name')
+                    $view->with('categories', Category::active()
+                        ->with(['subCategories' => fn($q) => $q->active()->ordered(), 'children' => fn($q) => $q->active()->ordered()])
+                        ->ordered()
                         ->get());
                 }
             }

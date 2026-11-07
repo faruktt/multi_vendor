@@ -39,20 +39,16 @@ class ProductFeedService
         $branchId = is_object($branch) ? $branch->id : $branch;
 
         $categoryIds = null;
+        $subCategoryIds = [];
         if ($categoryId) {
-            $catIds = [(int) $categoryId];
-            $childIds = \App\Models\Category::withoutGlobalScopes()
-                ->where('parent_id', $categoryId)
+            $categoryIds = [(int) $categoryId];
+            $subCategoryIds = \App\Models\SubCategory::where('category_id', $categoryId)
                 ->pluck('id')
                 ->map(fn($id) => (int) $id)
                 ->all();
-            if (!empty($childIds)) {
-                $catIds = array_values(array_unique(array_merge($catIds, $childIds)));
-            }
-            $categoryIds = $catIds;
         }
 
-        $buildQuery = function () use ($branchId, $categoryIds, $search, $minPrice, $maxPrice) {
+        $buildQuery = function () use ($branchId, $categoryIds, $subCategoryIds, $search, $minPrice, $maxPrice) {
             $q = Product::withoutGlobalScopes()
                 ->where('vendor_id', $branchId)
                 ->where('status', 'active')
@@ -63,9 +59,11 @@ class ProductFeedService
                 ->with(['category', 'supplier', 'variants.color', 'variants.size']);
 
             if ($categoryIds !== null) {
-                $q->where(function ($sub) use ($categoryIds) {
-                    $sub->whereIn('category_id', $categoryIds)
-                        ->orWhereIn('sub_category_id', $categoryIds);
+                $q->where(function ($sub) use ($categoryIds, $subCategoryIds) {
+                    $sub->whereIn('category_id', $categoryIds);
+                    if (!empty($subCategoryIds)) {
+                        $sub->orWhereIn('sub_category_id', $subCategoryIds);
+                    }
                 });
             }
 
@@ -202,17 +200,13 @@ class ProductFeedService
         $branchId = is_object($branch) ? $branch->id : $branch;
 
         $categoryIds = null;
+        $subCategoryIds = [];
         if ($categoryId) {
-            $catIds = [(int) $categoryId];
-            $childIds = \App\Models\Category::withoutGlobalScopes()
-                ->where('parent_id', $categoryId)
+            $categoryIds = [(int) $categoryId];
+            $subCategoryIds = \App\Models\SubCategory::where('category_id', $categoryId)
                 ->pluck('id')
                 ->map(fn($id) => (int) $id)
                 ->all();
-            if (!empty($childIds)) {
-                $catIds = array_values(array_unique(array_merge($catIds, $childIds)));
-            }
-            $categoryIds = $catIds;
         }
 
         $totalCount = Product::withoutGlobalScopes()
@@ -222,10 +216,12 @@ class ProductFeedService
                 $sub->whereNull('supplier_id')
                     ->orWhere('approval_status', 'approved');
             })
-            ->when($categoryIds !== null, function ($q) use ($categoryIds) {
-                $q->where(function ($sub) use ($categoryIds) {
-                    $sub->whereIn('category_id', $categoryIds)
-                        ->orWhereIn('sub_category_id', $categoryIds);
+            ->when($categoryIds !== null, function ($q) use ($categoryIds, $subCategoryIds) {
+                $q->where(function ($sub) use ($categoryIds, $subCategoryIds) {
+                    $sub->whereIn('category_id', $categoryIds);
+                    if (!empty($subCategoryIds)) {
+                        $sub->orWhereIn('sub_category_id', $subCategoryIds);
+                    }
                 });
             })
             ->when($search, function ($q) use ($search) {

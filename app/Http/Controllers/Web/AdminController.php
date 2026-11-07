@@ -16,6 +16,7 @@ use App\Models\ResellerWithdrawal;
 use App\Models\CourierSetting;
 use App\Models\Product;
 use App\Models\Category;
+use App\Models\SubCategory;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -312,8 +313,8 @@ class AdminController extends Controller
         $totalStockValue     = round(Product::withoutGlobalScopes()->sum(DB::raw('stock_qty * cost_price')), 2);
 
         // 11. Categories & Subcategories
-        $totalCategories     = Category::withoutGlobalScopes()->whereNull('parent_id')->count();
-        $totalSubcategories  = Category::withoutGlobalScopes()->whereNotNull('parent_id')->count();
+        $totalCategories     = Category::count();
+        $totalSubcategories  = SubCategory::count();
 
         $kpi = [
             'total_sales'               => $totalSales,

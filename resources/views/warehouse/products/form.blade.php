@@ -511,7 +511,7 @@ function productForm() {
         get availableSubcategories() {
             if (!this.selectedCategoryId) return [];
             const cat = this.categories.find(c => String(c.id) === String(this.selectedCategoryId));
-            return (cat && cat.children) ? cat.children : [];
+            return cat ? (cat.sub_categories || cat.children || []) : [];
         },
 
         onCategoryChange() {

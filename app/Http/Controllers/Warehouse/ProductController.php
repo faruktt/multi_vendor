@@ -27,36 +27,10 @@ class ProductController extends Controller
         )->id;
     }
 
-    /** Same category, found-or-created by name in the destination branch — mirrors TransferController. */
+    /** Category is now global across all branches and channels. */
     private function resolveBranchCategory(Vendor $toBranch, ?Category $sourceCategory): ?int
     {
-        if (!$sourceCategory) return null;
-
-        $parentBranchCatId = null;
-        if ($sourceCategory->parent_id) {
-            $sourceParent = Category::withoutGlobalScopes()->find($sourceCategory->parent_id);
-            if ($sourceParent) {
-                $parentBranchCatId = $this->resolveBranchCategory($toBranch, $sourceParent);
-            }
-        }
-
-        $existing = Category::withoutGlobalScopes()
-            ->where('vendor_id', $toBranch->id)
-            ->where('name', $sourceCategory->name)
-            ->first();
-
-        if ($existing) {
-            if ($parentBranchCatId && $existing->parent_id !== $parentBranchCatId) {
-                $existing->update(['parent_id' => $parentBranchCatId]);
-            }
-            return $existing->id;
-        }
-
-        return Category::create([
-            'vendor_id' => $toBranch->id,
-            'name'      => $sourceCategory->name,
-            'parent_id' => $parentBranchCatId,
-        ])->id;
+        return $sourceCategory?->id;
     }
 
     /** Active, non-warehouse branches — the only valid distribution/purchase targets. */
@@ -126,13 +100,7 @@ class ProductController extends Controller
 
     public function create(Vendor $branch)
     {
-        $this->warehouseCategoryId($branch);
-        $categories = Category::withoutGlobalScopes()
-            ->where('vendor_id', $branch->id)
-            ->whereNull('parent_id')
-            ->with(['children' => fn($q) => $q->orderBy('name')])
-            ->orderBy('name')
-            ->get();
+        $categories = Category::active()->ordered()->with(['children' => fn($q) => $q->active()->ordered(), 'subCategories' => fn($q) => $q->active()->ordered()])->get();
         $toBranches = $this->distributableBranches();
         $colors     = Color::orderBy('sort_order')->orderBy('name')->get();
         $sizes      = Size::orderBy('sort_order')->orderBy('name')->get();
@@ -172,8 +140,8 @@ class ProductController extends Controller
     {
         $request->validate([
             'name'          => 'required|string|max:255',
-            'category_id'   => ['required', Rule::exists('categories', 'id')->where('vendor_id', $branch->id)],
-            'sub_category_id' => ['nullable', Rule::exists('categories', 'id')->where('vendor_id', $branch->id)],
+            'category_id'     => 'required|exists:categories,id',
+            'sub_category_id' => 'nullable|exists:sub_categories,id',
             'price'         => 'required|numeric|min:0',
             'old_price'     => 'nullable|numeric|min:0',
             'cost_price'    => 'required|numeric|min:0',
@@ -300,20 +268,11 @@ class ProductController extends Controller
         // a branch before this became the only entry point — so categories come from whichever
         // vendor actually owns this product, not always the Warehouse's own list.
         $owner      = $product->vendor_id === $branch->id ? $branch : Vendor::find($product->vendor_id);
-        $categories = Category::withoutGlobalScopes()
-            ->where('vendor_id', $owner->id)
-            ->whereNull('parent_id')
-            ->with(['children' => fn($q) => $q->orderBy('name')])
-            ->orderBy('name')
-            ->get();
+        $categories = Category::active()->ordered()->with(['children' => fn($q) => $q->active()->ordered(), 'subCategories' => fn($q) => $q->active()->ordered()])->get();
         $toBranches = $this->distributableBranches();
         $colors     = Color::orderBy('sort_order')->orderBy('name')->get();
         $sizes      = Size::orderBy('sort_order')->orderBy('name')->get();
         $product->load(['variants', 'category', 'subCategory']);
-        if ($product->category && $product->category->parent_id && !$product->sub_category_id) {
-            $product->sub_category_id = $product->category_id;
-            $product->category_id = $product->category->parent_id;
-        }
         $product->setRelation('vendor', $owner);
         $product->image_url = $product->first_image_url;
 
@@ -341,8 +300,8 @@ class ProductController extends Controller
 
         $request->validate([
             'name'           => 'required|string|max:255',
-            'category_id'    => ['required', Rule::exists('categories', 'id')->where('vendor_id', $product->vendor_id)],
-            'sub_category_id'=> ['nullable', Rule::exists('categories', 'id')->where('vendor_id', $product->vendor_id)],
+            'category_id'    => 'required|exists:categories,id',
+            'sub_category_id'=> 'nullable|exists:sub_categories,id',
             'price'          => 'required|numeric|min:0',
             'old_price'      => 'nullable|numeric|min:0',
             'cost_price'     => 'required|numeric|min:0',

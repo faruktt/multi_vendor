@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
 use App\Models\Category;
+use App\Models\SubCategory;
 use App\Models\CourierSetting;
 use App\Models\Customer;
 use App\Models\IncomeExpense;
@@ -574,53 +575,18 @@ class AdminDataController extends Controller
     // ── All Categories ─────────────────────────────────────────────────────
     public function allCategories(Request $request)
     {
-        $onlineStoreId = Vendor::where('is_online_store', true)->value('id');
-
-        $rows = Category::withoutGlobalScopes()
-            ->withCount(['products' => fn($q) => $q->withoutGlobalScopes()])
-            ->with(['vendor', 'parent'])
-            ->get();
-
-        $parentRows = $rows->whereNull('parent_id');
-
-        $categories = $parentRows->groupBy('name')->map(function ($group) use ($onlineStoreId, $rows) {
-            $representative = $group->first();
-            $websiteRow     = $onlineStoreId ? $group->firstWhere('vendor_id', $onlineStoreId) : null;
-
-            $subCount = $rows->filter(function ($r) use ($representative) {
-                return $r->parent_id && ($r->parent_id === $representative->id || ($r->parent && $r->parent->name === $representative->name));
-            })->groupBy('name')->count();
-
-            $sortOrder = (int) ($group->max('sort_order') ?? $group->max('homepage_sort_order') ?? 0);
-
-            return (object) [
-                'id'                  => $representative->id,
-                'name'                => $representative->name,
-                'parent_id'           => null,
-                'parent_name'         => null,
-                'is_subcategory'      => false,
-                'subcategories_count' => $subCount,
-                'image_url'           => $representative->image ? Storage::disk('uploads')->url($representative->image) : null,
-                'image'               => $representative->image,
-                'products_count'      => $group->sum('products_count'),
-                'website_category_id' => $websiteRow?->id,
-                'show_on_homepage'    => $websiteRow?->show_on_homepage ?? true,
-                'status'              => $representative->status ?? 'active',
-                'sort_order'          => $sortOrder,
-            ];
-        })->values();
+        $query = Category::withCount(['products', 'subCategories']);
 
         if ($request->filled('search')) {
-            $s = mb_strtolower(trim($request->search));
-            $categories = $categories->filter(fn($c) => str_contains(mb_strtolower($c->name), $s))->values();
+            $s = trim($request->search);
+            $query->where('name', 'like', "%{$s}%");
         }
 
         if ($request->filled('status')) {
-            $categories = $categories->filter(fn($c) => $c->status === $request->status)->values();
+            $query->where('status', $request->status);
         }
 
-        $categories = $categories->sortBy(fn($c) => [$c->sort_order, $c->name])->values();
-
+        $categories = $query->orderBy('sort_order')->orderBy('name')->get();
         $parentCategories = $categories;
 
         return view('admin.all-categories', compact('categories', 'parentCategories'));
@@ -628,57 +594,33 @@ class AdminDataController extends Controller
 
     public function allSubcategories(Request $request)
     {
-        $rows = Category::withoutGlobalScopes()
-            ->whereNotNull('parent_id')
-            ->with(['vendor', 'parent'])
-            ->withCount(['products' => fn($q) => $q->withoutGlobalScopes()])
-            ->get();
-
-        $subcategories = $rows->groupBy(function ($r) {
-            $pName = $r->parent ? $r->parent->name : 'Unknown';
-            return $pName . '___' . $r->name;
-        })->map(function ($group) {
-            $representative = $group->first();
-            $parent = $representative->parent;
-            if (!$parent && $representative->parent_id) {
-                $parent = Category::withoutGlobalScopes()->find($representative->parent_id);
-            }
-
-            return (object) [
-                'id'                  => $representative->id,
-                'name'                => $representative->name,
-                'parent_id'           => $representative->parent_id,
-                'parent_name'         => $parent?->name ?? '—',
-                'parent_category_id'  => $parent?->id,
-                'status'              => $representative->status ?? 'active',
-                'is_active'           => ($representative->status ?? 'active') === 'active',
-                'image_url'           => $representative->image ? Storage::disk('uploads')->url($representative->image) : null,
-                'products_count'      => $group->sum('products_count'),
-                'created_at'          => $representative->created_at,
-            ];
-        })->values();
+        $query = SubCategory::with('category')->withCount('products');
 
         if ($request->filled('search')) {
-            $s = mb_strtolower(trim($request->search));
-            $subcategories = $subcategories->filter(fn($item) => str_contains(mb_strtolower($item->name), $s) || str_contains(mb_strtolower($item->parent_name), $s))->values();
+            $s = trim($request->search);
+            $query->where(function ($q) use ($s) {
+                $q->where('name', 'like', "%{$s}%")
+                  ->orWhereHas('category', fn($cq) => $cq->where('name', 'like', "%{$s}%"));
+            });
         }
 
-        if ($request->filled('parent_id')) {
-            $catFilter = trim($request->parent_id);
-            $subcategories = $subcategories->filter(fn($item) => (string)$item->parent_id === $catFilter || (string)$item->parent_category_id === $catFilter)->values();
+        if ($request->filled('parent_id') || $request->filled('category_id') || $request->filled('category')) {
+            $catFilter = trim($request->category_id ?: ($request->parent_id ?: $request->category));
+            $query->where(function ($q) use ($catFilter) {
+                if (is_numeric($catFilter)) {
+                    $q->where('category_id', $catFilter);
+                } else {
+                    $q->whereHas('category', fn($cq) => $cq->where('name', $catFilter));
+                }
+            });
         }
 
         if ($request->filled('status')) {
-            $subcategories = $subcategories->filter(fn($item) => $item->status === $request->status)->values();
+            $query->where('status', $request->status);
         }
 
-        $subcategories = $subcategories->sortBy(fn($item) => $item->parent_name . ' - ' . $item->name)->values();
-
-        $parentCategories = Category::withoutGlobalScopes()
-            ->whereNull('parent_id')
-            ->get()
-            ->unique('name')
-            ->values();
+        $subcategories = $query->orderBy('sort_order')->orderBy('name')->get();
+        $parentCategories = Category::orderBy('name')->get();
 
         return view('admin.all-subcategories', compact('subcategories', 'parentCategories'));
     }

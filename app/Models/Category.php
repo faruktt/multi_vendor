@@ -2,36 +2,31 @@
 
 namespace App\Models;
 
-use App\Traits\BelongsToVendor;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class Category extends Model
 {
-    use BelongsToVendor;
-
-    protected $fillable = ['vendor_id', 'parent_id', 'name', 'slug', 'image', 'status', 'sort_order', 'show_on_homepage', 'homepage_sort_order'];
+    protected $fillable = [
+        'name',
+        'slug',
+        'image',
+        'status',
+        'sort_order',
+        'show_on_homepage',
+        'homepage_sort_order',
+    ];
 
     protected $casts = [
-        'show_on_homepage' => 'boolean',
-        'sort_order' => 'integer',
+        'show_on_homepage'    => 'boolean',
+        'sort_order'          => 'integer',
         'homepage_sort_order' => 'integer',
     ];
 
     public function getImageUrlAttribute(): ?string
     {
-        if ($this->image) {
-            return Storage::disk('uploads')->url($this->image);
-        }
-
-        // Fallback: check if sibling category row with same name has an uploaded image
-        $siblingImage = static::withoutGlobalScopes()
-            ->where('name', $this->name)
-            ->whereNotNull('image')
-            ->value('image');
-
-        return $siblingImage ? Storage::disk('uploads')->url($siblingImage) : null;
+        return $this->image ? Storage::disk('uploads')->url($this->image) : null;
     }
 
     public function isActive(): bool
@@ -43,21 +38,19 @@ class Category extends Model
     {
         static::creating(function (Category $category) {
             if (!$category->slug) {
-                $category->slug = static::uniqueSlug($category->vendor_id, $category->name);
+                $category->slug = static::uniqueSlug($category->name);
             }
         });
     }
 
-    public static function uniqueSlug(int $vendorId, string $name, ?int $excludeId = null): string
+    public static function uniqueSlug(string $name, ?int $excludeId = null): string
     {
         $base = Str::slug($name) ?: 'category';
         $slug = $base;
         $i = 2;
 
         while (
-            static::withoutGlobalScopes()
-                ->where('vendor_id', $vendorId)
-                ->where('slug', $slug)
+            static::where('slug', $slug)
                 ->when($excludeId, fn($q) => $q->where('id', '!=', $excludeId))
                 ->exists()
         ) {
@@ -69,22 +62,18 @@ class Category extends Model
 
     public function products()
     {
-        return $this->hasMany(Product::class);
-    }
-
-    public function parent()
-    {
-        return $this->belongsTo(Category::class, 'parent_id');
-    }
-
-    public function children()
-    {
-        return $this->hasMany(Category::class, 'parent_id');
+        return $this->hasMany(Product::class, 'category_id');
     }
 
     public function subCategories()
     {
-        return $this->hasMany(Category::class, 'parent_id');
+        return $this->hasMany(SubCategory::class, 'category_id');
+    }
+
+    /** Backward compatibility alias for storefront views expecting ->children */
+    public function children()
+    {
+        return $this->hasMany(SubCategory::class, 'category_id');
     }
 
     public function scopeActive($query)
@@ -101,11 +90,6 @@ class Category extends Model
 
     public function scopeParents($query)
     {
-        return $query->whereNull('parent_id');
-    }
-
-    public function scopeSubcategories($query)
-    {
-        return $query->whereNotNull('parent_id');
+        return $query;
     }
 }
