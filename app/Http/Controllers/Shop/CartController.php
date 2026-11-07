@@ -25,6 +25,20 @@ class CartController extends Controller
             ->where('vendor_id', $branch->id)
             ->findOrFail($request->product_id);
 
+        if ($product->hasVariants() && empty($request->variant_id)) {
+            if ($request->wantsJson() || $request->ajax() || $request->header('Accept') === 'application/json') {
+                return response()->json([
+                    'success'            => false,
+                    'has_variants'       => true,
+                    'requires_selection' => true,
+                    'redirect_url'       => route('shop.products.show', $product->slug),
+                    'message'            => 'অনুগ্রহ করে সাইজ বা কালার সিলেক্ট করুন।'
+                ], 422);
+            }
+            return redirect()->route('shop.products.show', $product->slug)
+                ->with('error', 'অনুগ্রহ করে সাইজ বা কালার সিলেক্ট করুন।');
+        }
+
         $variant = $request->variant_id
             ? ProductVariant::where('product_id', $product->id)->findOrFail($request->variant_id)
             : null;

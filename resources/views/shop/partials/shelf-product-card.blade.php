@@ -27,6 +27,7 @@
     $tagsText = strtoupper(implode(', ', array_unique($tags)));
 
     // Pricing & Variants check
+    $hasVariants = $product->hasVariants();
     $variantPrices = $product->relationLoaded('variants')
         ? $product->variants->pluck('price')->filter(fn($p) => (float)$p > 0)
         : collect();
@@ -105,7 +106,16 @@
         @if(!$out)
         <div class="absolute bottom-2.5 left-1/2 -translate-x-1/2 z-20 opacity-0 translate-y-3 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-200 pointer-events-none group-hover:pointer-events-auto">
             <div class="bg-white rounded-md shadow-lg border border-gray-100 flex items-center divide-x divide-gray-100 overflow-hidden">
-                {{-- 1. Add to Cart --}}
+                {{-- 1. Add to Cart / Select Options (if has variants, go to details page) --}}
+                @if($hasVariants)
+                <a href="{{ route('shop.products.show', $product->slug) }}"
+                   class="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center text-gray-700 hover:text-brand hover:bg-gray-50 active:bg-gray-100 transition-colors"
+                   title="Select Size & Color">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/>
+                    </svg>
+                </a>
+                @else
                 <button type="button"
                         @click.prevent.stop="window.shopQuickAddToCart({{ $product->id }})"
                         class="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center text-gray-700 hover:text-brand hover:bg-gray-50 active:bg-gray-100 transition-colors"
@@ -114,6 +124,7 @@
                         <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/>
                     </svg>
                 </button>
+                @endif
 
                 {{-- 2. Quick View --}}
                 <button type="button"

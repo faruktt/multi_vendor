@@ -136,6 +136,14 @@ class Product extends Model
         return $this->hasMany(ProductVariant::class);
     }
 
+    public function hasVariants(): bool
+    {
+        if ($this->relationLoaded('variants')) {
+            return $this->variants->isNotEmpty();
+        }
+        return $this->variants()->exists();
+    }
+
     public function landingPages()
     {
         return $this->belongsToMany(LandingPage::class, 'landing_page_products');

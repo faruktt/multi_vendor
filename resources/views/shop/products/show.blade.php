@@ -252,7 +252,7 @@
 
                     {{-- Color Selector --}}
                     @if($variantColors->isNotEmpty())
-                    <div class="mb-4">
+                    <div class="mb-4 transition-all" :class="{ 'ring-2 ring-rose-500 ring-offset-2 p-2 rounded-xl bg-rose-50/40': shakeSignal && variantColors.length > 0 && !selectedColorId }">
                         <label class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">
                             Color
                             <span class="normal-case font-semibold text-brand-dark ml-1" x-text="selectedColorLabel ? '— ' + selectedColorLabel : ''"></span>
@@ -261,7 +261,7 @@
                             @foreach($variantColors as $c)
                             <button type="button"
                                     @click="selectColor({{ $c['id'] }})"
-                                    class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium border transition-all"
+                                    class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium border transition-all cursor-pointer"
                                     :class="selectedColorId === {{ $c['id'] }} ? 'border-brand bg-brand-light text-brand-dark shadow-sm ring-1 ring-brand' : 'border-gray-200 text-gray-600 hover:border-gray-300'">
                                 @if($c['hex'])
                                 <span class="w-3.5 h-3.5 rounded-full border border-gray-300 flex-shrink-0"
@@ -279,7 +279,7 @@
 
                     {{-- Size Selector --}}
                     @if($variantSizes->isNotEmpty())
-                    <div class="mb-5">
+                    <div class="mb-5 transition-all" :class="{ 'ring-2 ring-rose-500 ring-offset-2 p-2 rounded-xl bg-rose-50/40': shakeSignal && variantSizes.length > 0 && !selectedSizeId }">
                         <label class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">
                             Size
                             <span class="normal-case font-semibold text-brand-dark ml-1" x-text="selectedSizeLabel ? '— ' + selectedSizeLabel : ''"></span>
@@ -288,7 +288,7 @@
                             @foreach($variantSizes as $s)
                             <button type="button"
                                     @click="selectSize({{ $s['id'] }})"
-                                    class="px-4 py-2 rounded-xl text-sm font-semibold border transition-all relative"
+                                    class="px-4 py-2 rounded-xl text-sm font-semibold border transition-all relative cursor-pointer"
                                     :class="[
                                         selectedSizeId === {{ $s['id'] }} ? 'border-brand bg-brand-light text-brand-dark shadow-sm ring-1 ring-brand' : 'border-gray-200 text-gray-600 hover:border-gray-300',
                                         !isSizeAvailable({{ $s['id'] }}) ? 'opacity-40 cursor-not-allowed bg-gray-50' : '',
@@ -572,6 +572,7 @@ function productPage(variants, baseStock, basePrice, variantColors, variantSizes
         selectedColorId: null,
         selectedSizeId: null,
         selectedCustomVariantId: null,
+        shakeSignal: false,
 
         init() {
             // No auto-selection — user must choose manually
@@ -686,10 +687,12 @@ function productPage(variants, baseStock, basePrice, variantColors, variantSizes
                 } else {
                     this.validationMsg = 'অনুগ্রহ করে একটি অপশন সিলেক্ট করুন।';
                 }
-                // Auto-clear after 3s
-                setTimeout(() => { this.validationMsg = ''; }, 3000);
+                this.shakeSignal = true;
+                setTimeout(() => { this.shakeSignal = false; }, 800);
+                setTimeout(() => { this.validationMsg = ''; }, 3500);
                 return false;
             }
+            return true;
         },
 
         // Current effective price (flash price if available, else regular)

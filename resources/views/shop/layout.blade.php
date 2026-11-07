@@ -1608,8 +1608,24 @@ window.shopQuickAddToCart = function(productId, variantId = null, qty = 1) {
         },
         body: formData
     })
-    .then(res => res.json())
+    .then(async res => {
+        const data = await res.json().catch(() => ({}));
+        if (data.requires_selection || data.has_variants) {
+            if (data.redirect_url) {
+                window.location.href = data.redirect_url;
+                return data;
+            }
+        }
+        if (!res.ok) {
+            showToast(data.message || 'Could not add product to cart', 'error');
+            return data;
+        }
+        return data;
+    })
     .then(data => {
+        if (!data || data.requires_selection || data.has_variants) {
+            return data;
+        }
         if (data.success) {
             const body = document.getElementById('cart-drawer-body');
             if (body && data.html) {

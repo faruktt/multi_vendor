@@ -55,3 +55,4 @@ return new class extends Migration
         // No-op rollback to protect data
     }
 };
+

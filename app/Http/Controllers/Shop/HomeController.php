@@ -72,7 +72,7 @@ class HomeController extends Controller
                 $q->whereIn('id', $allCustomerFlashIds)
                   ->orWhereIn('source_product_id', $allCustomerFlashIds);
             })
-            ->with(['category', 'activeFlashSale'])
+            ->with(['category', 'activeFlashSale', 'variants.color', 'variants.size'])
             ->take(12)
             ->get();
 

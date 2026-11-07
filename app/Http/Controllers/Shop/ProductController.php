@@ -24,7 +24,7 @@ class ProductController extends Controller
         $categories = $this->sidebarCategories();
 
         $query = Product::withoutGlobalScopes()
-            ->with(['category', 'supplier'])
+            ->with(['category', 'supplier', 'variants.color', 'variants.size'])
             ->where('vendor_id', $branch->id)
             ->where('status', 'active')
             ->where(function ($q) {
@@ -143,7 +143,7 @@ class ProductController extends Controller
         $categories = $this->sidebarCategories();
 
         $query = Product::withoutGlobalScopes()
-            ->with('category')
+            ->with(['category', 'variants.color', 'variants.size'])
             ->where('vendor_id', $branch->id)
             ->where('supplier_id', $supplier->id)
             ->where('status', 'active')
