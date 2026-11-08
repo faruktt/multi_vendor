@@ -7,23 +7,21 @@ use Illuminate\Support\Facades\Log;
 
 class ProductImageService
 {
-    public const TARGET_WIDTH  = 800;
-    public const TARGET_HEIGHT = 1000;
+    public const MAX_DIMENSION = 1200;
     public const JPEG_QUALITY  = 92;
 
     /**
      * Process an uploaded product image:
-     * - Standardizes image to 800x1000 (4:5) canvas
-     * - Upscales small images so they never appear tiny
-     * - Fills full height matching all catalog cards
-     * - Never crops the central product subject ("r crop jeno na hoi")
-     * - Returns the generated filename (e.g. 'img_xxxxxx.jpg')
+     * - NO CROPPING: Preserves 100% of the original photo aspect ratio and pixels.
+     * - Never cuts off any part of the image.
+     * - Optimizes resolution: downscales huge files to max 1200px, upscales small files to at least 800px.
+     * - Fixes orientation from EXIF metadata.
+     * - Saves as optimized, high-quality JPEG.
      */
     public static function processAndSave(
         UploadedFile|string $file,
         ?string $customFilename = null,
-        int $targetW = self::TARGET_WIDTH,
-        int $targetH = self::TARGET_HEIGHT,
+        int $maxDim = self::MAX_DIMENSION,
         int $quality = self::JPEG_QUALITY
     ): string {
         $uploadDir = public_path('uploads/products');
@@ -78,63 +76,37 @@ class ProductImageService
                 return $filename;
             }
 
-            $aspectRatio = $srcW / $srcH;
+            // ZERO CROPPING: Keep exact original aspect ratio
+            $maxSrc = max($srcW, $srcH);
+            $scale = 1.0;
 
-            // Target canvas 800x1000
+            if ($maxSrc > $maxDim) {
+                $scale = $maxDim / $maxSrc;
+            } elseif ($maxSrc < 600) {
+                $scale = 800 / $maxSrc;
+            }
+
+            $targetW = (int) max(1, round($srcW * $scale));
+            $targetH = (int) max(1, round($srcH * $scale));
+
             $canvas = imagecreatetruecolor($targetW, $targetH);
 
-            // For photos up to aspect ratio 1.35 (square, 4:3, 1:1, portrait):
-            // Scale to fill the 800x1000 frame completely so height is 100% full with zero white bars.
-            // The central subject is centered and never cropped.
-            if ($aspectRatio <= 1.35) {
-                $scale = max($targetW / $srcW, $targetH / $srcH);
-                $newW = (int) max(1, round($srcW * $scale));
-                $newH = (int) max(1, round($srcH * $scale));
+            // Handle transparency for PNG/WebP: fill canvas with pure white
+            $white = imagecolorallocate($canvas, 255, 255, 255);
+            imagefill($canvas, 0, 0, $white);
 
-                $dstX = (int) round(($targetW - $newW) / 2);
-                $dstY = (int) round(($targetH - $newH) / 2);
-
-                $white = imagecolorallocate($canvas, 255, 255, 255);
-                imagefill($canvas, 0, 0, $white);
-
-                imagecopyresampled(
-                    $canvas,
-                    $srcImage,
-                    $dstX,
-                    $dstY,
-                    0,
-                    0,
-                    $newW,
-                    $newH,
-                    $srcW,
-                    $srcH
-                );
-            } else {
-                // Wide landscape image (> 1.35):
-                // 1. Fill background with blurred ambient version of the photo itself
-                $bgScale = max($targetW / $srcW, $targetH / $srcH);
-                $bgW = (int) round($srcW * $bgScale);
-                $bgH = (int) round($srcH * $bgScale);
-                $bgX = (int) round(($targetW - $bgW) / 2);
-                $bgY = (int) round(($targetH - $bgH) / 2);
-
-                imagecopyresampled($canvas, $srcImage, $bgX, $bgY, 0, 0, $bgW, $bgH, $srcW, $srcH);
-
-                if (function_exists('imagefilter')) {
-                    for ($i = 0; $i < 15; $i++) {
-                        imagefilter($canvas, IMG_FILTER_GAUSSIAN_BLUR);
-                    }
-                }
-
-                // 2. Overlay the sharp, full uncropped product centered
-                $fgScale = min($targetW / $srcW, $targetH / $srcH);
-                $fgW = (int) round($srcW * $fgScale);
-                $fgH = (int) round($srcH * $fgScale);
-                $fgX = (int) round(($targetW - $fgW) / 2);
-                $fgY = (int) round(($targetH - $fgH) / 2);
-
-                imagecopyresampled($canvas, $srcImage, $fgX, $fgY, 0, 0, $fgW, $fgH, $srcW, $srcH);
-            }
+            imagecopyresampled(
+                $canvas,
+                $srcImage,
+                0,
+                0,
+                0,
+                0,
+                $targetW,
+                $targetH,
+                $srcW,
+                $srcH
+            );
 
             // Save high-quality JPEG
             imagejpeg($canvas, $destinationPath, $quality);
@@ -144,7 +116,7 @@ class ProductImageService
 
             return $filename;
         } catch (\Throwable $e) {
-            Log::warning('ProductImageService failed to resize image: ' . $e->getMessage());
+            Log::warning('ProductImageService failed to process image: ' . $e->getMessage());
 
             if ($file instanceof UploadedFile) {
                 $file->move($uploadDir, $filename);
@@ -156,12 +128,11 @@ class ProductImageService
     }
 
     /**
-     * Reprocess an existing image file on disk in-place.
+     * Reprocess an existing image file on disk in-place without cropping.
      */
     public static function reprocessInPlace(
         string $filePath,
-        int $targetW = self::TARGET_WIDTH,
-        int $targetH = self::TARGET_HEIGHT,
+        int $maxDim = self::MAX_DIMENSION,
         int $quality = self::JPEG_QUALITY
     ): bool {
         if (!file_exists($filePath)) {
@@ -170,7 +141,7 @@ class ProductImageService
 
         $tempPath = $filePath . '.tmp.jpg';
         try {
-            self::processAndSave($filePath, basename($tempPath), $targetW, $targetH, $quality);
+            self::processAndSave($filePath, basename($tempPath), $maxDim, $quality);
             if (file_exists($tempPath) && filesize($tempPath) > 0) {
                 @unlink($filePath);
                 @rename($tempPath, $filePath);

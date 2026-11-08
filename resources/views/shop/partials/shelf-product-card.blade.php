@@ -47,17 +47,21 @@
      x-data="{ liked: false }"
      x-init="$nextTick(() => liked = window.shopIsInWishlist ? window.shopIsInWishlist({{ $product->id }}) : false)">
 
-    {{-- Image Container (Compact 4:5 ratio, No Crop - Real Size Contain) --}}
-    <div class="relative w-full aspect-[4/5] overflow-hidden bg-white rounded-sm flex items-center justify-center">
-        <a href="{{ route('shop.products.show', $product->slug) }}" class="w-full h-full flex items-center justify-center">
+    {{-- Image Container (Uniform 4:5 card height, Zero Crop, Ambient Backdrop) --}}
+    <div class="relative w-full aspect-[4/5] overflow-hidden bg-gray-50/60 rounded-sm flex items-center justify-center">
+        @if($firstImg)
+            <img src="{{ $firstImg }}" alt="" aria-hidden="true"
+                 class="absolute inset-0 w-full h-full object-cover blur-xl scale-125 opacity-30 pointer-events-none select-none">
+        @endif
+        <a href="{{ route('shop.products.show', $product->slug) }}" class="relative z-10 w-full h-full flex items-center justify-center p-1">
             @if($firstImg)
                 <img src="{{ $firstImg }}" alt="{{ $product->name }}"
                      loading="lazy"
-                     class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ease-out {{ $out ? 'opacity-50' : '' }}">
+                     class="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300 ease-out {{ $out ? 'opacity-50' : '' }}">
                 @if($secondImg && !$out)
                 <img src="{{ $secondImg }}" alt="{{ $product->name }}"
                      loading="lazy"
-                     class="absolute inset-0 w-full h-full object-cover opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                     class="absolute inset-0 w-full h-full object-contain opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-1">
                 @endif
             @else
                 <div class="w-full h-full flex items-center justify-center text-gray-300">

@@ -8,14 +8,9 @@ FTP_PASS = 'Ebsbazar.com12'
 REMOTE_ROOT = '/public_html'
 
 FILES = [
-    'app/Models/Product.php',
-    'app/Http/Controllers/Shop/CartController.php',
-    'app/Http/Controllers/Shop/HomeController.php',
-    'app/Http/Controllers/Shop/ProductController.php',
-    'resources/views/shop/layout.blade.php',
-    'resources/views/shop/partials/quick-view-drawer.blade.php',
+    'app/Services/ProductImageService.php',
+    'app/Console/Commands/ResizeProductImages.php',
     'resources/views/shop/partials/shelf-product-card.blade.php',
-    'resources/views/shop/products/show.blade.php',
 ]
 
 def ensure_remote_dir(ftp, remote_dir):
@@ -57,6 +52,15 @@ def main():
             ftp.storbinary(f'STOR {remote_path}', f)
         print(f"[OK] {rel_path}")
 
+    # Also upload the uncropped version of the demo product's image
+    demo_local = os.path.join(base_dir, 'public', 'uploads', 'products', 'img_6af055f3981da5.21688548.jpg')
+    if os.path.exists(demo_local):
+        demo_remote = REMOTE_ROOT + '/public/uploads/products/img_6af055f3981da5.21688548.jpg'
+        print(f"Updating demo product image -> {demo_remote}...")
+        with open(demo_local, 'rb') as f:
+            ftp.storbinary(f'STOR {demo_remote}', f)
+        print("[OK] Demo product image restored to uncropped version!")
+
     # Clear remote view cache files
     print("Clearing remote view cache...")
     try:
@@ -72,19 +76,6 @@ def main():
         print(f"Cleared {len(files)} cached view files.")
     except Exception as e:
         print(f"Notice on view cache: {e}")
-
-    # Clear bootstrap cache if any
-    try:
-        bcache_dir = REMOTE_ROOT + '/bootstrap/cache'
-        ftp.cwd(bcache_dir)
-        for f in ['packages.php', 'services.php', 'config.php', 'routes-v7.php']:
-            try:
-                ftp.delete(f)
-                print(f"Deleted {f}")
-            except Exception:
-                pass
-    except Exception as e:
-        print(f"Notice on bootstrap cache: {e}")
 
     ftp.quit()
     print("Deployment finished successfully!")
