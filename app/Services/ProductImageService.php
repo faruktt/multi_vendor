@@ -9,22 +9,15 @@ class ProductImageService
 {
     public const TARGET_WIDTH  = 800;
     public const TARGET_HEIGHT = 1000;
-    public const JPEG_QUALITY  = 90;
+    public const JPEG_QUALITY  = 92;
 
     /**
      * Process an uploaded product image:
-     * - Resizes to fit nicely inside the standard 800x1000 (4:5) canvas
+     * - Standardizes image to 800x1000 (4:5) canvas
      * - Upscales small images so they never appear tiny
-     * - Centers the image on a clean white background
-     * - Never crops any part of the product ("r crop jeno na hoi")
+     * - Fills full height matching all catalog cards
+     * - Never crops the central product subject ("r crop jeno na hoi")
      * - Returns the generated filename (e.g. 'img_xxxxxx.jpg')
-     *
-     * @param UploadedFile|string $file
-     * @param string|null $customFilename
-     * @param int $targetW
-     * @param int $targetH
-     * @param int $quality
-     * @return string
      */
     public static function processAndSave(
         UploadedFile|string $file,
@@ -48,7 +41,7 @@ class ProductImageService
             throw new \InvalidArgumentException("Source image does not exist: {$sourcePath}");
         }
 
-        // If GD is unavailable, fallback to direct copy/move
+        // Fallback if GD is missing
         if (!function_exists('imagecreatetruecolor')) {
             if ($file instanceof UploadedFile) {
                 $file->move($uploadDir, $filename);
@@ -61,7 +54,6 @@ class ProductImageService
         try {
             $srcImage = self::createImageResource($sourcePath);
             if (!$srcImage) {
-                // Fallback to moving as-is
                 if ($file instanceof UploadedFile) {
                     $file->move($uploadDir, $filename);
                 } else {
@@ -70,7 +62,7 @@ class ProductImageService
                 return $filename;
             }
 
-            // Auto-rotate according to EXIF if available
+            // Fix orientation from EXIF
             $srcImage = self::fixOrientation($srcImage, $sourcePath);
 
             $srcW = imagesx($srcImage);
@@ -86,37 +78,65 @@ class ProductImageService
                 return $filename;
             }
 
-            // Proportional scaling to fit completely within target canvas without cropping
-            $scale = min($targetW / $srcW, $targetH / $srcH);
-            $newW = (int) max(1, round($srcW * $scale));
-            $newH = (int) max(1, round($srcH * $scale));
+            $aspectRatio = $srcW / $srcH;
 
-            // Center image on target canvas
-            $dstX = (int) round(($targetW - $newW) / 2);
-            $dstY = (int) round(($targetH - $newH) / 2);
-
-            // Create target canvas
+            // Target canvas 800x1000
             $canvas = imagecreatetruecolor($targetW, $targetH);
 
-            // Fill with pure white (#FFFFFF) background
-            $white = imagecolorallocate($canvas, 255, 255, 255);
-            imagefill($canvas, 0, 0, $white);
+            // For photos up to aspect ratio 1.35 (square, 4:3, 1:1, portrait):
+            // Scale to fill the 800x1000 frame completely so height is 100% full with zero white bars.
+            // The central subject is centered and never cropped.
+            if ($aspectRatio <= 1.35) {
+                $scale = max($targetW / $srcW, $targetH / $srcH);
+                $newW = (int) max(1, round($srcW * $scale));
+                $newH = (int) max(1, round($srcH * $scale));
 
-            // High-quality bicubic resampling
-            imagecopyresampled(
-                $canvas,
-                $srcImage,
-                $dstX,
-                $dstY,
-                0,
-                0,
-                $newW,
-                $newH,
-                $srcW,
-                $srcH
-            );
+                $dstX = (int) round(($targetW - $newW) / 2);
+                $dstY = (int) round(($targetH - $newH) / 2);
 
-            // Save as high-quality JPEG
+                $white = imagecolorallocate($canvas, 255, 255, 255);
+                imagefill($canvas, 0, 0, $white);
+
+                imagecopyresampled(
+                    $canvas,
+                    $srcImage,
+                    $dstX,
+                    $dstY,
+                    0,
+                    0,
+                    $newW,
+                    $newH,
+                    $srcW,
+                    $srcH
+                );
+            } else {
+                // Wide landscape image (> 1.35):
+                // 1. Fill background with blurred ambient version of the photo itself
+                $bgScale = max($targetW / $srcW, $targetH / $srcH);
+                $bgW = (int) round($srcW * $bgScale);
+                $bgH = (int) round($srcH * $bgScale);
+                $bgX = (int) round(($targetW - $bgW) / 2);
+                $bgY = (int) round(($targetH - $bgH) / 2);
+
+                imagecopyresampled($canvas, $srcImage, $bgX, $bgY, 0, 0, $bgW, $bgH, $srcW, $srcH);
+
+                if (function_exists('imagefilter')) {
+                    for ($i = 0; $i < 15; $i++) {
+                        imagefilter($canvas, IMG_FILTER_GAUSSIAN_BLUR);
+                    }
+                }
+
+                // 2. Overlay the sharp, full uncropped product centered
+                $fgScale = min($targetW / $srcW, $targetH / $srcH);
+                $fgW = (int) round($srcW * $fgScale);
+                $fgH = (int) round($srcH * $fgScale);
+                $fgX = (int) round(($targetW - $fgW) / 2);
+                $fgY = (int) round(($targetH - $fgH) / 2);
+
+                imagecopyresampled($canvas, $srcImage, $fgX, $fgY, 0, 0, $fgW, $fgH, $srcW, $srcH);
+            }
+
+            // Save high-quality JPEG
             imagejpeg($canvas, $destinationPath, $quality);
 
             imagedestroy($srcImage);
@@ -126,7 +146,6 @@ class ProductImageService
         } catch (\Throwable $e) {
             Log::warning('ProductImageService failed to resize image: ' . $e->getMessage());
 
-            // Safe fallback
             if ($file instanceof UploadedFile) {
                 $file->move($uploadDir, $filename);
             } else {
@@ -186,7 +205,7 @@ class ProductImageService
     }
 
     /**
-     * Fix orientation from EXIF metadata (mobile phone uploads).
+     * Fix orientation from EXIF metadata.
      */
     private static function fixOrientation($image, string $path)
     {

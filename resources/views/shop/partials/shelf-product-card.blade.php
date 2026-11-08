@@ -53,11 +53,11 @@
             @if($firstImg)
                 <img src="{{ $firstImg }}" alt="{{ $product->name }}"
                      loading="lazy"
-                     class="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300 ease-out {{ $out ? 'opacity-50' : '' }}">
+                     class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ease-out {{ $out ? 'opacity-50' : '' }}">
                 @if($secondImg && !$out)
                 <img src="{{ $secondImg }}" alt="{{ $product->name }}"
                      loading="lazy"
-                     class="absolute inset-0 w-full h-full object-contain opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                     class="absolute inset-0 w-full h-full object-cover opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                 @endif
             @else
                 <div class="w-full h-full flex items-center justify-center text-gray-300">

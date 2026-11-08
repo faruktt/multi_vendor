@@ -60,3 +60,4 @@ class ResizeProductImages extends Command
         return Command::SUCCESS;
     }
 }
+
