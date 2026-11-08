@@ -37,7 +37,7 @@ class ProductController extends Controller
 
         $imagePath = null;
         if ($request->hasFile('image')) {
-            $imagePath = $request->file('image')->store('products', 'uploads');
+            $imagePath = 'products/' . \App\Services\ProductImageService::processAndSave($request->file('image'));
         }
 
         $variants = [];
@@ -96,7 +96,7 @@ class ProductController extends Controller
         $imagePath = $product->image;
         if ($request->hasFile('image')) {
             if ($product->image) Storage::disk('uploads')->delete($product->image);
-            $imagePath = $request->file('image')->store('products', 'uploads');
+            $imagePath = 'products/' . \App\Services\ProductImageService::processAndSave($request->file('image'));
         }
 
         $variants = [];

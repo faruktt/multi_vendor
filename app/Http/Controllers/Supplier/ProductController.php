@@ -332,16 +332,9 @@ class ProductController extends Controller
     private function uploadImages(array $files): array
     {
         $names = [];
-        $uploadDir = public_path('uploads/products');
-        if (!file_exists($uploadDir)) {
-            @mkdir($uploadDir, 0755, true);
-        }
-
         foreach ($files as $file) {
             if (!$file || !$file->isValid()) continue;
-            $filename = uniqid('img_', true) . '.' . $file->getClientOriginalExtension();
-            $file->move($uploadDir, $filename);
-            $names[] = $filename;
+            $names[] = \App\Services\ProductImageService::processAndSave($file);
         }
         return $names;
     }

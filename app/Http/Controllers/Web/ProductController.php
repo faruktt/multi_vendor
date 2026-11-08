@@ -56,9 +56,7 @@ class ProductController extends Controller
         $names = [];
         foreach ($files as $file) {
             if (!$file || !$file->isValid()) continue;
-            $filename = uniqid('img_', true) . '.' . $file->getClientOriginalExtension();
-            $file->move(public_path('uploads/products'), $filename);
-            $names[] = $filename;
+            $names[] = \App\Services\ProductImageService::processAndSave($file);
         }
         return $names;
     }

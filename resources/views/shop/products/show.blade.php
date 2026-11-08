@@ -100,7 +100,7 @@
 
                         <template x-if="images.length > 0">
                             <img :src="currentImage" alt="{{ $product->name }}"
-                                 class="max-w-full max-h-full w-auto h-auto object-contain p-2 transition-transform duration-200 group-hover:scale-105">
+                                 class="w-full h-full object-contain p-2 transition-transform duration-200 group-hover:scale-105">
                         </template>
                         <template x-if="images.length === 0">
                             <i class="fas fa-box text-gray-300 text-6xl"></i>

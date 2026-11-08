@@ -219,9 +219,9 @@
         {{-- Left: Gallery — 1 main image + thumbnail strip --}}
         <div class="space-y-3">
             {{-- Main Image --}}
-            <div class="aspect-[4/5] bg-[#F8F9FA] rounded-lg overflow-hidden flex items-center justify-center p-3 border border-gray-100">
+            <div class="aspect-[4/5] bg-white rounded-lg overflow-hidden flex items-center justify-center border border-gray-100">
                 <img :src="activeImg" alt="{{ $product->name }}"
-                     class="max-w-full max-h-full w-auto h-auto object-contain transition-all duration-300">
+                     class="w-full h-full object-contain transition-all duration-300">
             </div>
 
             {{-- Thumbnail strip (show if more than 1 image) --}}
