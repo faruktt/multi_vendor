@@ -15,6 +15,31 @@
 
         <div class="flex flex-col xl:flex-row gap-6">
 
+            {{-- ══ Error Alert Banner ══ --}}
+            <div x-show="errorMessage || errorList.length > 0"
+                 x-cloak
+                 class="w-full xl:col-span-full mb-2 bg-red-50 border-2 border-red-300 rounded-2xl p-4 sm:p-5 text-red-800 shadow-sm transition-all"
+                 id="form-error-banner">
+                <div class="flex items-start gap-3.5">
+                    <div class="w-9 h-9 rounded-xl bg-red-100 flex items-center justify-center flex-shrink-0 text-red-600 mt-0.5">
+                        <i class="fas fa-circle-exclamation text-lg"></i>
+                    </div>
+                    <div class="flex-1">
+                        <h4 class="font-bold text-sm sm:text-base text-red-900" x-text="errorMessage || 'প্রোডাক্ট সংরক্ষণ করা যায়নি'"></h4>
+                        <template x-if="errorList.length > 0">
+                            <ul class="mt-2.5 list-disc list-inside text-xs sm:text-sm space-y-1 text-red-700 font-medium">
+                                <template x-for="(err, idx) in errorList" :key="idx">
+                                    <li x-text="err"></li>
+                                </template>
+                            </ul>
+                        </template>
+                    </div>
+                    <button type="button" @click="errorMessage = ''; errorList = []" class="text-red-400 hover:text-red-700 p-1 rounded-lg hover:bg-red-100 transition-colors">
+                        <i class="fas fa-times text-base"></i>
+                    </button>
+                </div>
+            </div>
+
             {{-- ══ LEFT COLUMN: Primary Details & Variants ══ --}}
             <div class="flex-1 space-y-5">
 
@@ -569,6 +594,8 @@ function supplierProductForm() {
         price:     {{ old('price', $product->price ?? 0) }},
         costPrice: {{ old('cost_price', $product->cost_price ?? 0) }},
         submitting: false,
+        errorMessage: '',
+        errorList: [],
 
         // Color & Size master lists (from controller)
         availableColors: @json($colorsJson ?? []),
@@ -617,14 +644,46 @@ function supplierProductForm() {
 
         async submitForm(e) {
             this.submitting = true;
+            this.errorMessage = '';
+            this.errorList = [];
+
             const form = e.target;
+
+            // Pre-validation checks
+            const name = (form.querySelector('[name="name"]')?.value || '').trim();
+            const categoryId = form.querySelector('[name="category_id"]')?.value;
+            const price = form.querySelector('[name="price"]')?.value;
+            const costPrice = form.querySelector('[name="cost_price"]')?.value;
+
+            const clientErrors = [];
+            if (!name) clientErrors.push('প্রোডাক্টের নাম (Product Name) দেওয়া আবশ্যক।');
+            if (!categoryId) clientErrors.push('ক্যাটাগরি (Category) সিলেক্ট করা আবশ্যক।');
+            if (price === '' || isNaN(price) || Number(price) < 0) clientErrors.push('বিক্রয় মূল্য (Price) সঠিক সংখ্যায় দেওয়া আবশ্যক।');
+            if (costPrice === '' || isNaN(costPrice) || Number(costPrice) < 0) clientErrors.push('ক্রয় মূল্য (Cost Price) সঠিক সংখ্যায় দেওয়া আবশ্যক।');
+
+            const uploader = window.__productImageUploader;
+            if (uploader && uploader.newFiles) {
+                uploader.newFiles.forEach((f) => {
+                    if (f.file && f.file.size > 10 * 1024 * 1024) {
+                        clientErrors.push(`"${f.file.name}" ছবির সাইজ ১০ MB এর বেশি (${(f.file.size / (1024 * 1024)).toFixed(1)} MB)। ছোট সাইজের ছবি আপলোড করুন।`);
+                    }
+                });
+            }
+
+            if (clientErrors.length > 0) {
+                this.errorMessage = 'অনুগ্রহ করে নিচের ভুলগুলো সংশোধন করুন:';
+                this.errorList = clientErrors;
+                this.submitting = false;
+                if (window.showToast) window.showToast('প্রোডাক্ট সংরক্ষণে সমস্যা হয়েছে! ভুলগুলো দেখুন।', 'error');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                return;
+            }
 
             // Build FormData from form fields
             const fd = new FormData(form);
 
             // Inject File objects directly from multiImageUploader
             fd.delete('images[]');
-            const uploader = window.__productImageUploader;
             if (uploader && uploader.newFiles) {
                 uploader.newFiles.forEach(f => fd.append('images[]', f.file));
             }
@@ -634,38 +693,68 @@ function supplierProductForm() {
                     method: 'POST',
                     body: fd,
                     redirect: 'follow',
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    },
                 });
 
+                const text = await resp.text();
+                let data = null;
+                try {
+                    data = JSON.parse(text);
+                } catch(err) {}
+
                 if (!resp.ok) {
-                    const text = await resp.text();
-                    let errMsg = 'Something went wrong while saving.';
-                    try {
-                        const json = JSON.parse(text);
-                        if (json.message) errMsg = json.message;
-                        if (json.errors) {
-                            errMsg = Object.values(json.errors).flat().join('\n');
+                    let mainMsg = 'প্রোডাক্ট সংরক্ষণ করা যায়নি।';
+                    let list = [];
+
+                    if (data) {
+                        if (data.message) mainMsg = data.message;
+                        if (data.errors) {
+                            list = Object.values(data.errors).flat();
                         }
-                    } catch(err) {}
-                    alert(errMsg);
+                    } else if (resp.status === 413) {
+                        mainMsg = 'আপলোডকৃত ফাইলের সাইজ অতিরিক্ত বড় (Payload Too Large)। ছবির সাইজ কমান।';
+                    } else if (resp.status === 419) {
+                        mainMsg = 'সেশন মেয়াদ শেষ হয়ে গেছে (CSRF Token Expired)। অনুগ্রহ করে পেজটি রিলোড দিন।';
+                    } else if (resp.status === 500) {
+                        mainMsg = 'সার্ভার ইন্টারনাল এরর (500)। অনুগ্রহ করে ফাইল সাইজ চেক করুন বা পুনরায় চেষ্টা করুন।';
+                    }
+
+                    this.errorMessage = mainMsg;
+                    this.errorList = list;
                     this.submitting = false;
+
+                    if (window.showToast) {
+                        window.showToast(mainMsg, 'error');
+                    }
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
                     return;
                 }
 
-                // If JSON with redirect_url
+                // SUCCESS
+                const successMsg = (data && data.message) ? data.message : 'প্রোডাক্ট সফলভাবে সংরক্ষণ করা হয়েছে!';
                 try {
-                    const data = await resp.clone().json();
-                    if (data.redirect_url) {
-                        window.location.href = data.redirect_url;
-                        return;
-                    }
+                    sessionStorage.setItem('flash_success', successMsg);
                 } catch(e) {}
 
-                window.location.href = resp.url || '{{ route('supplier.products.index') }}';
+                if (window.showToast) {
+                    window.showToast(successMsg, 'success');
+                }
+
+                const destUrl = (data && (data.redirect || data.redirect_url)) ? (data.redirect || data.redirect_url) : (resp.url || '{{ route('supplier.products.index') }}');
+                setTimeout(() => {
+                    window.location.href = destUrl;
+                }, 250);
+
             } catch (err) {
                 console.error('Submit error:', err);
-                alert('Submit failed: ' + (err.message || 'Unknown error'));
+                this.errorMessage = 'নেটওয়ার্ক বা সাবমিট এরর: ' + (err.message || 'Unknown error');
+                this.errorList = ['ইন্টারনেট কানেকশন চেক করুন এবং পুনরায় চেষ্টা করুন।'];
                 this.submitting = false;
+                if (window.showToast) window.showToast(this.errorMessage, 'error');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
             }
         }
     };

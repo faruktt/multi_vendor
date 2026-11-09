@@ -13,9 +13,11 @@ use App\Models\StockMovement;
 use App\Models\Vendor;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class ProductController extends Controller
 {
@@ -136,126 +138,178 @@ class ProductController extends Controller
 
     public function store(Request $request, Vendor $branch)
     {
-        $request->validate([
-            'name'          => 'required|string|max:255',
-            'category_id'     => 'required|exists:categories,id',
-            'sub_category_id' => 'nullable|exists:sub_categories,id',
-            'price'         => 'required|numeric|min:0',
-            'old_price'     => 'nullable|numeric|min:0',
-            'cost_price'    => 'required|numeric|min:0',
-            'reseller_price'=> 'nullable|numeric|min:0',
-            'stock_qty'     => 'nullable|integer|min:0',
-            'unit'          => 'nullable|string|max:50',
-            'barcode'       => 'nullable|string|unique:products,barcode',
-            'description'        => 'nullable|string',
-            'short_description'  => 'nullable|string|max:500',
-            'facebook_video_url' => 'nullable|string|max:1000',
-            'images'             => 'nullable|array|max:10',
-            'images.*'           => 'image|max:2048',
-            'branch_ids'         => 'nullable|array',
-            'branch_ids.*'       => 'integer|exists:vendors,id',
-        ]);
+        $messages = [
+            'name.required' => 'প্রোডাক্টের নাম (Product Name) দেওয়া আবশ্যক।',
+            'category_id.required' => 'ক্যাটাগরি (Category) সিলেক্ট করা আবশ্যক।',
+            'category_id.exists' => 'নির্বাচিত ক্যাটাগরিটি সঠিক নয়।',
+            'sub_category_id.exists' => 'নির্বাচিত সাবক্যাটাগরিটি সঠিক নয়।',
+            'price.required' => 'বিক্রয় মূল্য (Price) দেওয়া আবশ্যক।',
+            'price.numeric' => 'বিক্রয় মূল্য অবশ্যই সংখ্যা হতে হবে।',
+            'price.min' => 'বিক্রয় মূল্য ০ বা তার বেশি হতে হবে।',
+            'cost_price.required' => 'ক্রয় মূল্য (Cost Price) দেওয়া আবশ্যক।',
+            'cost_price.numeric' => 'ক্রয় মূল্য অবশ্যই সংখ্যা হতে হবে।',
+            'cost_price.min' => 'ক্রয় মূল্য ০ বা তার বেশি হতে হবে।',
+            'barcode.unique' => 'এই বারকোডটি ইতিমধ্যে অন্য একটি প্রোডাক্টে ব্যবহৃত হয়েছে। অনুগ্রহ করে ভিন্ন বারকোড দিন।',
+            'images.max' => 'একসাথে সর্বোচ্চ ১০টি ছবি আপলোড করা যাবে।',
+            'images.*.image' => 'আপলোড করা ফাইল অবশ্যই ইমেজ (ছবি) হতে হবে।',
+            'images.*.mimes' => 'শুধুমাত্র JPG, JPEG, PNG, WEBP বা GIF ফরম্যাটের ছবি গ্রহণযোগ্য।',
+            'images.*.max' => 'প্রতিটি ছবির সাইজ সর্বোচ্চ ১০ MB হতে পারবে।',
+        ];
 
-        $imageFilenames = $this->uploadImages($request->file('images', []));
+        try {
+            $request->validate([
+                'name'               => 'required|string|max:255',
+                'category_id'        => 'required|exists:categories,id',
+                'sub_category_id'    => 'nullable|exists:sub_categories,id',
+                'price'              => 'required|numeric|min:0',
+                'old_price'          => 'nullable|numeric|min:0',
+                'cost_price'         => 'required|numeric|min:0',
+                'reseller_price'     => 'nullable|numeric|min:0',
+                'stock_qty'          => 'nullable|integer|min:0',
+                'unit'               => 'nullable|string|max:50',
+                'barcode'            => 'nullable|string|unique:products,barcode',
+                'description'        => 'nullable|string',
+                'short_description'  => 'nullable|string|max:500',
+                'facebook_video_url' => 'nullable|string|max:1000',
+                'images'             => 'nullable|array|max:10',
+                'images.*'           => 'file|image|mimes:jpeg,png,jpg,webp,gif|max:10240',
+                'branch_ids'         => 'nullable|array',
+                'branch_ids.*'       => 'integer|exists:vendors,id',
+            ], $messages);
 
-        $variants    = json_decode($request->variants ?? '[]', true) ?? [];
-        $hasVariants = !empty($variants);
+            $imageFilenames = $this->uploadImages($request->file('images', []));
 
-        $validBranchIds = $this->distributableBranches()->pluck('id');
-        $branchIds      = collect($request->branch_ids ?? [])->intersect($validBranchIds);
+            $variants    = json_decode($request->variants ?? '[]', true) ?? [];
+            $hasVariants = !empty($variants);
 
-        $product = DB::transaction(function () use ($request, $branch, $imageFilenames, $variants, $hasVariants, $branchIds) {
-            $product = Product::create([
-                'vendor_id'          => $branch->id,
-                'category_id'        => $request->category_id,
-                'sub_category_id'    => $request->sub_category_id ?: null,
-                'name'               => $request->name,
-                'sku'                => 'SKU-' . strtoupper(Str::random(8)),
-                'barcode'            => $request->barcode,
-                'images'             => $imageFilenames,
-                'image'              => $imageFilenames[0] ?? null,
-                'description'        => $request->description,
-                'short_description'  => $request->short_description,
-                'facebook_video_url' => $request->facebook_video_url ? trim($request->facebook_video_url) : null,
-                'price'              => $request->price,
-                'old_price'          => $request->filled('old_price') ? $request->old_price : null,
-                'cost_price'         => $request->cost_price,
-                'reseller_price'     => ($request->filled('reseller_price') && (float)$request->reseller_price > 0) ? (float)$request->reseller_price : null,
-                'stock_qty'          => $hasVariants ? collect($variants)->sum(fn($v) => (int)($v['stock_qty'] ?? 0)) : ($request->stock_qty ?? 0),
-                'unit'               => $request->unit ?? 'pcs',
-                'status'             => 'active',
-            ]);
+            $validBranchIds = $this->distributableBranches()->pluck('id');
+            $branchIds      = collect($request->branch_ids ?? [])->intersect($validBranchIds);
 
-            foreach ($variants as $v) {
-                $colorLabel = $v['color_label'] ?? null;
-                $sizeLabel  = $v['size_label']  ?? null;
-                $price      = (!isset($v['price']) || $v['price'] === '') ? null : $v['price'];
-                $costPrice  = (!isset($v['cost_price']) || $v['cost_price'] === '') ? null : $v['cost_price'];
-                $stockQty   = (!isset($v['stock_qty']) || $v['stock_qty'] === '') ? 0 : (int)$v['stock_qty'];
-                $colorId    = !empty($v['color_id']) ? $v['color_id'] : null;
-                $sizeId     = !empty($v['size_id']) ? $v['size_id'] : null;
-
-                ProductVariant::create([
-                    'product_id'   => $product->id,
-                    'variant_name' => trim(implode(' / ', array_filter([$colorLabel, $sizeLabel]))) ?: ($v['variant_name'] ?? ''),
-                    'attributes'   => $v['attributes'] ?? null,
-                    'color_id'     => $colorId,
-                    'size_id'      => $sizeId,
-                    'color_label'  => $colorLabel,
-                    'size_label'   => $sizeLabel,
-                    'price'        => $price,
-                    'cost_price'   => $costPrice,
-                    'stock_qty'    => $stockQty,
-                    'sku'          => 'VAR-' . strtoupper(Str::random(8)),
-                ]);
-            }
-
-            if ($product->stock_qty > 0) {
-                StockMovement::create([
-                    'vendor_id'      => $branch->id,
-                    'product_id'     => $product->id,
-                    'type'           => 'in',
-                    'quantity'       => $product->stock_qty,
-                    'reference_type' => 'adjustment',
-                    'note'           => 'Opening stock',
-                ]);
-            }
-
-            // Distribute — every selected branch gets a 0-stock clone right away so the
-            // product shows up in its catalog; real stock still only arrives via Purchase → Transfer.
-            $product->load(['category', 'subCategory']);
-            $subCategorySource = $product->sub_category_id ? Category::withoutGlobalScopes()->find($product->sub_category_id) : null;
-
-            foreach ($branchIds as $toBranchId) {
-                $toBranch = Vendor::find($toBranchId);
-                if (!$toBranch) continue;
-
-                $branchSubCatId = $subCategorySource ? $this->resolveBranchCategory($toBranch, $subCategorySource) : null;
-
-                Product::create([
-                    'vendor_id'          => $toBranch->id,
-                    'category_id'        => $this->resolveBranchCategory($toBranch, $product->category),
-                    'sub_category_id'    => $branchSubCatId,
-                    'source_product_id'  => $product->id,
-                    'name'               => $product->name,
+            $product = DB::transaction(function () use ($request, $branch, $imageFilenames, $variants, $hasVariants, $branchIds) {
+                $product = Product::create([
+                    'vendor_id'          => $branch->id,
+                    'category_id'        => $request->category_id,
+                    'sub_category_id'    => $request->sub_category_id ?: null,
+                    'name'               => $request->name,
                     'sku'                => 'SKU-' . strtoupper(Str::random(8)),
-                    'description'        => $product->description,
-                    'images'             => $product->images,
-                    'image'              => $product->image,
-                    'price'              => $product->price,
-                    'old_price'          => $product->old_price,
-                    'cost_price'         => $product->cost_price,
-                    'reseller_price'     => $product->reseller_price,
-                    'stock_qty'          => 0,
-                    'unit'               => $product->unit,
+                    'barcode'            => $request->barcode,
+                    'images'             => $imageFilenames,
+                    'image'              => $imageFilenames[0] ?? null,
+                    'description'        => $request->description,
+                    'short_description'  => $request->short_description,
+                    'facebook_video_url' => $request->facebook_video_url ? trim($request->facebook_video_url) : null,
+                    'price'              => $request->price,
+                    'old_price'          => $request->filled('old_price') ? $request->old_price : null,
+                    'cost_price'         => $request->cost_price,
+                    'reseller_price'     => ($request->filled('reseller_price') && (float)$request->reseller_price > 0) ? (float)$request->reseller_price : null,
+                    'stock_qty'          => $hasVariants ? collect($variants)->sum(fn($v) => (int)($v['stock_qty'] ?? 0)) : ($request->stock_qty ?? 0),
+                    'unit'               => $request->unit ?? 'pcs',
                     'status'             => 'active',
                 ]);
+
+                foreach ($variants as $v) {
+                    $colorLabel = $v['color_label'] ?? null;
+                    $sizeLabel  = $v['size_label']  ?? null;
+                    $price      = (!isset($v['price']) || $v['price'] === '') ? null : $v['price'];
+                    $costPrice  = (!isset($v['cost_price']) || $v['cost_price'] === '') ? null : $v['cost_price'];
+                    $stockQty   = (!isset($v['stock_qty']) || $v['stock_qty'] === '') ? 0 : (int)$v['stock_qty'];
+                    $colorId    = !empty($v['color_id']) ? $v['color_id'] : null;
+                    $sizeId     = !empty($v['size_id']) ? $v['size_id'] : null;
+
+                    ProductVariant::create([
+                        'product_id'   => $product->id,
+                        'variant_name' => trim(implode(' / ', array_filter([$colorLabel, $sizeLabel]))) ?: ($v['variant_name'] ?? ''),
+                        'attributes'   => $v['attributes'] ?? null,
+                        'color_id'     => $colorId,
+                        'size_id'      => $sizeId,
+                        'color_label'  => $colorLabel,
+                        'size_label'   => $sizeLabel,
+                        'price'        => $price,
+                        'cost_price'   => $costPrice,
+                        'stock_qty'    => $stockQty,
+                        'sku'          => 'VAR-' . strtoupper(Str::random(8)),
+                    ]);
+                }
+
+                if ($product->stock_qty > 0) {
+                    StockMovement::create([
+                        'vendor_id'      => $branch->id,
+                        'product_id'     => $product->id,
+                        'type'           => 'in',
+                        'quantity'       => $product->stock_qty,
+                        'reference_type' => 'adjustment',
+                        'note'           => 'Opening stock',
+                    ]);
+                }
+
+                // Distribute — every selected branch gets a 0-stock clone right away so the
+                // product shows up in its catalog; real stock still only arrives via Purchase → Transfer.
+                $product->load(['category', 'subCategory']);
+                $subCategorySource = $product->sub_category_id ? Category::withoutGlobalScopes()->find($product->sub_category_id) : null;
+
+                foreach ($branchIds as $toBranchId) {
+                    $toBranch = Vendor::find($toBranchId);
+                    if (!$toBranch) continue;
+
+                    $branchSubCatId = $subCategorySource ? $this->resolveBranchCategory($toBranch, $subCategorySource) : null;
+
+                    Product::create([
+                        'vendor_id'          => $toBranch->id,
+                        'category_id'        => $this->resolveBranchCategory($toBranch, $product->category),
+                        'sub_category_id'    => $branchSubCatId,
+                        'source_product_id'  => $product->id,
+                        'name'               => $product->name,
+                        'sku'                => 'SKU-' . strtoupper(Str::random(8)),
+                        'description'        => $product->description,
+                        'images'             => $product->images,
+                        'image'              => $product->image,
+                        'price'              => $product->price,
+                        'old_price'          => $product->old_price,
+                        'cost_price'         => $product->cost_price,
+                        'reseller_price'     => $product->reseller_price,
+                        'stock_qty'          => 0,
+                        'unit'               => $product->unit,
+                        'status'             => 'active',
+                    ]);
+                }
+
+                return $product;
+            });
+
+            $successMsg = 'প্রোডাক্ট সফলভাবে যুক্ত করা হয়েছে — ' . ($branchIds->count() ?: 'কোন') . ' টি ব্রাঞ্চে বিতরণ করা হয়েছে।';
+
+            if ($request->ajax() || $request->wantsJson()) {
+                session()->flash('success', $successMsg);
+                return response()->json([
+                    'success'  => true,
+                    'message'  => $successMsg,
+                    'redirect' => route('admin.warehouse.products.index', 'warehouse'),
+                ]);
             }
 
-            return $product;
-        });
+            return redirect()->route('admin.warehouse.products.index', 'warehouse')->with('success', $successMsg);
 
-        return redirect()->route('admin.warehouse.products.index', 'warehouse')->with('success', 'Product added — available at ' . ($branchIds->count() ?: 'no') . ' branch' . ($branchIds->count() === 1 ? '' : 'es') . '.');
+        } catch (ValidationException $e) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'ফর্মের তথ্য সঠিকভাবে পূরণ করা হয়নি। ভুলগুলো সংশোধন করুন।',
+                    'errors'  => $e->errors(),
+                ], 422);
+            }
+            throw $e;
+        } catch (\Throwable $e) {
+            Log::error('Product creation failed: ' . $e->getMessage(), ['exception' => $e]);
+            $errorMsg = 'প্রোডাক্ট আপলোড করতে ব্যর্থ হয়েছে: ' . $e->getMessage();
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $errorMsg,
+                    'errors'  => ['general' => [$e->getMessage()]],
+                ], 500);
+            }
+            return back()->withInput()->with('error', $errorMsg);
+        }
     }
 
     public function edit(Vendor $branch, Product $product)
@@ -296,185 +350,235 @@ class ProductController extends Controller
     {
         abort_unless(is_null($product->source_product_id), 404);
 
-        $request->validate([
-            'name'           => 'required|string|max:255',
-            'category_id'    => 'required|exists:categories,id',
-            'sub_category_id'=> 'nullable|exists:sub_categories,id',
-            'price'          => 'required|numeric|min:0',
-            'old_price'      => 'nullable|numeric|min:0',
-            'cost_price'     => 'required|numeric|min:0',
-            'reseller_price' => 'nullable|numeric|min:0',
-            'stock_qty'      => 'nullable|integer|min:0',
-            'unit'           => 'nullable|string|max:50',
-            'barcode'        => 'nullable|string|unique:products,barcode,' . $product->id,
-            'description'        => 'nullable|string',
-            'short_description'  => 'nullable|string|max:500',
-            'facebook_video_url' => 'nullable|string|max:1000',
-            'images'             => 'nullable|array|max:10',
-            'images.*'           => 'image|max:2048',
-            'remove_images'      => 'nullable|array',
-            'remove_images.*'    => 'string',
-            'branch_ids'         => 'nullable|array',
-            'branch_ids.*'       => 'integer|exists:vendors,id',
-        ]);
+        $messages = [
+            'name.required' => 'প্রোডাক্টের নাম (Product Name) দেওয়া আবশ্যক।',
+            'category_id.required' => 'ক্যাটাগরি (Category) সিলেক্ট করা আবশ্যক।',
+            'category_id.exists' => 'নির্বাচিত ক্যাটাগরিটি সঠিক নয়।',
+            'sub_category_id.exists' => 'নির্বাচিত সাবক্যাটাগরিটি সঠিক নয়।',
+            'price.required' => 'বিক্রয় মূল্য (Price) দেওয়া আবশ্যক।',
+            'price.numeric' => 'বিক্রয় মূল্য অবশ্যই সংখ্যা হতে হবে।',
+            'price.min' => 'বিক্রয় মূল্য ০ বা তার বেশি হতে হবে।',
+            'cost_price.required' => 'ক্রয় মূল্য (Cost Price) দেওয়া আবশ্যক।',
+            'cost_price.numeric' => 'ক্রয় মূল্য অবশ্যই সংখ্যা হতে হবে।',
+            'cost_price.min' => 'ক্রয় মূল্য ০ বা তার বেশি হতে হবে।',
+            'barcode.unique' => 'এই বারকোডটি ইতিমধ্যে অন্য একটি প্রোডাক্টে ব্যবহৃত হয়েছে।',
+            'images.max' => 'সর্বোচ্চ ১০টি ছবি আপলোড করা যাবে।',
+            'images.*.image' => 'আপলোড করা ফাইল অবশ্যই ইমেজ (ছবি) হতে হবে।',
+            'images.*.mimes' => 'শুধুমাত্র JPG, JPEG, PNG, WEBP বা GIF ফরম্যাটের ছবি গ্রহণযোগ্য।',
+            'images.*.max' => 'প্রতিটি ছবির সাইজ সর্বোচ্চ ১০ MB হতে পারবে।',
+        ];
 
-        $currentImages = $product->images_list;
-        $toRemove = $request->input('remove_images', []);
-        if (!empty($toRemove)) {
-            $this->deleteImages($toRemove);
-            $currentImages = array_values(array_diff($currentImages, $toRemove));
-        }
-        $newImages = $this->uploadImages($request->file('images', []));
-        $allImages = array_values(array_merge($currentImages, $newImages));
+        try {
+            $request->validate([
+                'name'               => 'required|string|max:255',
+                'category_id'        => 'required|exists:categories,id',
+                'sub_category_id'    => 'nullable|exists:sub_categories,id',
+                'price'              => 'required|numeric|min:0',
+                'old_price'          => 'nullable|numeric|min:0',
+                'cost_price'         => 'required|numeric|min:0',
+                'reseller_price'     => 'nullable|numeric|min:0',
+                'stock_qty'          => 'nullable|integer|min:0',
+                'unit'               => 'nullable|string|max:50',
+                'barcode'            => 'nullable|string|unique:products,barcode,' . $product->id,
+                'description'        => 'nullable|string',
+                'short_description'  => 'nullable|string|max:500',
+                'facebook_video_url' => 'nullable|string|max:1000',
+                'images'             => 'nullable|array|max:10',
+                'images.*'           => 'file|image|mimes:jpeg,png,jpg,webp,gif|max:10240',
+                'remove_images'      => 'nullable|array',
+                'remove_images.*'    => 'string',
+                'branch_ids'         => 'nullable|array',
+                'branch_ids.*'       => 'integer|exists:vendors,id',
+            ], $messages);
 
-        $variants    = json_decode($request->variants ?? '[]', true) ?? [];
-        $hasVariants = !empty($variants);
-
-        $oldStockQty = $product->stock_qty;
-
-        $product->update([
-            'category_id'        => $request->category_id,
-            'sub_category_id'    => $request->sub_category_id ?: null,
-            'name'               => $request->name,
-            'price'              => $request->price,
-            'old_price'          => $request->filled('old_price') ? $request->old_price : null,
-            'cost_price'         => $request->cost_price,
-            'reseller_price'     => ($request->filled('reseller_price') && (float)$request->reseller_price > 0) ? (float)$request->reseller_price : null,
-            'stock_qty'          => $hasVariants ? collect($variants)->sum(fn($v) => (int)($v['stock_qty'] ?? 0)) : ($request->stock_qty ?? $product->stock_qty),
-            'unit'               => $request->unit ?? $product->unit,
-            'barcode'            => $request->barcode ?? $product->barcode,
-            'images'             => $allImages,
-            'image'              => $allImages[0] ?? null,
-            'description'        => $request->description ?? $product->description,
-            'short_description'  => $request->short_description ?? $product->short_description,
-            'facebook_video_url' => $request->facebook_video_url ? trim($request->facebook_video_url) : null,
-        ]);
-
-        if ($hasVariants) {
-            $incomingIds = collect($variants)->pluck('id')->filter();
-            $product->variants()->whereNotIn('id', $incomingIds)->delete();
-
-            foreach ($variants as $v) {
-                $colorLabel = $v['color_label'] ?? null;
-                $sizeLabel  = $v['size_label']  ?? null;
-                $price      = (!isset($v['price']) || $v['price'] === '') ? null : $v['price'];
-                $costPrice  = (!isset($v['cost_price']) || $v['cost_price'] === '') ? null : $v['cost_price'];
-                $stockQty   = (!isset($v['stock_qty']) || $v['stock_qty'] === '') ? 0 : (int)$v['stock_qty'];
-                $colorId    = !empty($v['color_id']) ? $v['color_id'] : null;
-                $sizeId     = !empty($v['size_id']) ? $v['size_id'] : null;
-
-                $data = [
-                    'product_id'   => $product->id,
-                    'variant_name' => trim(implode(' / ', array_filter([$colorLabel, $sizeLabel]))) ?: ($v['variant_name'] ?? ''),
-                    'attributes'   => $v['attributes'] ?? null,
-                    'color_id'     => $colorId,
-                    'size_id'      => $sizeId,
-                    'color_label'  => $colorLabel,
-                    'size_label'   => $sizeLabel,
-                    'price'        => $price,
-                    'cost_price'   => $costPrice,
-                    'stock_qty'    => $stockQty,
-                ];
-                if (!empty($v['id'])) {
-                    ProductVariant::where('id', $v['id'])->update($data);
-                } else {
-                    ProductVariant::create(array_merge($data, ['sku' => 'VAR-' . strtoupper(Str::random(8))]));
-                }
+            $currentImages = $product->images_list;
+            $toRemove = $request->input('remove_images', []);
+            if (!empty($toRemove)) {
+                $this->deleteImages($toRemove);
+                $currentImages = array_values(array_diff($currentImages, $toRemove));
             }
-            $product->update(['stock_qty' => collect($variants)->sum(fn($v) => (int)($v['stock_qty'] ?? 0))]);
-        }
+            $newImages = $this->uploadImages($request->file('images', []));
+            $allImages = array_values(array_merge($currentImages, $newImages));
 
-        $stockDelta = $product->stock_qty - $oldStockQty;
-        if ($stockDelta !== 0) {
-            StockMovement::create([
-                'vendor_id'      => $product->vendor_id,
-                'product_id'     => $product->id,
-                'type'           => $stockDelta > 0 ? 'in' : 'out',
-                'quantity'       => abs($stockDelta),
-                'reference_type' => 'adjustment',
-                'note'           => 'Manual stock adjustment',
+            $variants    = json_decode($request->variants ?? '[]', true) ?? [];
+            $hasVariants = !empty($variants);
+
+            $oldStockQty = $product->stock_qty;
+
+            $product->update([
+                'category_id'        => $request->category_id,
+                'sub_category_id'    => $request->sub_category_id ?: null,
+                'name'               => $request->name,
+                'price'              => $request->price,
+                'old_price'          => $request->filled('old_price') ? $request->old_price : null,
+                'cost_price'         => $request->cost_price,
+                'reseller_price'     => ($request->filled('reseller_price') && (float)$request->reseller_price > 0) ? (float)$request->reseller_price : null,
+                'stock_qty'          => $hasVariants ? collect($variants)->sum(fn($v) => (int)($v['stock_qty'] ?? 0)) : ($request->stock_qty ?? $product->stock_qty),
+                'unit'               => $request->unit ?? $product->unit,
+                'barcode'            => $request->barcode ?? $product->barcode,
+                'images'             => $allImages,
+                'image'              => $allImages[0] ?? null,
+                'description'        => $request->description ?? $product->description,
+                'short_description'  => $request->short_description ?? $product->short_description,
+                'facebook_video_url' => $request->facebook_video_url ? trim($request->facebook_video_url) : null,
             ]);
-        }
 
-        // Newly-checked branches get a fresh 0-stock clone; unchecking an already-distributed
-        // branch removes it — but only if it's still at 0 stock, so nothing with real inventory
-        // disappears silently just from a checkbox change.
-        $validBranchIds       = $this->distributableBranches()->pluck('id');
-        $requestedBranchIds   = collect($request->branch_ids ?? [])->intersect($validBranchIds);
-        $alreadyDistributedTo = Product::withoutGlobalScopes()->where('source_product_id', $product->id)->pluck('vendor_id');
-        $newBranchIds         = $requestedBranchIds->diff($alreadyDistributedTo);
-        $removedBranchIds     = $alreadyDistributedTo->diff($requestedBranchIds);
+            if ($hasVariants) {
+                $incomingIds = collect($variants)->pluck('id')->filter();
+                $product->variants()->whereNotIn('id', $incomingIds)->delete();
 
-        $product->load(['category', 'subCategory']);
-        $subCategorySource = $product->sub_category_id ? Category::withoutGlobalScopes()->find($product->sub_category_id) : null;
+                foreach ($variants as $v) {
+                    $colorLabel = $v['color_label'] ?? null;
+                    $sizeLabel  = $v['size_label']  ?? null;
+                    $price      = (!isset($v['price']) || $v['price'] === '') ? null : $v['price'];
+                    $costPrice  = (!isset($v['cost_price']) || $v['cost_price'] === '') ? null : $v['cost_price'];
+                    $stockQty   = (!isset($v['stock_qty']) || $v['stock_qty'] === '') ? 0 : (int)$v['stock_qty'];
+                    $colorId    = !empty($v['color_id']) ? $v['color_id'] : null;
+                    $sizeId     = !empty($v['size_id']) ? $v['size_id'] : null;
 
-        if ($newBranchIds->isNotEmpty()) {
-            foreach ($newBranchIds as $toBranchId) {
-                $toBranch = Vendor::find($toBranchId);
-                if (!$toBranch) continue;
+                    $data = [
+                        'product_id'   => $product->id,
+                        'variant_name' => trim(implode(' / ', array_filter([$colorLabel, $sizeLabel]))) ?: ($v['variant_name'] ?? ''),
+                        'attributes'   => $v['attributes'] ?? null,
+                        'color_id'     => $colorId,
+                        'size_id'      => $sizeId,
+                        'color_label'  => $colorLabel,
+                        'size_label'   => $sizeLabel,
+                        'price'        => $price,
+                        'cost_price'   => $costPrice,
+                        'stock_qty'    => $stockQty,
+                    ];
+                    if (!empty($v['id'])) {
+                        ProductVariant::where('id', $v['id'])->update($data);
+                    } else {
+                        ProductVariant::create(array_merge($data, ['sku' => 'VAR-' . strtoupper(Str::random(8))]));
+                    }
+                }
+                $product->update(['stock_qty' => collect($variants)->sum(fn($v) => (int)($v['stock_qty'] ?? 0))]);
+            }
 
-                $branchSubCatId = $subCategorySource ? $this->resolveBranchCategory($toBranch, $subCategorySource) : null;
-
-                Product::create([
-                    'vendor_id'          => $toBranch->id,
-                    'category_id'        => $this->resolveBranchCategory($toBranch, $product->category),
-                    'sub_category_id'    => $branchSubCatId,
-                    'source_product_id'  => $product->id,
-                    'name'               => $product->name,
-                    'sku'                => 'SKU-' . strtoupper(Str::random(8)),
-                    'description'        => $product->description,
-                    'short_description'  => $product->short_description,
-                    'facebook_video_url' => $product->facebook_video_url,
-                    'images'             => $product->images,
-                    'image'              => $product->image,
-                    'price'              => $product->price,
-                    'old_price'          => $product->old_price,
-                    'cost_price'         => $product->cost_price,
-                    'reseller_price'     => $product->reseller_price,
-                    'stock_qty'          => 0,
-                    'unit'               => $product->unit,
-                    'status'             => 'active',
+            $stockDelta = $product->stock_qty - $oldStockQty;
+            if ($stockDelta !== 0) {
+                StockMovement::create([
+                    'vendor_id'      => $product->vendor_id,
+                    'product_id'     => $product->id,
+                    'type'           => $stockDelta > 0 ? 'in' : 'out',
+                    'quantity'       => abs($stockDelta),
+                    'reference_type' => 'adjustment',
+                    'note'           => 'Manual stock adjustment',
                 ]);
             }
-        }
 
-        // Sync details to existing downstream clones
-        foreach (Product::withoutGlobalScopes()->where('source_product_id', $product->id)->get() as $clone) {
-            $cloneBranch = Vendor::find($clone->vendor_id);
-            $cloneCatId = $cloneBranch ? $this->resolveBranchCategory($cloneBranch, $product->category) : null;
-            $cloneSubCatId = ($cloneBranch && $subCategorySource) ? $this->resolveBranchCategory($cloneBranch, $subCategorySource) : null;
+            // Newly-checked branches get a fresh 0-stock clone; unchecking an already-distributed
+            // branch removes it — but only if it's still at 0 stock, so nothing with real inventory
+            // disappears silently just from a checkbox change.
+            $validBranchIds       = $this->distributableBranches()->pluck('id');
+            $requestedBranchIds   = collect($request->branch_ids ?? [])->intersect($validBranchIds);
+            $alreadyDistributedTo = Product::withoutGlobalScopes()->where('source_product_id', $product->id)->pluck('vendor_id');
+            $newBranchIds         = $requestedBranchIds->diff($alreadyDistributedTo);
+            $removedBranchIds     = $alreadyDistributedTo->diff($requestedBranchIds);
 
-            $clone->update([
-                'category_id'        => $cloneCatId ?: $clone->category_id,
-                'sub_category_id'    => $cloneSubCatId,
-                'short_description'  => $product->short_description,
-                'facebook_video_url' => $product->facebook_video_url,
-                'description'        => $product->description,
-                'image'              => $product->image,
-                'images'             => $product->images,
-                'old_price'          => $product->old_price,
-            ]);
-        }
+            $product->load(['category', 'subCategory']);
+            $subCategorySource = $product->sub_category_id ? Category::withoutGlobalScopes()->find($product->sub_category_id) : null;
 
-        $blockedRemovals = [];
-        foreach ($removedBranchIds as $vendorId) {
-            $clone = Product::withoutGlobalScopes()->where('source_product_id', $product->id)->where('vendor_id', $vendorId)->first();
-            if (!$clone) continue;
+            if ($newBranchIds->isNotEmpty()) {
+                foreach ($newBranchIds as $toBranchId) {
+                    $toBranch = Vendor::find($toBranchId);
+                    if (!$toBranch) continue;
 
-            if ($clone->stock_qty > 0) {
-                $blockedRemovals[] = $clone->vendor?->name ?? "vendor #{$vendorId}";
-                continue;
+                    $branchSubCatId = $subCategorySource ? $this->resolveBranchCategory($toBranch, $subCategorySource) : null;
+
+                    Product::create([
+                        'vendor_id'          => $toBranch->id,
+                        'category_id'        => $this->resolveBranchCategory($toBranch, $product->category),
+                        'sub_category_id'    => $branchSubCatId,
+                        'source_product_id'  => $product->id,
+                        'name'               => $product->name,
+                        'sku'                => 'SKU-' . strtoupper(Str::random(8)),
+                        'description'        => $product->description,
+                        'short_description'  => $product->short_description,
+                        'facebook_video_url' => $product->facebook_video_url,
+                        'images'             => $product->images,
+                        'image'              => $product->image,
+                        'price'              => $product->price,
+                        'old_price'          => $product->old_price,
+                        'cost_price'         => $product->cost_price,
+                        'reseller_price'     => $product->reseller_price,
+                        'stock_qty'          => 0,
+                        'unit'               => $product->unit,
+                        'status'             => 'active',
+                    ]);
+                }
             }
 
-            $clone->delete();
-        }
+            // Sync details to existing downstream clones
+            foreach (Product::withoutGlobalScopes()->where('source_product_id', $product->id)->get() as $clone) {
+                $cloneBranch = Vendor::find($clone->vendor_id);
+                $cloneCatId = $cloneBranch ? $this->resolveBranchCategory($cloneBranch, $product->category) : null;
+                $cloneSubCatId = ($cloneBranch && $subCategorySource) ? $this->resolveBranchCategory($cloneBranch, $subCategorySource) : null;
 
-        $message = 'Product updated.';
-        if (!empty($blockedRemovals)) {
-            $message .= ' Could not remove from ' . implode(', ', $blockedRemovals) . ' — it still has stock there; transfer it out first.';
-        }
+                $clone->update([
+                    'category_id'        => $cloneCatId ?: $clone->category_id,
+                    'sub_category_id'    => $cloneSubCatId,
+                    'short_description'  => $product->short_description,
+                    'facebook_video_url' => $product->facebook_video_url,
+                    'description'        => $product->description,
+                    'image'              => $product->image,
+                    'images'             => $product->images,
+                    'old_price'          => $product->old_price,
+                ]);
+            }
 
-        return redirect()->route('admin.warehouse.products.edit', ['warehouse', $product])->with($blockedRemovals ? 'error' : 'success', $message);
+            $blockedRemovals = [];
+            foreach ($removedBranchIds as $vendorId) {
+                $clone = Product::withoutGlobalScopes()->where('source_product_id', $product->id)->where('vendor_id', $vendorId)->first();
+                if (!$clone) continue;
+
+                if ($clone->stock_qty > 0) {
+                    $blockedRemovals[] = $clone->vendor?->name ?? "vendor #{$vendorId}";
+                    continue;
+                }
+
+                $clone->delete();
+            }
+
+            $message = 'প্রোডাক্ট সফলভাবে আপডেট করা হয়েছে।';
+            if (!empty($blockedRemovals)) {
+                $message .= ' (' . implode(', ', $blockedRemovals) . ' থেকে সরানো যায়নি কারণ স্টক বিদ্যমান)।';
+            }
+
+            if ($request->ajax() || $request->wantsJson()) {
+                session()->flash($blockedRemovals ? 'warning' : 'success', $message);
+                return response()->json([
+                    'success'  => empty($blockedRemovals),
+                    'message'  => $message,
+                    'redirect' => route('admin.warehouse.products.edit', ['warehouse', $product]),
+                ]);
+            }
+
+            return redirect()->route('admin.warehouse.products.edit', ['warehouse', $product])->with($blockedRemovals ? 'warning' : 'success', $message);
+
+        } catch (ValidationException $e) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'ফর্মের তথ্য সঠিকভাবে পূরণ করা হয়নি। ভুলগুলো সংশোধন করুন।',
+                    'errors'  => $e->errors(),
+                ], 422);
+            }
+            throw $e;
+        } catch (\Throwable $e) {
+            Log::error('Product update failed: ' . $e->getMessage(), ['exception' => $e]);
+            $errorMsg = 'প্রোডাক্ট আপডেট করতে ব্যর্থ হয়েছে: ' . $e->getMessage();
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $errorMsg,
+                    'errors'  => ['general' => [$e->getMessage()]],
+                ], 500);
+            }
+            return back()->withInput()->with('error', $errorMsg);
+        }
     }
 
     public function destroy(Vendor $branch, Product $product)

@@ -1476,6 +1476,20 @@ document.addEventListener('alpine:initialized', () => {
     @if(isset($errors) && $errors->any())
         @foreach($errors->all() as $e) showToast(@json($e), 'error'); @endforeach
     @endif
+
+    // Also pick up flash messages saved in sessionStorage from client redirects
+    try {
+        const sSuccess = sessionStorage.getItem('flash_success');
+        if (sSuccess) {
+            sessionStorage.removeItem('flash_success');
+            setTimeout(() => showToast(sSuccess, 'success'), 100);
+        }
+        const sError = sessionStorage.getItem('flash_error');
+        if (sError) {
+            sessionStorage.removeItem('flash_error');
+            setTimeout(() => showToast(sError, 'error'), 100);
+        }
+    } catch(e) {}
 });
 </script>
 </body>

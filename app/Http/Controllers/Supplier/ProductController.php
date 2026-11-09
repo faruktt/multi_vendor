@@ -81,6 +81,16 @@ class ProductController extends Controller
         $supplier = auth('supplier')->user();
         $onlineStore = Vendor::onlineStore();
 
+        $messages = [
+            'name.required' => 'প্রোডাক্টের নাম (Product Name) দেওয়া আবশ্যক।',
+            'category_id.required' => 'ক্যাটাগরি (Category) সিলেক্ট করা আবশ্যক।',
+            'price.required' => 'বিক্রয় মূল্য (Price) দেওয়া আবশ্যক।',
+            'price.numeric' => 'বিক্রয় মূল্য অবশ্যই সংখ্যা হতে হবে।',
+            'images.max' => 'একসাথে সর্বোচ্চ ১০টি ছবি আপলোড করা যাবে।',
+            'images.*.image' => 'আপলোড করা ফাইল অবশ্যই ইমেজ (ছবি) হতে হবে।',
+            'images.*.max' => 'প্রতিটি ছবির সাইজ সর্বোচ্চ ১০ MB হতে পারবে।',
+        ];
+
         $request->validate([
             'name'               => 'required|string|max:255',
             'category_id'        => 'required|exists:categories,id',
@@ -95,9 +105,9 @@ class ProductController extends Controller
             'description'        => 'nullable|string',
             'facebook_video_url' => 'nullable|string|max:1000',
             'images'             => 'nullable|array|max:10',
-            'images.*'           => 'image|max:3072',
+            'images.*'           => 'image|max:10240',
             'status'             => 'nullable|in:active,inactive',
-        ]);
+        ], $messages);
 
         $imageFilenames = $this->uploadImages($request->file('images', []));
         $variants = json_decode($request->variants ?? '[]', true) ?? [];
@@ -201,6 +211,16 @@ class ProductController extends Controller
         $supplier = auth('supplier')->user();
         abort_unless($product->supplier_id === $supplier->id, 403, 'Unauthorized access.');
 
+        $messages = [
+            'name.required' => 'প্রোডাক্টের নাম (Product Name) দেওয়া আবশ্যক।',
+            'category_id.required' => 'ক্যাটাগরি (Category) সিলেক্ট করা আবশ্যক।',
+            'price.required' => 'বিক্রয় মূল্য (Price) দেওয়া আবশ্যক।',
+            'price.numeric' => 'বিক্রয় মূল্য অবশ্যই সংখ্যা হতে হবে।',
+            'images.max' => 'একসাথে সর্বোচ্চ ১০টি ছবি আপলোড করা যাবে।',
+            'images.*.image' => 'আপলোড করা ফাইল অবশ্যই ইমেজ (ছবি) হতে হবে।',
+            'images.*.max' => 'প্রতিটি ছবির সাইজ সর্বোচ্চ ১০ MB হতে পারবে।',
+        ];
+
         $request->validate([
             'name'               => 'required|string|max:255',
             'category_id'        => 'required|exists:categories,id',
@@ -215,9 +235,9 @@ class ProductController extends Controller
             'description'        => 'nullable|string',
             'facebook_video_url' => 'nullable|string|max:1000',
             'images'             => 'nullable|array|max:10',
-            'images.*'           => 'image|max:3072',
+            'images.*'           => 'image|max:10240',
             'status'             => 'nullable|in:active,inactive',
-        ]);
+        ], $messages);
 
         // Process existing images & removals
         $currentImages = $product->images_list ?: [];
