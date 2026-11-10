@@ -15,11 +15,23 @@ class ProductController extends Controller
         $branch = Vendor::onlineStore();
         abort_unless($branch->status === 'active', 404);
 
-        $category = $categorySlug
-            ? Category::active()
-                ->where('slug', $categorySlug)
-                ->firstOrFail()
-            : null;
+        $category = null;
+        $subCategory = null;
+        $parentCategory = null;
+
+        if ($categorySlug) {
+            // First check if it matches a main Category
+            $category = Category::active()->where('slug', $categorySlug)->first();
+
+            // If not found, check if it matches a SubCategory
+            if (!$category) {
+                $subCategory = \App\Models\SubCategory::active()->where('slug', $categorySlug)->first();
+                if (!$subCategory) {
+                    abort(404);
+                }
+                $parentCategory = $subCategory->category;
+            }
+        }
 
         $categories = $this->sidebarCategories();
 
@@ -31,7 +43,13 @@ class ProductController extends Controller
                 $q->whereNull('supplier_id')->orWhere('approval_status', 'approved');
             });
 
-        if ($category) {
+        if ($subCategory) {
+            // Filter strictly by this subcategory (or legacy category_id matching subcategory)
+            $query->where(function ($q) use ($subCategory) {
+                $q->where('sub_category_id', $subCategory->id)
+                  ->orWhere('category_id', $subCategory->id);
+            });
+        } elseif ($category) {
             $childIds = \App\Models\SubCategory::where('category_id', $category->id)
                 ->active()
                 ->pluck('id')
@@ -66,7 +84,8 @@ class ProductController extends Controller
                 page: (int) $request->get('page', 1),
                 search: $request->q,
                 minPrice: $request->filled('min_price') ? $request->float('min_price') : null,
-                maxPrice: $request->filled('max_price') ? $request->float('max_price') : null
+                maxPrice: $request->filled('max_price') ? $request->float('max_price') : null,
+                subCategoryId: $subCategory?->id
             );
         } else {
             match ($request->get('sort')) {
@@ -77,9 +96,10 @@ class ProductController extends Controller
             };
             $products = $query->paginate(20)->withQueryString();
         }
-        $activeCategory = $category;
 
-        return view('shop.products.index', compact('branch', 'categories', 'products', 'activeCategory'));
+        $activeCategory = $subCategory ?: $category;
+
+        return view('shop.products.index', compact('branch', 'categories', 'products', 'activeCategory', 'parentCategory'));
     }
 
     public function show(string $productSlug)

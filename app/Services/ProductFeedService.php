@@ -34,13 +34,16 @@ class ProductFeedService
         int $limit = 8,
         ?string $search = null,
         ?float $minPrice = null,
-        ?float $maxPrice = null
+        ?float $maxPrice = null,
+        ?int $subCategoryId = null
     ): Collection {
         $branchId = is_object($branch) ? $branch->id : $branch;
 
         $categoryIds = null;
         $subCategoryIds = [];
-        if ($categoryId) {
+        if ($subCategoryId) {
+            $subCategoryIds = [(int) $subCategoryId];
+        } elseif ($categoryId) {
             $categoryIds = [(int) $categoryId];
             $subCategoryIds = \App\Models\SubCategory::where('category_id', $categoryId)
                 ->pluck('id')
@@ -48,7 +51,7 @@ class ProductFeedService
                 ->all();
         }
 
-        $buildQuery = function () use ($branchId, $categoryIds, $subCategoryIds, $search, $minPrice, $maxPrice) {
+        $buildQuery = function () use ($branchId, $categoryIds, $subCategoryIds, $subCategoryId, $search, $minPrice, $maxPrice) {
             $q = Product::withoutGlobalScopes()
                 ->where('vendor_id', $branchId)
                 ->where('status', 'active')
@@ -58,7 +61,12 @@ class ProductFeedService
                 })
                 ->with(['category', 'supplier', 'variants.color', 'variants.size']);
 
-            if ($categoryIds !== null) {
+            if ($subCategoryId) {
+                $q->where(function ($sub) use ($subCategoryId) {
+                    $sub->where('sub_category_id', $subCategoryId)
+                        ->orWhere('category_id', $subCategoryId);
+                });
+            } elseif ($categoryIds !== null) {
                 $q->where(function ($sub) use ($categoryIds, $subCategoryIds) {
                     $sub->whereIn('category_id', $categoryIds);
                     if (!empty($subCategoryIds)) {
@@ -195,13 +203,16 @@ class ProductFeedService
         int $page = 1,
         ?string $search = null,
         ?float $minPrice = null,
-        ?float $maxPrice = null
+        ?float $maxPrice = null,
+        ?int $subCategoryId = null
     ): LengthAwarePaginator {
         $branchId = is_object($branch) ? $branch->id : $branch;
 
         $categoryIds = null;
         $subCategoryIds = [];
-        if ($categoryId) {
+        if ($subCategoryId) {
+            $subCategoryIds = [(int) $subCategoryId];
+        } elseif ($categoryId) {
             $categoryIds = [(int) $categoryId];
             $subCategoryIds = \App\Models\SubCategory::where('category_id', $categoryId)
                 ->pluck('id')
@@ -216,7 +227,13 @@ class ProductFeedService
                 $sub->whereNull('supplier_id')
                     ->orWhere('approval_status', 'approved');
             })
-            ->when($categoryIds !== null, function ($q) use ($categoryIds, $subCategoryIds) {
+            ->when($subCategoryId !== null, function ($q) use ($subCategoryId) {
+                $q->where(function ($sub) use ($subCategoryId) {
+                    $sub->where('sub_category_id', $subCategoryId)
+                        ->orWhere('category_id', $subCategoryId);
+                });
+            })
+            ->when($subCategoryId === null && $categoryIds !== null, function ($q) use ($categoryIds, $subCategoryIds) {
                 $q->where(function ($sub) use ($categoryIds, $subCategoryIds) {
                     $sub->whereIn('category_id', $categoryIds);
                     if (!empty($subCategoryIds)) {
@@ -232,7 +249,7 @@ class ProductFeedService
             ->when($maxPrice !== null, fn($q) => $q->where('price', '<=', $maxPrice))
             ->count();
 
-        $items = self::getBalancedFeed($branch, $categoryId, $perPage, $search, $minPrice, $maxPrice);
+        $items = self::getBalancedFeed($branch, $categoryId, $perPage, $search, $minPrice, $maxPrice, $subCategoryId);
 
         return new LengthAwarePaginator(
             $items,

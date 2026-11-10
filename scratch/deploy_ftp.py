@@ -8,13 +8,10 @@ FTP_PASS = 'Ebsbazar.com12'
 REMOTE_ROOT = '/public_html'
 
 FILES = [
-    'app/Http/Controllers/Warehouse/ProductController.php',
-    'app/Http/Controllers/Web/ProductController.php',
-    'app/Http/Controllers/Supplier/ProductController.php',
-    'resources/views/layouts/app.blade.php',
-    'resources/views/warehouse/products/form.blade.php',
-    'resources/views/products/form.blade.php',
-    'resources/views/supplier/products/form.blade.php',
+    'app/Http/Controllers/Shop/ProductController.php',
+    'app/Services/ProductFeedService.php',
+    'resources/views/shop/products/index.blade.php',
+    'resources/views/shop/products/show.blade.php',
 ]
 
 def ensure_remote_dir(ftp, remote_dir):

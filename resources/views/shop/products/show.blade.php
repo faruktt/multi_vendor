@@ -67,7 +67,7 @@
 @endif
 @if($product->subCategory)
 <span class="text-gray-300">/</span>
-<span class="text-gray-600">{{ $product->subCategory->name }}</span>
+<a href="{{ route('shop.products.category', $product->subCategory->slug) }}" class="hover:text-brand-dark">{{ $product->subCategory->name }}</a>
 @endif
 <span class="text-gray-300">/</span>
 <span class="text-gray-900 font-semibold truncate">{{ $product->name }}</span>

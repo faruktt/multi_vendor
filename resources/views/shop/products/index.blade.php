@@ -10,6 +10,10 @@
 <span class="text-gray-300">/</span>
 <a href="{{ route('shop.products.index') }}" class="hover:text-brand-dark {{ !$activeCategory ? 'text-gray-900 font-semibold' : '' }}">Shop</a>
 @if($activeCategory)
+    @if(isset($parentCategory) && $parentCategory)
+    <span class="text-gray-300">/</span>
+    <a href="{{ route('shop.products.category', $parentCategory->slug) }}" class="hover:text-brand-dark">{{ $parentCategory->name }}</a>
+    @endif
 <span class="text-gray-300">/</span>
 <span class="text-gray-900 font-semibold">{{ $activeCategory->name }}</span>
 @endif
@@ -24,11 +28,14 @@
     <div class="flex-1 min-w-0">
         <div class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
 
-            @if(!empty($activeCategory?->image_url))
+            @php
+                $bannerImage = $activeCategory?->image_url ?? ($parentCategory?->image_url ?? null);
+            @endphp
+            @if(!empty($bannerImage))
             {{-- Category Banner matching 1400x400 aspect ratio with no crop --}}
             <div class="mb-4 overflow-hidden rounded-xl border border-gray-100 shadow-2xs">
                 <div class="relative w-full aspect-[1400/400] min-h-[140px] overflow-hidden bg-gray-50" style="aspect-ratio: 1400 / 400;">
-                    <img src="{{ $activeCategory->image_url }}" alt="{{ $activeCategory->name }}" class="w-full h-full object-cover object-center" />
+                    <img src="{{ $bannerImage }}" alt="{{ $activeCategory->name }}" class="w-full h-full object-cover object-center" />
                 </div>
             </div>
             @endif
